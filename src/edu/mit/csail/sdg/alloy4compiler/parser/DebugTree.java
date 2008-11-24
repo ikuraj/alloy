@@ -48,8 +48,7 @@ import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Browsable;
 
-/**
- * This class represents a graphical parse tree displayer.
+/** This class represents a graphical parse tree displayer.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */

@@ -373,9 +373,7 @@ final class SimpleReporter extends A4Reporter {
 
     private int warn=0;
 
-    /**
-     * Task that performs solution enumeration.
-     */
+    /** Task that performs solution enumeration. */
     static final class SimpleTask2 implements WorkerTask {
         private static final long serialVersionUID = 1L;
         public String filename = "";
@@ -426,9 +424,7 @@ final class SimpleReporter extends A4Reporter {
         StaticInstanceReader.parseInstance(new File(filename));
     }
 
-    /**
-     * Task that perform one command.
-     */
+    /** Task that perform one command. */
     static final class SimpleTask1 implements WorkerTask {
         private static final long serialVersionUID = 1L;
         public A4Options options;

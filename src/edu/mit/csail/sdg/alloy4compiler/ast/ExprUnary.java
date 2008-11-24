@@ -39,8 +39,7 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
-/**
- * Immutable; represents a unary expression of the form "(OP subexpression)"
+/** Immutable; represents a unary expression of the form "(OP subexpression)"
  *
  * <p> <b>Invariant:</b>  type!=EMPTY => sub.mult==0
  */
@@ -138,8 +137,7 @@ public final class ExprUnary extends Expr {
         /** The human readable label for this operator */
         private final String label;
 
-        /**
-         * Construct an ExprUnary node.
+        /** Construct an ExprUnary node.
          * @param pos - the original position of the "unary operator" in the file (can be null if unknown)
          * @param sub - the subexpression
          *
@@ -150,8 +148,7 @@ public final class ExprUnary extends Expr {
          */
         public final Expr make(Pos pos, Expr sub) { return make(pos, sub, null, 0); }
 
-        /**
-         * Construct an ExprUnary node.
+        /** Construct an ExprUnary node.
          * @param pos - the original position of the "unary operator" in the file (can be null if unknown)
          * @param sub - the subexpression
          * @param extraError - if nonnull, it will be appended as an extra error
@@ -270,8 +267,7 @@ public final class ExprUnary extends Expr {
 
     //============================================================================================================//
 
-    /**
-     * Helper method that computes the relevant type for a closure expression.
+    /** Helper method that computes the relevant type for a closure expression.
      *
      * <p> Return Value == { c1->c2 | c1->c2 in childType, AND exists p1->p2 in parentType
      *                       where p1..c1..c2..p2 is a path in the closure graph }

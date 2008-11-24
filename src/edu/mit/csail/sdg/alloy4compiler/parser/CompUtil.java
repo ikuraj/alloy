@@ -51,8 +51,7 @@ public final class CompUtil {
 
     //=============================================================================================================//
 
-    /**
-     * Go up the directory hierachy 0 or more times.
+    /** Go up the directory hierachy 0 or more times.
      * <br> For example, on a UNIX machine, goUp("/home/abc/def",1) will return "/home/abc"
      * <br> For example, on a UNIX machine, goUp("/home/abc/def",2) will return "/home"
      * @param filepath - this must be an absolute path
@@ -70,8 +69,7 @@ public final class CompUtil {
 
     //=============================================================================================================//
 
-    /**
-     * Given the name of a module, and the filename for that module, compute the filename for another module
+    /** Given the name of a module, and the filename for that module, compute the filename for another module
      * @param moduleA - must be a legal Alloy modulepath (eg. name) (eg. name/name/name) (must not start or end in '/')
      * @param fileA - the filename corresponding to moduleA
      * @param moduleB - must be a legal Alloy modulepath (eg. name) (eg. name/name/name) (must not start or end in '/')
@@ -101,8 +99,7 @@ public final class CompUtil {
 
     //=============================================================================================================//
 
-    /**
-     * Helper method that recursively parse a file and all its included subfiles
+    /** Helper method that recursively parse a file and all its included subfiles
      * @param loaded - this stores the text files we've loaded while parsing; cannot be null
      * @param fc - if a file cannot be found, we consult this cache first before attempting to load it from disk/jar; cannot be null
      * @param pos - the position of the "open" statement
@@ -156,8 +153,7 @@ public final class CompUtil {
 
     //=============================================================================================================//
 
-    /**
-     * Parses 1 module from the input string (without loading any subfiles)
+    /** Parses 1 module from the input string (without loading any subfiles)
      * @return an array of 0 or more Command if no error occurred
      */
     public static ConstList<Command> parseOneModule_fromString(String content) throws Err {
@@ -175,8 +171,7 @@ public final class CompUtil {
 
     //=============================================================================================================//
 
-    /**
-     * Parses 1 module from the file (without loading any subfiles)
+    /** Parses 1 module from the file (without loading any subfiles)
      * @return an array of 0 or more Command if no error occurred
      */
     public static ConstList<Command> parseOneModule_fromFile(String filename) throws Err {
@@ -192,8 +187,7 @@ public final class CompUtil {
 
     //=============================================================================================================//
 
-    /**
-     * Parses then typecheck the given input String as an Alloy expression from that world
+    /** Parses then typecheck the given input String as an Alloy expression from that world
      * @return the fully-typechecked expression if no error occurred
      * @throws Err if world==null or if any other error occurred
      */
@@ -210,8 +204,7 @@ public final class CompUtil {
 
     //=============================================================================================================//
 
-    /**
-     * Read everything from "file" and parse it; if it mentions submodules, open them and parse them too.
+    /** Read everything from "file" and parse it; if it mentions submodules, open them and parse them too.
      * @param rep - if nonnull, we will report compilation progress messages to it
      * @param loaded - a cache of files that have been pre-fetched (can be null if there were no prefetching)
      * @param filename - the main module we are parsing
@@ -239,8 +232,7 @@ public final class CompUtil {
         }
     }
 
-    /**
-     * Read everything from "file" and parse it; if it mentions submodules, open them and parse them too.
+    /** Read everything from "file" and parse it; if it mentions submodules, open them and parse them too.
      * @param rep - if nonnull, we will report compilation progress messages to it
      * @param loaded - a cache of files that have been pre-fetched (can be null if there were no prefetching)
      * @param filename - the main module we are parsing

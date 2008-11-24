@@ -22,8 +22,7 @@
 
 package edu.mit.csail.sdg.alloy4;
 
-/**
- * This holds the buildDate String.
+/** This holds the buildDate String.
  *
  * The release build script will generate a customized Version.java with the correct buildnumber and date.
  *

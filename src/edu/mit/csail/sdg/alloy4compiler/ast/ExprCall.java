@@ -37,8 +37,7 @@ import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
-/**
- * Immutable; represents a call.
+/** Immutable; represents a call.
  *
  * <p> <b>Invariant:</b>  type!=EMPTY => (all x:args | x.mult==0)
  */

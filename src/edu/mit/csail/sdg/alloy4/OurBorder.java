@@ -28,8 +28,7 @@ import java.awt.Insets;
 import java.awt.Graphics;
 import javax.swing.border.Border;
 
-/**
- * Graphical border on zero, one, two, three, or all four sides of a component.
+/** Graphical border on zero, one, two, three, or all four sides of a component.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -48,8 +47,7 @@ public final class OurBorder implements Border {
     /** non-null if we want to draw a border line of that Color to the right of the component. */
     private final Color right;
 
-    /**
-     * Construct a Border object that draws a border on 0, 1, 2, 3, or all 4 sides of the component.
+    /** Construct a Border object that draws a border on 0, 1, 2, 3, or all 4 sides of the component.
      * Note: it paints the borders top, bottom, left, then right.
      * @param top    - nonnull if we want to draw a border line (with that color) above the component
      * @param left   - nonnull if we want to draw a border line (with that color) to the left of the component
@@ -63,8 +61,7 @@ public final class OurBorder implements Border {
         this.right  = right;
     }
 
-    /**
-     * Construct a Border object that draws a light gray line on 0, 1, 2, 3, or all 4 sides of the component.
+    /** Construct a Border object that draws a light gray line on 0, 1, 2, 3, or all 4 sides of the component.
      * Note: it paints the borders top, bottom, left, then right.
      * @param top    - true if we want to draw a Color.LIGHT_GRAY border line above the component
      * @param left   - true if we want to draw a Color.LIGHT_GRAY border line to the left of the component

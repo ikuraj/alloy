@@ -31,8 +31,7 @@ import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.JoinableList;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
-/**
- * Immutable; represents an illegal node.
+/** Immutable; represents an illegal node.
  *
  * <p> <b>Invariant:</b>  this.type==EMPTY && this.errors.size()==1
  */

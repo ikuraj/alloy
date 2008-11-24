@@ -296,8 +296,7 @@ public final class A4SolutionReader {
        sol.solve(null, null, null, false);
     }
 
-    /**
-     * Parse the XML element into an AlloyInstance.
+    /** Parse the XML element into an AlloyInstance.
      *
      * <p> The list of sigs, if not null, will be used as the sigs (and their fields) that we expect to exist;
      * <br> if there's a sig or field X in the list but not in the XML, then X's tupleset will be regarded as empty;

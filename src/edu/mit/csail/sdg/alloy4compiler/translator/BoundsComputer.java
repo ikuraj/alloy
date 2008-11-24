@@ -49,9 +49,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
 
-/**
- * Immutable; this class assigns each sig and field to some Kodkod relation or expression, then set the bounds.
- */
+/** Immutable; this class assigns each sig and field to some Kodkod relation or expression, then set the bounds. */
 
 final class BoundsComputer {
 
@@ -78,8 +76,7 @@ final class BoundsComputer {
 
     //==============================================================================================================//
 
-    /**
-     * Computes the lowerbound from bottom-up; it will also set a suitable initial value for each sig's upperbound.
+    /** Computes the lowerbound from bottom-up; it will also set a suitable initial value for each sig's upperbound.
      * Precondition: sig is not a builtin sig
      */
     private TupleSet computeLowerBound(List<Tuple> atoms, final PrimSig sig) throws Err {
@@ -102,8 +99,7 @@ final class BoundsComputer {
 
     //==============================================================================================================//
 
-    /**
-     * Computes the upperbound from top-down, then allocate a relation for it.
+    /** Computes the upperbound from top-down, then allocate a relation for it.
      * Precondition: sig is not a builtin sig
      */
     private void computeUpperBound(PrimSig sig) throws Err {

@@ -26,8 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.awt.geom.CubicCurve2D;
 
-/**
- * Mutable; represents a connected path.
+/** Mutable; represents a connected path.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -58,8 +57,7 @@ final class VizCurve {
         }
         return ans;
     }
-    /**
-     * Precondition: this.lastX==next.firstX and this.lastY==next.firstY.
+    /** Precondition: this.lastX==next.firstX and this.lastY==next.firstY.
      * Note: the resulting VizCurve will still share the same CubicCurve2D objects as this and that. */
     VizCurve join(VizCurve that) {
         VizCurve ans = new VizCurve(startX, startY);
@@ -156,8 +154,7 @@ final class VizCurve {
         endY=tmp.y2;
     }
 
-    /**
-     * Returns the x position at the given y position, or defaultValue if the line doesn't pass thru the given y position.
+    /** Returns the x position at the given y position, or defaultValue if the line doesn't pass thru the given y position.
      * <p> Precondition: the curve is monotonic in the vertical direction.
      */
     public double getXatY(double y, double startT, double endT, double defaultValue) {

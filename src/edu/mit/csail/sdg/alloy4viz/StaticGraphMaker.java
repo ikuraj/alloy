@@ -32,8 +32,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import edu.mit.csail.sdg.alloy4.Util;
 
-/**
- * This utility class generates a graph for a particular index of the projection.
+/** This utility class generates a graph for a particular index of the projection.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -153,8 +152,7 @@ public final class StaticGraphMaker {
         graph=new DotGraph(view.getFontSize(), view.getOrientation(), view.getNodePalette(), view.getEdgePalette(), rels, magicColor, nodes, edges, attribs);
     }
 
-    /**
-     * Return the node for a specific AlloyAtom (create it if it doesn't exist yet).
+    /** Return the node for a specific AlloyAtom (create it if it doesn't exist yet).
      * @return null if the atom is explicitly marked as "Don't Show".
      */
     private DotNode createNode(final boolean hidePrivate, final boolean hideMeta, final AlloyAtom atom) {
@@ -293,8 +291,7 @@ public final class StaticGraphMaker {
         }
     }
 
-    /**
-     * Return the label for an atom.
+    /** Return the label for an atom.
      * @param atom - the atom
      * @param showSets - whether the label should also show the sets that this atom belongs to
      *

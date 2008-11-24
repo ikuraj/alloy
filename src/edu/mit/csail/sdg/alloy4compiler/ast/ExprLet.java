@@ -32,8 +32,7 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Util;
 
-/**
- * Immutable; represents an expression of the form (let a=b | x).
+/** Immutable; represents an expression of the form (let a=b | x).
  *
  * <p> <b>Invariant:</b>  type!=EMPTY => (var.type.unambiguos() && sub.mult==0)
  */
@@ -90,8 +89,7 @@ public final class ExprLet extends Expr {
 
     //=============================================================================================================//
 
-    /**
-     * Constructs a LET expression.
+    /** Constructs a LET expression.
      *
      * @param pos - the position of the '=' token in the original Alloy model (or null if unknown)
      * @param var - the LET variable

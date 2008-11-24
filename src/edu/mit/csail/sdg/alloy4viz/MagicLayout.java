@@ -29,8 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * This class implements the automatic visualization inference.
+/** This class implements the automatic visualization inference.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -51,16 +50,12 @@ final class MagicLayout {
     private AlloyType projectionType = null;
     private Set<AlloyRelation> spineRelations = Collections.emptySet();
 
-    /**
-     * Constructor.
-     */
+    /** Constructor. */
     private MagicLayout(final VizState vizState) {
         this.vizState = vizState;
     }
 
-    /**
-     * Main method to infer settings.
-     */
+    /** Main method to infer settings. */
     public static void magic(final VizState vizState) {
         vizState.resetTheme();
         final MagicLayout st = new MagicLayout(vizState);
@@ -74,8 +69,7 @@ final class MagicLayout {
         st.hideUnconnectedNodes();
     }
 
-    /**
-     * SYNTACTIC: An enumeration follows the pattern "abstract sig Colour; one sig Red; one sig Blue".
+    /** SYNTACTIC: An enumeration follows the pattern "abstract sig Colour; one sig Red; one sig Blue".
      */
     private void identifyEnumerationTypes() {
         final AlloyModel model = vizState.getCurrentModel();
@@ -127,8 +121,7 @@ final class MagicLayout {
 
     }
 
-    /**
-     * SEMANTIC/LAYOUT: Determine at most one relation to project over.
+    /** SEMANTIC/LAYOUT: Determine at most one relation to project over.
      *
      * When do we project over a sig? Do we ever project over more than one?
      * <ul>
@@ -218,8 +211,7 @@ final class MagicLayout {
         LIKELY_PROJECTION_TYPE_NAMES = Collections.unmodifiableSet(s);
     }
 
-    /**
-     * SEMANTIC/LAYOUT: Determine some relations to be the spine (ie, influence
+    /** SEMANTIC/LAYOUT: Determine some relations to be the spine (ie, influence
      * the layout).
      *
      * Which relations should be used to layout? all? none? clever?
@@ -277,8 +269,7 @@ final class MagicLayout {
 
     }
 
-    /**
-     * SEMANTIC/LAYOUT: Determine whether non-projection, non-spine relations
+    /** SEMANTIC/LAYOUT: Determine whether non-projection, non-spine relations
      * should be shown as attributes or edges.
      *
      * <ul>
@@ -307,9 +298,7 @@ final class MagicLayout {
     }
 
 
-    /**
-     * PRESENTATIONAL: Labels for edges.
-     */
+    /** PRESENTATIONAL: Labels for edges. */
     private void edgeLabels() {
         final AlloyModel model = vizState.getCurrentModel();
         int relationsAsEdges = 0;
@@ -331,9 +320,7 @@ final class MagicLayout {
     }
 
 
-    /**
-     * SYNTACTIC/VISUAL: Hide some things.
-     */
+    /** SYNTACTIC/VISUAL: Hide some things. */
     private void nodeVisibility() {
         final AlloyModel model = vizState.getCurrentModel();
         final Set<AlloyType> types = model.getTypes();
@@ -357,9 +344,7 @@ final class MagicLayout {
     }
 
 
-    /**
-     * SYNTACTIC/VISUAL: Should nodes that are not connected to anything else be
-     * hidden?
+    /** SYNTACTIC/VISUAL: Should nodes that are not connected to anything else be hidden?
      * <ul>
      * <li> don't see events that don't occur at this time
      * <li> hide unless skolems or sets
@@ -383,8 +368,7 @@ final class MagicLayout {
 //      }
     }
 
-    /**
-     * Should imports be hidden?
+    /** Should imports be hidden?
      * <ul>
      * <li> hide ord, not other imports
      * <li> hide unconnected nodes for imports ?

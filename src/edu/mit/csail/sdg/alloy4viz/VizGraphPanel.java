@@ -55,8 +55,7 @@ import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4graph.VizViewer;
 
-/**
- * GUI panel that houses the actual graph, as well as any projection comboboxes.
+/** GUI panel that houses the actual graph, as well as any projection comboboxes.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -117,8 +116,7 @@ public final class VizGraphPanel extends JPanel {
             }
             return true;
         }
-        /**
-         * Constructs a new TypePanel.
+        /** Constructs a new TypePanel.
          * @param type - the type being projected
          * @param atoms - the list of possible projection atom choices
          */
@@ -184,8 +182,7 @@ public final class VizGraphPanel extends JPanel {
         public AlloyType getAlloyType() { return type; }
     }
 
-    /**
-     * Create a splitpane showing the graph on top, as well as projection comboboxes on the bottom.
+    /** Create a splitpane showing the graph on top, as well as projection comboboxes on the bottom.
      * @param vizState - the current visualization settings
      * @param seeDot - true if we want to see the DOT source code, false if we want it rendered as a graph
      */

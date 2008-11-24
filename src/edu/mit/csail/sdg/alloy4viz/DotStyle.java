@@ -28,8 +28,7 @@ import java.util.ArrayList;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4graph.VizStyle;
 
-/**
- * Immutable; this defines the set of line styles that dot can produce.
+/** Immutable; this defines the set of line styles that dot can produce.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -53,8 +52,7 @@ public final class DotStyle extends DotAttribute {
         values=Collections.unmodifiableList(list);
     }
 
-    /**
-     * Construct a new DotStyle.
+    /** Construct a new DotStyle.
      * @param displayedText - the label to show when the user selects a style from a combobox
      * @param dotText - the actual attribute that we will write into the DOT file
      * @param icon - the icon to use for this

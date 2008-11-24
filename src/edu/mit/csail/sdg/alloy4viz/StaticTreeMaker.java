@@ -47,8 +47,7 @@ import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Util;
 
-/**
- * This utility class takes an AlloyInstance and generates a JTree showing
+/** This utility class takes an AlloyInstance and generates a JTree showing
  * the types, sets, and relation tuples from it.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
@@ -178,8 +177,7 @@ public final class StaticTreeMaker {
         return sb.toString();
     }
 
-    /**
-     * Custom TreeCellRenderer to print the tree nodes better.
+    /** Custom TreeCellRenderer to print the tree nodes better.
      * The idea of using JLabel is inspired by the DefaultTreeCellRenderer implementation.
      */
     private static final class OurRenderer extends JLabel implements TreeCellRenderer {
@@ -219,8 +217,7 @@ public final class StaticTreeMaker {
         }
     }
 
-    /**
-     * Generate a scrollpane containing a JTree (showing the sigs, sets, and relations in the given instance)
+    /** Generate a scrollpane containing a JTree (showing the sigs, sets, and relations in the given instance)
      * @param instance - the instance to display
      * @param theme - the theme for displaying the atom labels (can be null if we don't want to use a theme)
      */

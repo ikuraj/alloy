@@ -35,8 +35,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 
-/**
- * Immutable; represents the type of an expression.
+/** Immutable; represents the type of an expression.
  *
  * <p> <b>Invariant:</b>  all x:entries | x.arity()>0
  *
@@ -53,8 +52,7 @@ public final class Type implements Iterable<Type.ProductType> {
     /** This configuration option is true if we want to automatically cast from Int to int when necessary. */
     public static final boolean SIGINT2INT=true;
 
-    /**
-     * Immutable; represents a list of PrimSig objects.
+    /** Immutable; represents a list of PrimSig objects.
      *
      * <p> <b>Invariant:</b>  "one of the sig in the list is NONE" iff "every sig in the list is NONE".
      *
@@ -70,8 +68,7 @@ public final class Type implements Iterable<Type.ProductType> {
         /** The ProductType with arity==0 */
         private static final ProductType zero = new ProductType(new PrimSig[0]);
 
-        /**
-         * Constructs a new ProductType object consisting of the given array of PrimSig objects.
+        /** Constructs a new ProductType object consisting of the given array of PrimSig objects.
          * <p> Precondition:  "one of the sig in the list is NONE" iff "every sig in the list is NONE"
          * <p> Note: it will use the array as-is, so the caller should give up its reference to the array.
          * <p> Note: this constructor promises it won't call any method or read anything from any of the sig(s).
@@ -80,16 +77,14 @@ public final class Type implements Iterable<Type.ProductType> {
             types = array;
         }
 
-        /**
-         * Constructs a new ProductType made of exactly 1 PrimSig;
+        /** Constructs a new ProductType made of exactly 1 PrimSig;
          * <p> Note: this constructor promises it won't call any method or read anything from the sig.
          */
         private ProductType(PrimSig sig) {
             types = new PrimSig[]{sig};
         }
 
-        /**
-         * Constructs a new ProductType made of exactly n references to the same PrimSig object.
+        /** Constructs a new ProductType made of exactly n references to the same PrimSig object.
          * <p> Note: this constructor promises it won't call any method or read anything from the sig.
          */
         private ProductType(int n, PrimSig sig) {
@@ -110,8 +105,7 @@ public final class Type implements Iterable<Type.ProductType> {
             return true;
         }
 
-        /**
-         * Returns true if (this[i] is equal or subtype of that[i]) for every i.
+        /** Returns true if (this[i] is equal or subtype of that[i]) for every i.
          * <p> Precondition: this.arity == that.arity
          */
         private boolean isSubtypeOf(ProductType that) {
@@ -120,8 +114,7 @@ public final class Type implements Iterable<Type.ProductType> {
             return true;
         }
 
-        /**
-         * Returns true if (this[i] is equal or subtype of that[i]) for every i.
+        /** Returns true if (this[i] is equal or subtype of that[i]) for every i.
          * <p> Precondition: this.arity == that.arity
          */
         private boolean isSubtypeOf(List<PrimSig> that) {
@@ -132,8 +125,7 @@ public final class Type implements Iterable<Type.ProductType> {
         /** Returns the arity of this ProductType object. */
         public int arity() { return types.length; }
 
-        /**
-         * Returns a specific PrimSig in this ProductType
+        /** Returns a specific PrimSig in this ProductType
          * @throws ArrayIndexOutOfBoundsException if (i < 0) or (i >= arity)
          */
         PrimSig get(int i) { return types[i]; }
@@ -141,16 +133,14 @@ public final class Type implements Iterable<Type.ProductType> {
         /** Returns true if this.arity==0  or  this==NONE->..->NONE */
         public boolean isEmpty() { return types.length==0 || types[0]==NONE; }
 
-        /**
-         * Returns the tranpose of this
+        /** Returns the tranpose of this
          * <p> Precondition: this.arity()==2
          */
         private ProductType transpose() {
             if (types[0]==types[1]) return this; else return new ProductType(new PrimSig[]{types[1], types[0]});
         }
 
-        /**
-         * Returns the cross product of this and that.
+        /** Returns the cross product of this and that.
          * <p> Note: If either or both is NONE->..->NONE, then we return NONE->..->NONE instead.
          */
         ProductType product(ProductType that) {
@@ -165,8 +155,7 @@ public final class Type implements Iterable<Type.ProductType> {
             return new ProductType(ans);
         }
 
-        /**
-         * Returns the intersection of this and that.
+        /** Returns the intersection of this and that.
          *
          * <p> Note: if (this[i] & that[i]) is empty for at least one i, then we return "NONE->..->NONE" instead.
          *
@@ -185,8 +174,7 @@ public final class Type implements Iterable<Type.ProductType> {
             return new ProductType(ans);
         }
 
-        /**
-         * Returns true iff the intersection of this and that is nonempty.
+        /** Returns true iff the intersection of this and that is nonempty.
          *
          * <p> Precondition: this.arity == that.arity
          */
@@ -195,8 +183,7 @@ public final class Type implements Iterable<Type.ProductType> {
             return true;
         }
 
-        /**
-         * Returns the relational join of this and that.
+        /** Returns the relational join of this and that.
          *
          * <p> Note: if (this.rightmost() & that.leftmost()) is empty, we return NONE->..->NONE instead.
          *
@@ -215,8 +202,7 @@ public final class Type implements Iterable<Type.ProductType> {
             return new ProductType(types);
         }
 
-        /**
-         * If (this[i] & that) is not empty, then return this[0]->this[1]->this[2]->this[3]..->this[n-1]
+        /** If (this[i] & that) is not empty, then return this[0]->this[1]->this[2]->this[3]..->this[n-1]
          * except the i-th entry is replaced by (this[i] & that).
          *
          * <p> Otherwise, this method returns NONE->..->NONE
@@ -262,8 +248,7 @@ public final class Type implements Iterable<Type.ProductType> {
     /** True if primitive boolean value is a possible value in this type. */
     public final boolean is_bool;
 
-    /**
-     * Contains a summary of the arities in this type.
+    /** Contains a summary of the arities in this type.
      *
      * <br> The (1<<0) bitmask is nonzero iff arity X exists for some X>30
      * <br> The (1<<1) bitmask is nonzero iff arity 1 exists
@@ -277,14 +262,12 @@ public final class Type implements Iterable<Type.ProductType> {
     /** Contains the list of ProductType entries in this type. */
     private final ConstList<ProductType> entries;
 
-    /**
-     * Returns an iterator that iterates over the ProductType entries in this type.
+    /** Returns an iterator that iterates over the ProductType entries in this type.
      * <p> This iterator will reject all modification requests.
      */
     public Iterator<ProductType> iterator() { return entries.iterator(); }
 
-    /**
-     * Merge "x" into the set of entries, then return the new arity bitmask.
+    /** Merge "x" into the set of entries, then return the new arity bitmask.
      * <br> Precondition: entries and arities are consistent
      */
     private static int add(TempList<ProductType> entries, int arities, ProductType x) {
@@ -302,8 +285,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return arities;
     }
 
-    /**
-     * Create a new type consisting of the given set of entries, set of arities, and the given is_int/is_bool values;
+    /** Create a new type consisting of the given set of entries, set of arities, and the given is_int/is_bool values;
      * <p> Precondition: entries and arities must be consistent
      */
     private Type(boolean is_int, boolean is_bool, ConstList<ProductType> entries, int arities) {
@@ -318,8 +300,7 @@ public final class Type implements Iterable<Type.ProductType> {
         }
     }
 
-    /**
-     * Create a new type consisting of the given set of entries, set of arities, and the given is_int/is_bool values;
+    /** Create a new type consisting of the given set of entries, set of arities, and the given is_int/is_bool values;
      * <p> Precondition: entries and arities must be consistent
      */
     private static Type make(boolean is_int, boolean is_bool, ConstList<ProductType> entries, int arities) {
@@ -329,8 +310,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return new Type(is_int, is_bool, entries, arities);
     }
 
-    /**
-     * Create the type consisting of the given ProductType entry.
+    /** Create the type consisting of the given ProductType entry.
      */
     static Type make(ProductType productType) {
         int ar=productType.types.length;
@@ -338,8 +318,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return make(false, false, ConstList.make(1,productType), (ar>30) ? 1 : (1<<ar));
     }
 
-    /**
-     * Create the type list[start]->list[start+1]->..->list[end-1]
+    /** Create the type list[start]->list[start+1]->..->list[end-1]
      * (If start<0, end<0, end>list.size(), or start>=end, this method will return EMPTY)
      */
     static Type make(List<PrimSig> list, int start, int end) {
@@ -425,8 +404,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return false;
     }
 
-    /**
-     *      If every entry has the same arity, that arity is returned;
+    /** If every entry has the same arity, that arity is returned;
      * <br> else if some entries have different arities, we return -1;
      * <br> else we return 0 (which only happens when there are no entries at all).
      */
@@ -444,8 +422,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return ans;
     }
 
-    /**
-     * Returns true if exists some A in this, some B in that, where (A[0]&B[0]!=empty)
+    /** Returns true if exists some A in this, some B in that, where (A[0]&B[0]!=empty)
      * <p> This method ignores the "is_int" and "is_bool" flags.
      */
     public boolean firstColumnOverlaps(Type that) {
@@ -457,8 +434,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return false;
     }
 
-    /**
-     * Returns true if exists some A in this, some B in that, where (A.arity==B.arity, and A[0]&B[0]!=empty)
+    /** Returns true if exists some A in this, some B in that, where (A.arity==B.arity, and A[0]&B[0]!=empty)
      * <p> This method ignores the "is_int" and "is_bool" flags.
      */
     public boolean canOverride(Type that) {
@@ -480,8 +456,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return (arities & that.arities)!=0;
     }
 
-    /**
-     * Returns a new type { A->B | A is in this, and B is in that }
+    /** Returns a new type { A->B | A is in this, and B is in that }
      *
      * <p>  ReturnValue.is_int  == false
      * <br> ReturnValue.is_bool == false
@@ -496,8 +471,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return make(false, false, ee.makeConst(), aa);
     }
 
-    /**
-     * Returns true iff { A&B | A is in this, and B is in that } can have tuples.
+    /** Returns true iff { A&B | A is in this, and B is in that } can have tuples.
      */
     public boolean intersects(Type that) {
         if ((arities & that.arities)!=0)
@@ -507,8 +481,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return false;
     }
 
-    /**
-     * Returns a new type { A&B | A is in this, and B is in that }
+    /** Returns a new type { A&B | A is in this, and B is in that }
      *
      * <p>  ReturnValue.is_int  == false
      * <br> ReturnValue.is_bool == false
@@ -526,8 +499,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return make(false, false, ee.makeConst(), aa);
     }
 
-    /**
-     * Returns a new type { A&that | A is in this }
+    /** Returns a new type { A&that | A is in this }
      *
      * <p>  ReturnValue.is_int  == false
      * <br> ReturnValue.is_bool == false
@@ -542,8 +514,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return make(false, false, ee.makeConst(), aa);
     }
 
-    /**
-     * Returns a new type { A | A is in this, or A is in that }
+    /** Returns a new type { A | A is in this, or A is in that }
      *
      * <p>  ReturnValue.is_int  == this.is_int  || that.is_int
      * <br> ReturnValue.is_bool == this.is_bool || that.is_bool
@@ -564,8 +535,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return make(is_int||that.is_int, is_bool||that.is_bool, ee.makeConst(), aa);
     }
 
-    /**
-     * Returns a new type { A | A is in this, or A == that }
+    /** Returns a new type { A | A is in this, or A == that }
      *
      * <p>  ReturnValue.is_int  == this.is_int
      * <br> ReturnValue.is_bool == this.is_bool
@@ -576,8 +546,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return make(is_int, is_bool, ee.makeConst(), aa);
     }
 
-    /**
-     * Returns a new type { A | A is in this, or A == that.subList(begin,end) }
+    /** Returns a new type { A | A is in this, or A == that.subList(begin,end) }
      *
      * <p>  ReturnValue.is_int  == this.is_int
      * <br> ReturnValue.is_bool == this.is_bool
@@ -591,8 +560,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return make(is_int, is_bool, ee.makeConst(), aa);
     }
 
-    /**
-     * Returns a new type { A | A is in this, or A == that }
+    /** Returns a new type { A | A is in this, or A == that }
      *
      * <p>  ReturnValue.is_int  == this.is_int
      * <br> ReturnValue.is_bool == this.is_bool
@@ -613,8 +581,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return make(is_int, is_bool, ee.makeConst(), aa);
     }
 
-    /**
-     * Returns a new type { A | (A is in this && A.arity in that) or (A is in that && A.arity in this) }
+    /** Returns a new type { A | (A is in this && A.arity in that) or (A is in that && A.arity in this) }
      *
      * <p>  ReturnValue.is_int  == false
      * <br> ReturnValue.is_bool == false
@@ -642,8 +609,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return make(false, false, ee.makeConst(), aa);
     }
 
-    /**
-     * Returns a new type { A | (A is in this && A.arity in that) }
+    /** Returns a new type { A | (A is in this && A.arity in that) }
      *
      * <p>  ReturnValue.is_int  == false
      * <br> ReturnValue.is_bool == false
@@ -665,8 +631,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return make(false, false, ee.makeConst(), aa);
     }
 
-    /**
-     * Returns a new type { A in this | A.artiy==1 }
+    /** Returns a new type { A in this | A.artiy==1 }
      *
      * <p>  ReturnValue.is_int  == false
      * <br> ReturnValue.is_bool == false
@@ -681,8 +646,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return make(false, false, ee.makeConst(), (1<<1));
     }
 
-    /**
-     * Returns a new type { A in this | A.artiy==2 }
+    /** Returns a new type { A in this | A.artiy==2 }
      *
      * <p>  ReturnValue.is_int  == false
      * <br> ReturnValue.is_bool == false
@@ -697,8 +661,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return make(false, false, ee.makeConst(), (1<<2));
     }
 
-    /**
-     * Returns a new type { A | A is binary and ~A is in this }
+    /** Returns a new type { A | A is binary and ~A is in this }
      *
      * <p>  ReturnValue.is_int  == false
      * <br> ReturnValue.is_bool == false
@@ -713,8 +676,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return make(false, false, ee.makeConst(), aa);
     }
 
-    /**
-     * Returns true if for all A in this, there exists B in that, where A is equal or subset of B.
+    /** Returns true if for all A in this, there exists B in that, where A is equal or subset of B.
      * <p> Note: if this.is_int && !that.is_int, we return false immediately.
      * <p> Note: if this.is_bool && !that.is_bool, we return false immediately.
      * <p> Note: if this nothing above is violated, and this type has no relational entry in it, we return true.
@@ -732,8 +694,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return true;
     }
 
-    /**
-     * Returns a new type { A.B | exists A in this, exists B in that, where A.arity+B.arity>2 }
+    /** Returns a new type { A.B | exists A in this, exists B in that, where A.arity+B.arity>2 }
      * <p> If this.size()==0, or that.size()==0, or none of the entries have the right arity, then result.size()==0.
      *
      * <p>  ReturnValue.is_int  == false
@@ -747,8 +708,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return make(false, false, ee.makeConst(), aa);
     }
 
-    /**
-     * Returns a new type { R[0]->..->R[n-1] |
+    /** Returns a new type { R[0]->..->R[n-1] |
      * exists n-ary A in this, exists unary B in that, such that R[i]==A[i] except R[0]==(A[0] & B)
      *
      * <p>  ReturnValue.is_int  == false
@@ -767,8 +727,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return make(false, false, ee.makeConst(), aa);
     }
 
-    /**
-     * Returns a new type { R[0]->..->R[n-1] |
+    /** Returns a new type { R[0]->..->R[n-1] |
      * exists n-ary A in this, exists unary B in that, such that R[i]==A[i] except R[n-1]==(A[n-1] & B)
      *
      * <p>  ReturnValue.is_int  == false
@@ -787,8 +746,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return make(false, false, ee.makeConst(), aa);
     }
 
-    /**
-     * Returns a new type { A  |  (A in this) and (A.arity == arity) }
+    /** Returns a new type { A  |  (A in this) and (A.arity == arity) }
      *
      * <p>  ReturnValue.is_int  == false
      * <br> ReturnValue.is_bool == false
@@ -804,8 +762,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return make(false, false, ee.makeConst(), aa);
     }
 
-    /**
-     * Returns a new type u + u.u + u.u.u + ... (where u == the set of binary entries in this type)
+    /** Returns a new type u + u.u + u.u.u + ... (where u == the set of binary entries in this type)
      *
      * <p>  ReturnValue.is_int  == false
      * <br> ReturnValue.is_bool == false
@@ -825,8 +782,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return ans;
     }
 
-    /**
-     * Convert this type into a UNION of PRODUCT of sigs.
+    /** Convert this type into a UNION of PRODUCT of sigs.
      * @throws ErrorType if it does not contain exactly one arity
      * @throws ErrorType if is_int is true
      * @throws ErrorType if is_bool is true
@@ -843,8 +799,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return ans;
     }
 
-    /**
-     * Merge "a" into the set of entries.
+    /** Merge "a" into the set of entries.
      *
      * <p>  If {a}+this.entries contain a set of entries X1..Xn, such that
      * <br>   (1) For each X:  X[j]==a[j] for i!=j, and X[i].super==a[i].super
@@ -882,8 +837,7 @@ public final class Type implements Iterable<Type.ProductType> {
         return a;
     }
 
-    /**
-     * Return the result of folding this Type (that is, whenever a subset of relations are identical
+    /** Return the result of folding this Type (that is, whenever a subset of relations are identical
      * except for 1 position, where together they comprise of all direct subsigs of an abstract sig,
      * then we merge them)
      *

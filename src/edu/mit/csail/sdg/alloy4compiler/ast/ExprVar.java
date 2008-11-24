@@ -29,8 +29,7 @@ import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 
-/**
- * Immutable; represents a LET or QUANTIFICATION variable in the AST.
+/** Immutable; represents a LET or QUANTIFICATION variable in the AST.
  *
  * <p> <b>Invariant:</b>  type!=EMPTY => (type==expr.type && !expr.ambiguous)
  */
@@ -52,8 +51,7 @@ public final class ExprVar extends ExprHasName {
         super(pos, label, type);
     }
 
-    /**
-     * Constructs an ExprVar variable with the EMPTY type
+    /** Constructs an ExprVar variable with the EMPTY type
      * @param pos - the original position in the source file (can be null if unknown)
      * @param label - the label for this variable (it is only used for pretty-printing and does not have to be unique)
      */
@@ -61,8 +59,7 @@ public final class ExprVar extends ExprHasName {
         return new ExprVar(pos, label, Type.EMPTY);
     }
 
-    /**
-     * Constructs an ExprVar variable with the given type
+    /** Constructs an ExprVar variable with the given type
      * @param pos - the original position in the source file (can be null if unknown)
      * @param label - the label for this variable (it is only used for pretty-printing and does not have to be unique)
      * @param type - the type

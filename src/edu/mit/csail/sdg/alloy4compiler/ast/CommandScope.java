@@ -26,8 +26,7 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
 
-/**
- * Immutable; reresents a scope in a "run" or "check" command.
+/** Immutable; reresents a scope in a "run" or "check" command.
  *
  * <p> <b>Invariant:</b>  sig != null
  * <p> <b>Invariant:</b>  endingScope >= startingScope >= 0
@@ -54,8 +53,7 @@ public class CommandScope {
     /** The scope increment; if this sig is not a growing sig, then this.increment is ignored. */
     public final int increment;
 
-    /**
-     * Construct a new CommandScope object.
+    /** Construct a new CommandScope object.
      * @param sig - the sig for this scope
      * @param isExact - true iff the scope is intended to be exact
      * @param scope - the scope
@@ -63,8 +61,7 @@ public class CommandScope {
      */
     public CommandScope(Sig sig, boolean isExact, int scope) throws ErrorSyntax { this(null, sig, isExact, scope, scope, 1); }
 
-    /**
-     * Construct a new CommandScope object.
+    /** Construct a new CommandScope object.
      * @param pos - the position where this scope is given
      * @param sig - the sig for this scope
      * @param isExact - true iff the scope is intended to be exact

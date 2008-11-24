@@ -35,8 +35,7 @@ import java.util.TreeSet;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.XMLNode;
 
-/**
- * This utility class contains methods to read and write VizState customizations.
+/** This utility class contains methods to read and write VizState customizations.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */

@@ -44,8 +44,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.filechooser.FileFilter;
 
-/**
- * Graphical dialog methods for asking the user some questions.
+/** Graphical dialog methods for asking the user some questions.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -66,8 +65,7 @@ public final class OurDialog {
         System.exit(1);
     }
 
-    /**
-     * Ask if the user wishes to save the file, discard the file, or cancel the entire operation (default==cancel).
+    /** Ask if the user wishes to save the file, discard the file, or cancel the entire operation (default==cancel).
      * @return null if cancel, true if save, false if discard
      */
     public static Boolean askSaveDiscardCancel(Frame parentFrame, String description) {
@@ -135,8 +133,7 @@ public final class OurDialog {
     /** True if we should use AWT (instead of Swing) to display the OPEN and SAVE dialog. */
     private static boolean useAWT = false;
 
-    /**
-     * Use the platform's preferred file chooser to ask the user to select a file.
+    /** Use the platform's preferred file chooser to ask the user to select a file.
      * <br> Note: if it is a save operation, and the user didn't include an extension, then we'll add the extension.
      * @param parentFrame - the parent frame
      * @param isOpen - true means this is an Open operation; false means this is a Save operation

@@ -30,8 +30,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 
-/**
- * This list allows add() but disallows remove() and set(); null values are allowed.
+/** This list allows add() but disallows remove() and set(); null values are allowed.
  *
  * <p>
  * By making this sacrifice, we are able to provide a very cheap "duplicate method"
@@ -181,8 +180,7 @@ public final class SafeList<T> implements Serializable, Iterable<T> {
         return size()==0;
     }
 
-    /**
-     * Returns an iterator that iterates over elements in this list
+    /** Returns an iterator that iterates over elements in this list
      * (in the order that they were inserted).
      *
      * <p> Note: This iterator's remove() method always throws UnsupportedOperationException.

@@ -17232,8 +17232,7 @@ final class CompParser extends java_cup_11a.runtime.lr_parser {
 class CUP$CompParser$actions {
 
 
-    /**
-     * This function is needed to handle a difficult parsing ambiguity.
+    /** This function is needed to handle a difficult parsing ambiguity.
      *
      * <p>
      * "some EXPR", "one EXPR", and "lone EXPR"

@@ -152,8 +152,7 @@ public final class SimContext extends VisitReturn<Object> {
         }
     }
 
-    /**
-     * Helper method that read "key =" then return the key part (with leading and trailing spaces removed).
+    /** Helper method that read "key =" then return the key part (with leading and trailing spaces removed).
      * This method can only be called after you've synchronized on SimContext's class.
      */
     private static String readkey(BufferedInputStream bis) throws IOException {
@@ -271,8 +270,7 @@ public final class SimContext extends VisitReturn<Object> {
         return false;
     }
 
-    /**
-     * Create a fresh atom for the given sig, then return the newly created atom.
+    /** Create a fresh atom for the given sig, then return the newly created atom.
      * @throws ErrorAPI if attempting to add an atom to an abstract sig with children, or a builtin sig, or a subset sig.
      */
     public SimAtom makeAtom(Sig sig) throws Err {
@@ -295,8 +293,7 @@ public final class SimContext extends VisitReturn<Object> {
         }
     }
 
-    /**
-     * Delete an atom from all sigs/fields/skolem...
+    /** Delete an atom from all sigs/fields/skolem...
      * <p> The resulting instance may or may not satisfy all facts, and should be checked for consistency.
      * <p> Returns true if at least one sig/field/var changed its value as a result of this deletion.
      * @throws ErrorAPI if attempting to delete from "Int".
@@ -315,8 +312,7 @@ public final class SimContext extends VisitReturn<Object> {
        if (changed) { cacheUNIV=null; return true; } else { return false; }
     }
 
-    /**
-     * Initializes the given sig to be associated with the given unary value; should only be called at the beginning.
+    /** Initializes the given sig to be associated with the given unary value; should only be called at the beginning.
      * <p> The resulting instance may or may not satisfy all facts, and should be checked for consistency.
      */
     public void init(Sig sig, SimTupleset value) throws Err {
@@ -329,8 +325,7 @@ public final class SimContext extends VisitReturn<Object> {
         cacheForConstants.clear();
     }
 
-    /**
-     * Initializes the given field to be associated with the given unary value; should only be called at the beginning.
+    /** Initializes the given field to be associated with the given unary value; should only be called at the beginning.
      * <p> The resulting instance may or may not satisfy all facts, and should be checked for consistency.
      */
     public void init(Field field, SimTupleset value) throws Err {
@@ -343,8 +338,7 @@ public final class SimContext extends VisitReturn<Object> {
         cacheForConstants.clear();
     }
 
-    /**
-     * Initializes the given var to be associated with the given unary value; should only be called at the beginning.
+    /** Initializes the given var to be associated with the given unary value; should only be called at the beginning.
      * <p> The resulting instance may or may not satisfy all facts, and should be checked for consistency.
      */
     public void init(ExprVar var, SimTupleset value) throws Err {
@@ -359,8 +353,7 @@ public final class SimContext extends VisitReturn<Object> {
     /** Truncate the given integer based on the current chosen bitwidth */
     private int trunc(int i) { return (i<<(32-bitwidth)) >> (32-bitwidth); }
 
-    /**
-     * Convenience method that evalutes x and casts the result to be a boolean.
+    /** Convenience method that evalutes x and casts the result to be a boolean.
      * @return the boolean - if x evaluates to a boolean
      * @throws ErrorFatal - if x does not evaluate to a boolean
      */
@@ -371,8 +364,7 @@ public final class SimContext extends VisitReturn<Object> {
         throw new ErrorFatal(x.span(), "This should have been a formula.\nInstead it is "+y);
     }
 
-    /**
-     * Convenience method that evalutes x and cast the result to be a int.
+    /** Convenience method that evalutes x and cast the result to be a int.
      * @return the int - if x evaluates to an int
      * @throws ErrorFatal - if x does not evaluate to an int
      */
@@ -383,8 +375,7 @@ public final class SimContext extends VisitReturn<Object> {
         throw new ErrorFatal(x.span(), "This should have been an integer expression.\nInstead it is "+y);
     }
 
-    /**
-     * Convenience method that evalutes x and cast the result to be a tupleset
+    /** Convenience method that evalutes x and cast the result to be a tupleset
      * @return the tupleset - if x evaluates to a tupleset
      * @throws ErrorFatal - if x does not evaluate to a tupleset
      */

@@ -22,8 +22,7 @@
 
 package edu.mit.csail.sdg.alloy4viz;
 
-/**
- * Immutable; represents an Alloy atom in an instance.
+/** Immutable; represents an Alloy atom in an instance.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -36,8 +35,7 @@ public final class AlloyAtom implements Comparable<AlloyAtom> {
     /** The most specific AlloyType that this atom belongs to. */
     private final AlloyType type;
 
-    /**
-     * The index is a number that differentiates atoms of the same AlloyType;
+    /** The index is a number that differentiates atoms of the same AlloyType;
      * one special convention: (this atom is the only atom with this type) iff (index==Integer.MAX_VALUE)
      */
     private final int index;
@@ -77,8 +75,7 @@ public final class AlloyAtom implements Comparable<AlloyAtom> {
     /** Provides a human-readable label for debugging purpose. */
     @Override public String toString() { return getVizName(null,true); }
 
-    /**
-     * Compare first by type, then by index, then by the original names.
+    /** Compare first by type, then by index, then by the original names.
      * <br> We guarantee x.equals(y) iff x.compareTo(y)==0
      *
      * <p> As a special cosmetic enhancement:

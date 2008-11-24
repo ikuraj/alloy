@@ -9,8 +9,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JTextPane;
 
-/**
- * Graphical convenience methods for managing and constructing antialias-capable components.
+/** Graphical convenience methods for managing and constructing antialias-capable components.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */

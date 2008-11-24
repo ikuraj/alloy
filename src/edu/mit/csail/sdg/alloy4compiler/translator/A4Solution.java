@@ -97,8 +97,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options.SatSolver;
 
-/**
- * This class stores a SATISFIABLE or UNSATISFIABLE solution.
+/** This class stores a SATISFIABLE or UNSATISFIABLE solution.
  * It is also used as a staging area for the solver before generating the solution.
  * Once solve() has been called, then this object becomes immutable after that.
  */
@@ -209,8 +208,7 @@ public final class A4Solution {
 
     //===================================================================================================//
 
-    /**
-     * Construct a blank A4Solution containing just UNIV, SIGINT, SEQIDX, STRING, and NONE as its only known sigs.
+    /** Construct a blank A4Solution containing just UNIV, SIGINT, SEQIDX, STRING, and NONE as its only known sigs.
      * @param originalCommand  - the original Alloy command that generated this solution; can be "" if unknown
      * @param bitwidth - the bitwidth; must be between 1 and 30
      * @param maxseq - the maximum allowed sequence length; must be between 0 and (2^(bitwidth-1))-1
@@ -402,8 +400,7 @@ public final class A4Solution {
     /** Returns a modifiable copy of the Kodkod Bounds object. */
     Bounds getBounds() { return bounds.clone(); }
 
-    /**
-     * Add a new relation with the given label and the given lower and upper bound.
+    /** Add a new relation with the given label and the given lower and upper bound.
      * @param label - the label for the new relation; need not be unique
      * @param lower - the lowerbound; can be null if you want it to be the empty set
      * @param upper - the upperbound; cannot be null; must contain everything in lowerbound
@@ -422,8 +419,7 @@ public final class A4Solution {
        return rel;
     }
 
-    /**
-     * Add a new sig to this solution and associate it with the given expression (and if s.isTopLevel then add this expression into Sig.UNIV).
+    /** Add a new sig to this solution and associate it with the given expression (and if s.isTopLevel then add this expression into Sig.UNIV).
      * <br> The expression must contain only constant Relations or Relations that are already bound in this solution.
      * <br> (If the sig was already added by a previous call to addSig(), then this call will return immediately without altering what it is associated with)
      */
@@ -436,8 +432,7 @@ public final class A4Solution {
        if (s.isTopLevel()) a2k.put(UNIV, a2k.get(UNIV).union(expr));
     }
 
-    /**
-     * Add a new field to this solution and associate it with the given expression.
+    /** Add a new field to this solution and associate it with the given expression.
      * <br> The expression must contain only constant Relations or Relations that are already bound in this solution.
      * <br> (If the field was already added by a previous call to addField(), then this call will return immediately without altering what it is associated with)
      */
@@ -448,8 +443,7 @@ public final class A4Solution {
        a2k.put(f, expr);
     }
 
-    /**
-     * Add a new skolem to this solution and associate it with the given expression.
+    /** Add a new skolem to this solution and associate it with the given expression.
      * <br> The expression must contain only constant Relations or Relations that are already bound in this solution.
      */
     private ExprVar addSkolem(String label, Type type, Expression expr) throws Err {
@@ -564,8 +558,7 @@ public final class A4Solution {
     /** Caches eval(Sig) and eval(Field) results. */
     private Map<Expr,A4TupleSet> evalCache = new LinkedHashMap<Expr,A4TupleSet>();
 
-    /**
-     * If this solution is solved and satisfiable, evaluates the given expression and returns an A4TupleSet, a java Integer, or a java Boolean.
+    /** If this solution is solved and satisfiable, evaluates the given expression and returns an A4TupleSet, a java Integer, or a java Boolean.
      * @throws Err if the expression has syntax error, type error, or other errors, or is not fully typechecked
      * @throws Err if this solution is not yet solved or it is not satisfiable
      */
@@ -992,8 +985,7 @@ public final class A4Solution {
     /** If nonnull, it caches the result of calling "next()". */
     private A4Solution nextCache = null;
 
-    /**
-     * If this solution is UNSAT, return itself; else return the next solution (which could be SAT or UNSAT).
+    /** If this solution is UNSAT, return itself; else return the next solution (which could be SAT or UNSAT).
      * @throws ErrorAPI if the solver was not an incremental solver
      */
     public A4Solution next() throws Err {

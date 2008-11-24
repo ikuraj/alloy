@@ -28,8 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.Util;
 
-/**
- * Immutable; represents an Alloy tuple.
+/** Immutable; represents an Alloy tuple.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -53,8 +52,7 @@ public final class AlloyTuple implements Comparable<AlloyTuple> {
         this.atoms = Util.asList(atoms);
     }
 
-    /**
-     * Project this tuple and return an unmodifiable list of remaining atoms (after removing zero or more columns)
+    /** Project this tuple and return an unmodifiable list of remaining atoms (after removing zero or more columns)
      * @param columns - the collection of columns to remove (0 is the first column, 1 is the second column...)
      */
     public List<AlloyAtom> project(Collection<Integer> columns) {
@@ -89,8 +87,7 @@ public final class AlloyTuple implements Comparable<AlloyTuple> {
         return s+">";
     }
 
-    /**
-     * Two tuples are first compared based on length; if the length is the same, we compare atom-by-atom.
+    /** Two tuples are first compared based on length; if the length is the same, we compare atom-by-atom.
      * <br> We guarantee x.equals(y) iff x.compareTo(y)==0
      */
     public int compareTo(AlloyTuple that) {

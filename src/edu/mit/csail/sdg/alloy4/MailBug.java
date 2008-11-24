@@ -45,9 +45,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import static edu.mit.csail.sdg.alloy4.OurUtil.*;
 
-/**
- * This class asks the user for permission to email a bug report when an uncaught exception occurs.
- */
+/** This class asks the user for permission to email a bug report when an uncaught exception occurs. */
 
 public final class MailBug implements UncaughtExceptionHandler {
 

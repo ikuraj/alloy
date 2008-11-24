@@ -26,8 +26,7 @@ import java.util.Set;
 import edu.mit.csail.sdg.alloy4graph.VizGraph;
 import edu.mit.csail.sdg.alloy4graph.VizNode;
 
-/**
- * Immutable; this represents a node to be written out to the DOT file.
+/** Immutable; this represents a node to be written out to the DOT file.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -55,8 +54,7 @@ public final class DotNode {
     /** Returns the unique id for this node. */
     public int getID() { return id; }
 
-    /**
-     * Constructs a node.
+    /** Constructs a node.
      * @param uuid - a user-provided annotation that will be associated with this node (can be null)
      * @param id - the unique ID for this node
      * @param label - the label to show
@@ -68,8 +66,7 @@ public final class DotNode {
         this.uuid = uuid; this.id = id; this.label = label; this.shape = shape; this.color = color; this.style = style;
     }
 
-    /**
-     * Writes the node into a DotGraph object.
+    /** Writes the node into a DotGraph object.
      * @param dotgraph - the graph
      * @param attribs - a set of additional labels to append to the node (can be null if we don't have any to append)
      * @param pal - the color palette to use
@@ -81,8 +78,7 @@ public final class DotNode {
         return n;
     }
 
-    /**
-     * Writes the node into a StringBuilder as we would writing to a Dot file
+    /** Writes the node into a StringBuilder as we would writing to a Dot file
      * @param out - the StringBuilder object that will receive the text
      * @param attribs - a set of additional labels to append to the node (can be null if we don't have any to append)
      * @param pal - the color palette to use

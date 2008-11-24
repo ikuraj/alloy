@@ -28,9 +28,7 @@ import java.io.RandomAccessFile;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 
-/**
- * Graphical convenience methods for producing PNG files.
- */
+/** Graphical convenience methods for producing PNG files. */
 
 public final strictfp class OurPNGWriter {
 

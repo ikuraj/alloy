@@ -35,8 +35,7 @@ import java.io.PrintStream;
 import java.io.Serializable;
 import java.lang.Thread.UncaughtExceptionHandler;
 
-/**
- * This class allows you to execute tasks in a subprocess, and receive its outputs via callback.
+/** This class allows you to execute tasks in a subprocess, and receive its outputs via callback.
  *
  * <p> By executing the task in a subprocess, we can always terminate a runaway task explicitly by calling stop(),
  * and we can control how much memory and stack space to give to the subprocess.
@@ -108,8 +107,7 @@ public final class WorkerEngine {
      synchronized(WorkerEngine.class) { return latest_manager!=null && latest_manager.isAlive(); }
   }
 
-  /**
-   * This executes a task using the current thread.
+  /** This executes a task using the current thread.
    * @param task - the task that we want to execute
    * @param callback - the handler that will receive outputs from the task
    * @throws IOException - if a previous task is still busy executing
@@ -121,8 +119,7 @@ public final class WorkerEngine {
      }
   }
 
-  /**
-   * This issues a new task to the subprocess; if subprocess hasn't been constructed yet or has terminated abnormally, this method will launch a new subprocess.
+  /** This issues a new task to the subprocess; if subprocess hasn't been constructed yet or has terminated abnormally, this method will launch a new subprocess.
    * @param task - the task that we want the subprocess to execute
    * @param newmem - the amount of memory (in megabytes) we want the subprocess to have (if the subproces has not terminated, then this parameter is ignored)
    * @param newstack - the amount of stack (in kilobytes) we want the subprocess to have (if the subproces has not terminated, then this parameter is ignored)
@@ -198,8 +195,7 @@ public final class WorkerEngine {
      }
   }
 
-  /**
-   * This is the entry point for the sub JVM.
+  /** This is the entry point for the sub JVM.
    *
    * <p> Behavior is very simple: it reads a WorkerTask object from System.in, then execute it, then read another...
    * If any error occurred, or if it's disconnected from the parent process's pipe, it then terminates itself

@@ -26,16 +26,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Immutable; this defines the set of color palettes that the user can choose from.
+/** Immutable; this defines the set of color palettes that the user can choose from.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class DotPalette extends DotAttribute {
 
-    /**
-     * The list of values that the user can select from a combobox.
+    /** The list of values that the user can select from a combobox.
      * If you change the order, you must also change the ordering of the colors in DotColor class.
      */
     private static final List<Object> values;

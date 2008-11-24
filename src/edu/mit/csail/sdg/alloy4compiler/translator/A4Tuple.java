@@ -36,8 +36,7 @@ public final class A4Tuple {
     /** The A4Solution that this came from. */
     private final A4Solution sol;
 
-    /**
-     * Construct a Tuple from the kodkod Tuple, while renaming each atom using the atom2name map in sol.
+    /** Construct a Tuple from the kodkod Tuple, while renaming each atom using the atom2name map in sol.
      * <br> NOTE: caller must ensure the Kodkod tuple is not modified, since we expect the resulting A4Tuple to be constant.
      */
     A4Tuple(Tuple tuple, A4Solution sol) {

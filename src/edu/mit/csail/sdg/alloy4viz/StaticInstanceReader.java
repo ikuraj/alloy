@@ -48,8 +48,7 @@ import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionReader;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Tuple;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4TupleSet;
 
-/**
- * This utility class parses an XML file into an AlloyInstance object.
+/** This utility class parses an XML file into an AlloyInstance object.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */

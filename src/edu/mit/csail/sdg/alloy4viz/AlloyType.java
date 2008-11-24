@@ -24,8 +24,7 @@ package edu.mit.csail.sdg.alloy4viz;
 
 import edu.mit.csail.sdg.alloy4.Util;
 
-/**
- * Immutable; represents an Alloy toplevel signature or an Alloy subsignature.
+/** Immutable; represents an Alloy toplevel signature or an Alloy subsignature.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -76,8 +75,7 @@ public final class AlloyType extends AlloyNodeElement {
     /** Records whether this sig is known to be "leaf"; NOTE: this value is NOT USED during equals() comparison. */
     public final boolean isLeaf;
 
-    /**
-     * When comparing two AlloyType objects, we compare their names.
+    /** When comparing two AlloyType objects, we compare their names.
      * <br> We guarantee x.equals(y) iff x.compareTo(y)==0
      */
     public int compareTo(AlloyType other) {
@@ -85,8 +83,7 @@ public final class AlloyType extends AlloyNodeElement {
         return Util.slashComparator.compare(getName(), other.getName());
     }
 
-    /**
-     * When comparing two AlloyType objects, we compare their names.
+    /** When comparing two AlloyType objects, we compare their names.
      * <br> We guarantee x.equals(y) iff x.compareTo(y)==0
      */
     public int compareTo(AlloyNodeElement other) {
@@ -95,8 +92,7 @@ public final class AlloyType extends AlloyNodeElement {
         return Util.slashComparator.compare(getName(), ((AlloyType)other).getName());
     }
 
-    /**
-     * When comparing two AlloyType objects, we compare their names.
+    /** When comparing two AlloyType objects, we compare their names.
      * <br> We guarantee x.equals(y) iff x.compareTo(y)==0
      */
     public int compareTo(AlloyElement other) {

@@ -22,16 +22,14 @@
 
 package edu.mit.csail.sdg.alloy4viz;
 
-/**
- * Immutable; this defines the set of possible edge directions.
+/** Immutable; this defines the set of possible edge directions.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class DotDirection extends DotAttribute{
 
-    /**
-     * Constructs a new DotDirection object.
+    /** Constructs a new DotDirection object.
      * @param dotText - the text to write into the .dot file
      */
     private DotDirection(String dotText) { super(dotText, dotText, null); }

@@ -44,8 +44,7 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.STRING;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 
-/**
- * Immutable; this class computes the scopes for each sig and computes the bitwidth and maximum sequence length.
+/** Immutable; this class computes the scopes for each sig and computes the bitwidth and maximum sequence length.
  *
  * <p> The scopes are determined as follows:
  *
@@ -159,8 +158,7 @@ final class ScopeComputer {
 
     //===========================================================================================================================//
 
-    /**
-     * If A is abstract, unscoped, and all children are scoped, then set A's scope to be the sum;
+    /** If A is abstract, unscoped, and all children are scoped, then set A's scope to be the sum;
      * if A is abstract, scoped, and every child except one is scoped, then set that child's scope to be the difference.
      */
     private boolean derive_abstract_scope (Iterable<Sig> sigs) throws Err {
@@ -192,9 +190,7 @@ final class ScopeComputer {
 
     //===========================================================================================================================//
 
-    /**
-     * If A is toplevel, and we haven't been able to derive its scope yet, then let it get the "overall" scope.
-     */
+    /** If A is toplevel, and we haven't been able to derive its scope yet, then let it get the "overall" scope. */
     private boolean derive_overall_scope (Iterable<Sig> sigs) throws Err {
         boolean changed=false;
         final int overall = (cmd.overall<0 && cmd.scope.size()==0) ? 3 : cmd.overall;
@@ -208,9 +204,7 @@ final class ScopeComputer {
 
     //===========================================================================================================================//
 
-    /**
-     * If A is not toplevel, and we haven't been able to derive its scope yet, then give it its parent's scope.
-     */
+    /** If A is not toplevel, and we haven't been able to derive its scope yet, then give it its parent's scope. */
     private boolean derive_scope_from_parent (Iterable<Sig> sigs) throws Err {
         boolean changed=false;
         Sig trouble=null;
@@ -328,8 +322,7 @@ final class ScopeComputer {
 
     //===========================================================================================================================//
 
-    /**
-     * Computes the scopes for each sig and computes the bitwidth and maximum sequence length.
+    /** Computes the scopes for each sig and computes the bitwidth and maximum sequence length.
      *
      * <p> The scopes are determined as follows:
      *

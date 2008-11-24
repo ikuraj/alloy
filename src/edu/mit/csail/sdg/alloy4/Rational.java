@@ -24,9 +24,7 @@ package edu.mit.csail.sdg.alloy4;
 
 import java.math.BigInteger;
 
-/**
- * Immutable; represents an infinite-precision rational number.
- */
+/** Immutable; represents an infinite-precision rational number. */
 
 public final class Rational {
 
@@ -136,8 +134,7 @@ public final class Rational {
     /** Returns true if this number is not undefined and is zero. */
     public boolean isZero () { return b!=BigInteger.ZERO && a==BigInteger.ZERO; }
 
-    /**
-     * Returns -1 if this is less than that, 0 if equal, 1 if this is greater than that;
+    /** Returns -1 if this is less than that, 0 if equal, 1 if this is greater than that;
      * NOTE: two NaN are considered equal, and NaN is considered smaller than all non-NaN.
      */
     public int cmp (Rational that) {

@@ -59,8 +59,7 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
 
-/**
- * Graphical convenience methods.
+/** Graphical convenience methods.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -73,8 +72,7 @@ public final class OurUtil {
     /** This constructor is private, since this utility class never needs to be instantiated. */
     private OurUtil() { }
 
-    /**
-     * Assign the given attributes to the given JComponent, then return the JComponent again.
+    /** Assign the given attributes to the given JComponent, then return the JComponent again.
      * <p> If Font x is given in the list, we call obj.setFont(x0
      * <p> If String x is given in the list, we call obj.setToolTipText(x)
      * <p> If Border x is given in the list, we call obj.setBorder(x)
@@ -147,8 +145,7 @@ public final class OurUtil {
         }
     }
 
-    /**
-     * Make a textual button
+    /** Make a textual button
      * @param label - the text to show beneath the button
      * @param func - the function to call when the button is pressed (null if we don't want to call any function)
      */
@@ -158,8 +155,7 @@ public final class OurUtil {
         return button;
     }
 
-    /**
-     * Make a graphical button
+    /** Make a graphical button
      * @param label - the text to show beneath the button
      * @param tip - the tooltip to show when the mouse hovers over the button
      * @param iconname - the filename of the icon to show (it will be loaded from an accompanying jar file)
@@ -185,8 +181,7 @@ public final class OurUtil {
         return new ImageIcon(new BufferedImage(2, 2, BufferedImage.TYPE_INT_RGB));
     }
 
-    /**
-     * Make a JPanel using horizontal or vertical BoxLayout, and add the components to it.
+    /** Make a JPanel using horizontal or vertical BoxLayout, and add the components to it.
      * <br> If a component is null, we will insert a horizontal (or vertical) glue instead.
      * <br> If a component is Integer, we will insert an "n*1" (or "1*n") rigid area instead.
      * <br> If a component is String, we will insert a JLabel with it as the label.
@@ -225,8 +220,7 @@ public final class OurUtil {
         return ans;
     }
 
-    /**
-     * Make a JPanel with the given dimension using BoxLayout, and add the components to it.
+    /** Make a JPanel with the given dimension using BoxLayout, and add the components to it.
      * <br> It will have the X_AXIS layout (or Y_AXIS if h>w).
      * <br> If a component is null, we will insert a horizontal (or vertical) glue instead.
      * <br> If a component is Integer, we will insert an "n*1" rigid area (or "1*n" rigid area) instead.
@@ -241,8 +235,7 @@ public final class OurUtil {
         return ans;
     }
 
-    /**
-     * Make a JPanel using horizontal BoxLayout, and add the components to it.
+    /** Make a JPanel using horizontal BoxLayout, and add the components to it.
      * <br> If a component is null, we will insert a horizontal glue instead.
      * <br> If a component is Integer, we will insert an "n*1" rigid area instead.
      * <br> If a component is String, we will insert a JLabel with it as the label.
@@ -251,8 +244,7 @@ public final class OurUtil {
      */
     public static JPanel makeH(Object... a) { return makeBox(true, 0.5f, 0.5f, a); }
 
-    /**
-     * Make a JPanel using horizontal BoxLayout, and add the components to it.
+    /** Make a JPanel using horizontal BoxLayout, and add the components to it.
      * <br> If a component is null, we will insert a horizontal glue instead.
      * <br> If a component is Integer, we will insert an "n*1" rigid area instead.
      * <br> If a component is String, we will insert a JLabel with it as the label.
@@ -261,8 +253,7 @@ public final class OurUtil {
      */
     public static JPanel makeHT(Object... a) { return makeBox(true, 0.5f, 0.0f, a); }
 
-    /**
-     * Make a JPanel using horizontal BoxLayout, and add the components to it.
+    /** Make a JPanel using horizontal BoxLayout, and add the components to it.
      * <br> If a component is null, we will insert a horizontal glue instead.
      * <br> If a component is Integer, we will insert an "n*1" rigid area instead.
      * <br> If a component is String, we will insert a JLabel with it as the label.
@@ -271,8 +262,7 @@ public final class OurUtil {
      */
     public static JPanel makeHB(Object... a) { return makeBox(true, 0.5f, 1.0f, a); }
 
-    /**
-     * Make a JPanel using vertical BoxLayout, and add the components to it.
+    /** Make a JPanel using vertical BoxLayout, and add the components to it.
      * <br> If a component is null, we will insert a vertical glue instead.
      * <br> If a component is Integer, we will insert an "1*n" rigid area instead.
      * <br> If a component is String, we will insert a JLabel with it as the label.
@@ -281,8 +271,7 @@ public final class OurUtil {
      */
     public static JPanel makeV(Object... a) { return makeBox(false, 0.5f, 0.5f, a); }
 
-    /**
-     * Make a JPanel using vertical BoxLayout, and add the components to it.
+    /** Make a JPanel using vertical BoxLayout, and add the components to it.
      * <br> If a component is null, we will insert a vertical glue instead.
      * <br> If a component is Integer, we will insert an "1*n" rigid area instead.
      * <br> If a component is String, we will insert a JLabel with it as the label.
@@ -291,8 +280,7 @@ public final class OurUtil {
      */
     public static JPanel makeVL(Object... a) { return makeBox(false, 0.0f, 0.5f, a); }
 
-    /**
-     * Make a JPanel using vertical BoxLayout, and add the components to it.
+    /** Make a JPanel using vertical BoxLayout, and add the components to it.
      * <br> If a component is null, we will insert a vertical glue instead.
      * <br> If a component is Integer, we will insert an "1*n" rigid area instead.
      * <br> If a component is String, we will insert a JLabel with it as the label.
@@ -301,8 +289,7 @@ public final class OurUtil {
      */
     public static JPanel makeVR(Object... a) { return makeBox(false, 1.0f, 0.5f, a); }
 
-    /**
-     * Constructs a new SplitPane containing the two components given as arguments
+    /** Constructs a new SplitPane containing the two components given as arguments
      * @param orientation - the orientation (HORIZONTAL_SPLIT or VERTICAL_SPLIT)
      * @param leftComp - the left component (if horizontal) or top component (if vertical)
      * @param rightComp - the right component (if horizontal) or bottom component (if vertical)
@@ -323,8 +310,7 @@ public final class OurUtil {
         return x;
     }
 
-    /**
-     * Convenience method that recursively enables every JMenu and JMenuItem inside "menu".
+    /** Convenience method that recursively enables every JMenu and JMenuItem inside "menu".
      * @param menu - the menu to start the recursive search
      */
     public static void enableAll (JMenu menu) {
@@ -338,8 +324,7 @@ public final class OurUtil {
         }
     }
 
-    /**
-     * Construct a new JMenu and add it to an existing JMenuBar.
+    /** Construct a new JMenu and add it to an existing JMenuBar.
      *
      * <p> Note: every time the user expands then collapses this JMenu,
      * it will automatically enable all JMenu and JMenuItem objects inside it.
@@ -361,8 +346,7 @@ public final class OurUtil {
         return x;
     }
 
-    /**
-     * Construct a new JMenuItem then add it to an existing JMenu.
+    /** Construct a new JMenuItem then add it to an existing JMenu.
      * @param parent - the JMenu to add this JMenuItem into (or null if you don't want to add it to any JMenu yet)
      * @param label - the text to show on the menu
      * @param attrs - a list of attributes to apply onto the new JMenuItem

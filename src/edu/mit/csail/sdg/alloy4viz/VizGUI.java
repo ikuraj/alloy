@@ -70,8 +70,7 @@ import edu.mit.csail.sdg.alloy4.Util.IntPref;
 import edu.mit.csail.sdg.alloy4.Util.StringPref;
 import edu.mit.csail.sdg.alloy4graph.VizViewer;
 
-/**
- * GUI main window for the visualizer.
+/** GUI main window for the visualizer.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -129,8 +128,7 @@ public final class VizGUI implements ComponentListener {
     /** The current instance and visualization settings; null if none is loaded. */
     private VizState myState=null;
 
-    /**
-     * Returns the current visualization settings (and you can call getOriginalInstance() on it to get the current instance).
+    /** Returns the current visualization settings (and you can call getOriginalInstance() on it to get the current instance).
      * If you make changes to the state, you should call doApply() on the VizGUI object to refresh the screen.
      */
     public VizState getVizState() { return myState; }
@@ -156,15 +154,12 @@ public final class VizGUI implements ComponentListener {
     /** The last known divider position between the customization panel and the graph panel. */
     private int lastDividerPosition=0;
 
-    /**
-     * If nonnull, you can pass in an expression to be evaluated.
+    /** If nonnull, you can pass in an expression to be evaluated.
      * If it throws an exception, that means an error has occurred.
      */
     private final Computer evaluator;
 
-    /**
-     * If nonnull, you can pass in an XML file to find the next solution.
-     */
+    /** If nonnull, you can pass in an XML file to find the next solution. */
     private final Computer enumerator;
 
     //==============================================================================================//
@@ -312,8 +307,7 @@ public final class VizGUI implements ComponentListener {
         };
     }
 
-    /**
-     * Creates a new visualization GUI window; this method can only be called by the AWT event thread.
+    /** Creates a new visualization GUI window; this method can only be called by the AWT event thread.
      * @param standalone - whether the JVM should shutdown after the last file is closed
      * @param xmlFileName - the filename of the incoming XML file; "" if there's no file to open
      * @param windowmenu - if standalone==false and windowmenu!=null, then this will be added as a menu on the menubar
@@ -324,8 +318,7 @@ public final class VizGUI implements ComponentListener {
         this(standalone, xmlFileName, windowmenu, null, null);
     }
 
-    /**
-     * Creates a new visualization GUI window; this method can only be called by the AWT event thread.
+    /** Creates a new visualization GUI window; this method can only be called by the AWT event thread.
      * @param standalone - whether the JVM should shutdown after the last file is closed
      * @param xmlFileName - the filename of the incoming XML file; "" if there's no file to open
      * @param windowmenu - if standalone==false and windowmenu!=null, then this will be added as a menu on the menubar
@@ -338,8 +331,7 @@ public final class VizGUI implements ComponentListener {
         this(standalone, xmlFileName, windowmenu, enumerator, evaluator, true);
     }
 
-    /**
-     * Creates a new visualization GUI window; this method can only be called by the AWT event thread.
+    /** Creates a new visualization GUI window; this method can only be called by the AWT event thread.
      * @param standalone - whether the JVM should shutdown after the last file is closed
      * @param xmlFileName - the filename of the incoming XML file; "" if there's no file to open
      * @param windowmenu - if standalone==false and windowmenu!=null, then this will be added as a menu on the menubar
@@ -738,8 +730,7 @@ public final class VizGUI implements ComponentListener {
         return wrapMe(fileName);
     }
 
-    /**
-     * This method closes the current instance; if there are previously loaded files, we will load one of them;
+    /** This method closes the current instance; if there are previously loaded files, we will load one of them;
      * otherwise, this window will set itself as invisible (if not in standalone mode),
      * or it will terminate the entire application (if in standalone mode).
      */
@@ -751,8 +742,7 @@ public final class VizGUI implements ComponentListener {
         return null;
     }
 
-    /**
-     * This method closes every XML file.
+    /** This method closes every XML file.
      * If in standalone mode, the JVM will then shutdown, otherwise it will just set the window invisible.
      */
     private Runner doCloseAll() {

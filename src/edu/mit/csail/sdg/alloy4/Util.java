@@ -46,8 +46,7 @@ import java.util.NoSuchElementException;
 import java.util.prefs.Preferences;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 
-/**
- * This provides useful static methods for I/O and XML operations.
+/** This provides useful static methods for I/O and XML operations.
  *
  * <p><b>Thread Safety:</b>  Safe.
  */
@@ -57,8 +56,7 @@ public final class Util {
     /** This constructor is private, since this utility class never needs to be instantiated. */
     private Util() { }
 
-    /**
-     * This reads and writes String-valued Java persistent preferences.
+    /** This reads and writes String-valued Java persistent preferences.
      * <p><b>Thread Safety:</b>  Safe.
      */
     public static final class StringPref {
@@ -79,8 +77,7 @@ public final class Util {
         }
     }
 
-    /**
-     * This reads and writes boolean-valued Java persistent preferences.
+    /** This reads and writes boolean-valued Java persistent preferences.
      * <p><b>Thread Safety:</b>  Safe.
      */
     public static final class BooleanPref {
@@ -94,8 +91,7 @@ public final class Util {
         public boolean get () { return "y".equals(Preferences.userNodeForPackage(Util.class).get(id, "")); }
     }
 
-    /**
-     * This reads and writes integer-valued Java persistent preferences.
+    /** This reads and writes integer-valued Java persistent preferences.
      * <p><b>Thread Safety:</b>  Safe.
      */
     public static final class IntPref {
@@ -183,8 +179,7 @@ public final class Util {
         return input.replace("\r\n","\n").replace('\r','\n').replaceAll("[\000-\010\013\014\016-\037]"," ");
     }
 
-    /**
-     * Attempt to close the file/stream/reader/writer and return true if and only if we successfully closed it.
+    /** Attempt to close the file/stream/reader/writer and return true if and only if we successfully closed it.
      * (If object==null, we return true right away)
      */
     public static boolean close(Closeable object) {
@@ -217,16 +212,14 @@ public final class Util {
         return currentDirectory;
     }
 
-    /**
-     * This returns the constant prefix to denote whether Util.readAll() should read from a JAR or read from the file system.
+    /** This returns the constant prefix to denote whether Util.readAll() should read from a JAR or read from the file system.
      * (The reason we made this into a "method" rather than a constant String is that it is used
      * by Util.canon() which is called by many static initializer blocks... so if we made this into a static field
      * of Util, then it may not be initialized yet when we need it!)
      */
     public static String jarPrefix() { return File.separator + "$alloy4$" + File.separator; }
 
-    /**
-     * Read everything into a String; throws IOException if an error occurred.
+    /** Read everything into a String; throws IOException if an error occurred.
      * (If filename begins with Util.jarPrefix() then we read from the JAR instead)
      */
     public static String readAll(String filename) throws FileNotFoundException, IOException {
@@ -310,8 +303,7 @@ public final class Util {
         }
     }
 
-    /**
-     * Returns the canonical absolute path for a file.
+    /** Returns the canonical absolute path for a file.
      * If an IO error occurred, or if the file doesn't exist yet,
      * we will at least return a noncanonical but absolute path for it.
      * <p> Note: if filename=="", we return "".
@@ -326,8 +318,7 @@ public final class Util {
         try { return file.getCanonicalPath(); } catch(IOException ex) { return file.getAbsolutePath(); }
     }
 
-    /**
-     * Sorts two strings for optimum module order; we guarantee slashComparator(a,b)==0 iff a.equals(b).
+    /** Sorts two strings for optimum module order; we guarantee slashComparator(a,b)==0 iff a.equals(b).
      * <br> (1) First of all, the builtin names "extend" and "in" are sorted ahead of other names
      * <br> (2) Else, if one string starts with "this/", then it is considered smaller
      * <br> (3) Else, if one string has fewer '/' than the other, then it is considered smaller.
@@ -353,8 +344,7 @@ public final class Util {
         }
     };
 
-    /**
-     * Copy the given file from JAR into the destination file; if the destination file exists, we then do nothing.
+    /** Copy the given file from JAR into the destination file; if the destination file exists, we then do nothing.
      * Returns true iff a file was created and written.
      */
     private static boolean copy(String sourcename, String destname) {
@@ -382,8 +372,7 @@ public final class Util {
         return true;
     }
 
-    /**
-     * Copy the list of files from JAR into the destination directory,
+    /** Copy the list of files from JAR into the destination directory,
      * then set the correct permissions on them if possible.
      *
      * @param executable - if true, we will attempt to set the file's "executable" permission (failure to do this is ignored)
@@ -415,8 +404,7 @@ public final class Util {
         }
     }
 
-    /**
-     * Copy file.content[from...f.length-1] into file.content[to...], then truncate the file after that point.
+    /** Copy file.content[from...f.length-1] into file.content[to...], then truncate the file after that point.
      * <p> If (from &gt; to), this means we simply delete the portion of the file beginning at "to" and up to but excluding "from".
      * <p> If (from &lt; to), this means we insert (to-from) number of ARBITRARY bytes into the "from" location and shift the original file content accordingly.
      * <p> Note: after this operation, the file's current position will be moved to the start of the file.
@@ -447,8 +435,7 @@ public final class Util {
         file.seek(0);
     }
 
-    /**
-     * Write a String into a PrintWriter, and encode special characters using XML-specific encoding.
+    /** Write a String into a PrintWriter, and encode special characters using XML-specific encoding.
      *
      * <p>
      * In particular, it changes LESS THAN, GREATER THAN, AMPERSAND, SINGLE QUOTE, and DOUBLE QUOTE
@@ -477,8 +464,7 @@ public final class Util {
         }
     }
 
-    /**
-     * Write a String into a StringBuilder, and encode special characters using XML-specific encoding.
+    /** Write a String into a StringBuilder, and encode special characters using XML-specific encoding.
      *
      * <p>
      * In particular, it changes LESS THAN, GREATER THAN, AMPERSAND, SINGLE QUOTE, and DOUBLE QUOTE
@@ -506,8 +492,7 @@ public final class Util {
         }
     }
 
-    /**
-     * Write a list of Strings into a PrintWriter, where strs[2n] are written as-is, and strs[2n+1] are XML-encoded.
+    /** Write a list of Strings into a PrintWriter, where strs[2n] are written as-is, and strs[2n+1] are XML-encoded.
      *
      * <p> For example, if you call encodeXML(out, A, B, C, D, E), it is equivalent to the following:
      * <br> out.print(A);
@@ -526,8 +511,7 @@ public final class Util {
         }
     }
 
-    /**
-     * Write a list of Strings into a StringBuilder, where strs[2n] are written as-is, and strs[2n+1] are XML-encoded.
+    /** Write a list of Strings into a StringBuilder, where strs[2n] are written as-is, and strs[2n+1] are XML-encoded.
      *
      * <p> For example, if you call encodeXML(out, A, B, C, D, E), it is equivalent to the following:
      * <br> out.append(A);
@@ -546,8 +530,7 @@ public final class Util {
         }
     }
 
-    /**
-     * Finds the first occurrence of <b>small</b> within <b>big</b>.
+    /** Finds the first occurrence of <b>small</b> within <b>big</b>.
      * @param big - the String that we want to perform the search on
      * @param small - the pattern we are looking forward
      * @param start - the offset within "big" to start (for example: 0 means to start from the beginning of "big")

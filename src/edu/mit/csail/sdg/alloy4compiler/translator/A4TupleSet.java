@@ -38,8 +38,7 @@ public final class A4TupleSet implements Iterable<A4Tuple> {
     /** The A4Solution that this came from. */
     private final A4Solution sol;
 
-    /**
-     * Construct a TupleSet from the kodkod TupleSet, while renaming each atom using the atom2name map in sol.
+    /** Construct a TupleSet from the kodkod TupleSet, while renaming each atom using the atom2name map in sol.
      * <br> NOTE: caller must ensure the Kodkod tupleset is not modified, since we expect the resulting A4Tupleset to be constant.
      */
     A4TupleSet(TupleSet tuples, A4Solution sol) throws ErrorAPI {

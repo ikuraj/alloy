@@ -25,8 +25,7 @@ package edu.mit.csail.sdg.alloy4compiler.ast;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 
-/**
- * This abstract class implements a Query visitor that walks over an Expr and its subnodes.
+/** This abstract class implements a Query visitor that walks over an Expr and its subnodes.
  * <br> As soon as one of the node returns a nonnull value,the nonnull value will be propagated to be the output of this visitor.
  *
  * <p> This default implementation will return null on all the leaf Expr nodes and thus the final answer will be null.

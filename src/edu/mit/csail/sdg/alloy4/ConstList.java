@@ -30,16 +30,14 @@ import java.util.Iterator;
 import java.util.ListIterator;
 import java.io.Serializable;
 
-/**
- * This implements an unmodifiable list (where comparison is based on equals())
+/** This implements an unmodifiable list (where comparison is based on equals())
  *
  * @param <T> - the type of element
  */
 
 public final class ConstList<T> implements Serializable, List<T> {
 
-   /**
-    * This implements a modifiable list that can be used to construct a ConstList.
+   /** This implements a modifiable list that can be used to construct a ConstList.
     *
     * @param <T> - the type of element
     */
@@ -120,8 +118,7 @@ public final class ConstList<T> implements Serializable, List<T> {
       return (ConstList<T>) emptylist;
    }
 
-   /**
-    * Return an unmodifiable list consisting of "n" references to "elem".
+   /** Return an unmodifiable list consisting of "n" references to "elem".
     * (If n<=0, we'll return an unmodifiable empty list)
     */
    public static<T> ConstList<T> make(int n, T elem) {
@@ -131,8 +128,7 @@ public final class ConstList<T> implements Serializable, List<T> {
       return new ConstList<T>(true, ans);
    }
 
-   /**
-    * Return an unmodifiable list with the same elements as the given collection.
+   /** Return an unmodifiable list with the same elements as the given collection.
     * (If collection==null, we'll return an unmodifiable empty list)
     */
    public static<T> ConstList<T> make(Iterable<T> collection) {

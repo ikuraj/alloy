@@ -22,8 +22,7 @@
 
 package edu.mit.csail.sdg.alloy4;
 
-/**
- * Immutable; represents a fatal error.
+/** Immutable; represents a fatal error.
  *
  * <p><b>Invariant:</b> pos!=null && msg!=null
  */
@@ -33,16 +32,14 @@ public final class ErrorFatal extends Err {
    /** This silences javac's warning about missing serialVersionUID. */
    private static final long serialVersionUID = 1L;
 
-   /**
-    * Constructs a new fatal error.
+   /** Constructs a new fatal error.
     * @param msg - the actual error message
     */
    public ErrorFatal(String msg) {
       super(null, msg, null);
    }
 
-   /**
-    * Constructs a new fatal error with "cause" as the underlying cause.
+   /** Constructs a new fatal error with "cause" as the underlying cause.
     * @param msg - the actual error message
     * @param cause - if nonnull, it is the cause of this exception
     */
@@ -50,8 +47,7 @@ public final class ErrorFatal extends Err {
       super(null, msg, cause);
    }
 
-   /**
-    * Constructs a new fatal error.
+   /** Constructs a new fatal error.
     * @param pos - the filename/line/row information (can be null if unknown)
     * @param msg - the actual error message
     */

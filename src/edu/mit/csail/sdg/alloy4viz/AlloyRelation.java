@@ -28,8 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.Util;
 
-/**
- * Immutable; represents an Alloy relation of 2 or higher arity.
+/** Immutable; represents an Alloy relation of 2 or higher arity.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -61,8 +60,7 @@ public final class AlloyRelation extends AlloyElement {
         this.isMeta = isMeta;
     }
 
-    /**
-     * Project this relation and return an unmodifiable list of remaining types (after removing zero or more columns)
+    /** Project this relation and return an unmodifiable list of remaining types (after removing zero or more columns)
      * @param columns - the collection of columns to remove (0 is the first column, 1 is the second column...)
      */
     public List<AlloyType> project(Collection<Integer> columns) {
@@ -77,8 +75,7 @@ public final class AlloyRelation extends AlloyElement {
     /** Returns the arity of the relation. */
     public int getArity() { return types.size(); }
 
-    /**
-     * When comparing two AlloyRelation objects, we first compare the name, then the arity, then the types.
+    /** When comparing two AlloyRelation objects, we first compare the name, then the arity, then the types.
      * <br> We guarantee x.equals(y) iff x.compareTo(y)==0
      */
     public int compareTo(AlloyRelation other) {
@@ -96,8 +93,7 @@ public final class AlloyRelation extends AlloyElement {
         return 0;
     }
 
-    /**
-     * When comparing two AlloyRelation objects, we first compare the name, then the arity, then the types.
+    /** When comparing two AlloyRelation objects, we first compare the name, then the arity, then the types.
      * <br> We guarantee x.equals(y) iff x.compareTo(y)==0
      */
     public int compareTo(AlloyElement other) {

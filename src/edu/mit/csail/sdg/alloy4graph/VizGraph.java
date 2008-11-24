@@ -38,8 +38,7 @@ import edu.mit.csail.sdg.alloy4.Rational;
 import edu.mit.csail.sdg.alloy4.Util;
 import static edu.mit.csail.sdg.alloy4graph.Artist.getBounds;
 
-/**
- * Mutable; represents a graph.
+/** Mutable; represents a graph.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -101,8 +100,7 @@ public final strictfp class VizGraph extends DiGraph {
     /** A list of legends; each legend is an Object with the associated text label and color. */
     private final SortedMap<Comparable<?>,Pair<String,Color>> legends = new TreeMap<Comparable<?>,Pair<String,Color>>();
 
-    /**
-     * Add a legend with the given object and the associated text label; if color==null, that means we will
+    /** Add a legend with the given object and the associated text label; if color==null, that means we will
      * still add this legend into the list of legends, but this legend will be hidden.
      */
     public void addLegend(Comparable<?> object, String label, Color color) { legends.put(object, new Pair<String,Color>(label,color)); }
@@ -503,8 +501,7 @@ public final strictfp class VizGraph extends DiGraph {
         return true;
     }
 
-    /**
-     * Assuming everything was laid out already, but at least one node just moved, then this re-layouts ALL edges.
+    /** Assuming everything was laid out already, but at least one node just moved, then this re-layouts ALL edges.
      */
     void relayout_edges(boolean straighten) {
         // Move pairs of virtual nodes to straighten the lines if possible
@@ -569,8 +566,7 @@ public final strictfp class VizGraph extends DiGraph {
         for(VizEdge e:edges) { e.layout_arrowHead(); e.repositionLabel(sp); }
     }
 
-    /**
-     * Assuming everything was laid out already, and that the nodes in layer[i] just moved horizontally,
+    /** Assuming everything was laid out already, and that the nodes in layer[i] just moved horizontally,
      * this re-layouts the edges going to and from layer i.
      */
     public void relayout_edges(int i) {

@@ -33,8 +33,7 @@ import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 
-/**
- * Immutable; reresents a "run" or "check" command.
+/** Immutable; reresents a "run" or "check" command.
  *
  * <p> <b>Invariant:</b>  expects == -1, 0, or 1
  * <p> <b>Invariant:</b>  overall >= -1
@@ -102,8 +101,7 @@ public final class Command extends Browsable {
         return sb.toString();
     }
 
-    /**
-     * Constructs a new Command object.
+    /** Constructs a new Command object.
      *
      * @param check - true if this is a "check"; false if this is a "run"
      * @param overall - the overall scope (0 or higher) (-1 if no overall scope was specified)
@@ -115,8 +113,7 @@ public final class Command extends Browsable {
         this(null, "", check, overall, bitwidth, maxseq, -1, null, null, formula, null);
     }
 
-    /**
-     * Constructs a new Command object.
+    /** Constructs a new Command object.
      *
      * @param pos - the original position in the file (must not be null)
      * @param label - the label for this command (it is only for pretty-printing and does not have to be unique)

@@ -38,8 +38,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 
-/**
- * Immutable; this class rearranges the AST to promote as many clauses up to the top level as possible
+/** Immutable; this class rearranges the AST to promote as many clauses up to the top level as possible
  * (in order to get better precision unsat core results)
  */
 

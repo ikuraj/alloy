@@ -35,8 +35,7 @@ import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4.JoinableList;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
-/**
- * Immutable; represents disjoint[] or pred/totalOrder[] or (... and ... and ..) and other similar list of arugments.
+/** Immutable; represents disjoint[] or pred/totalOrder[] or (... and ... and ..) and other similar list of arugments.
  *
  * <p> <b>Invariant:</b>  type!=EMPTY => (all x:args | x.mult==0)
  */

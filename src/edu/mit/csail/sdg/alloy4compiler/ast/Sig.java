@@ -78,61 +78,50 @@ public abstract class Sig extends Expr {
     /** {@inheritDoc} */
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
-    /**
-     * True if this sig is one of the built-in sig.
+    /** True if this sig is one of the built-in sig.
      * <p> Note: if builtin==true, then we ensure it is not abstract
      */
     public final boolean builtin;
 
-    /**
-     * Nonnull if this sig is abstract.
+    /** Nonnull if this sig is abstract.
      * <p> Note: if a sig is abstract, then it cannot and will not be a subset sig.
      */
     public final Pos isAbstract;
 
-    /**
-     * Nonnull if this sig is a PrimSig but not a builtin sig and its parent is not UNIV
-     */
+    /** Nonnull if this sig is a PrimSig but not a builtin sig and its parent is not UNIV */
     public final Pos isSubsig;
 
-    /**
-     * Nonnull if this sig is a SubsetSig.
+    /** Nonnull if this sig is a SubsetSig.
      * <p> Note: if a sig is a subset sig, then it cannot and will not be abstract.
      */
     public final Pos isSubset;
 
-    /**
-     * Nonnull if this sig's multiplicity is declared to be lone.
+    /** Nonnull if this sig's multiplicity is declared to be lone.
      * <p> Note: at most one of "lone", "one", "some" can be nonnull for each sig.
      */
     public final Pos isLone;
 
-    /**
-     * Nonnull if this sig's multiplicity is declared to be one.
+    /** Nonnull if this sig's multiplicity is declared to be one.
      * <p> Note: at most one of "lone", "one", "some" can be nonnull for each sig.
      */
     public final Pos isOne;
 
-    /**
-     * Nonnull if this sig's multiplicity is declared to be some.
+    /** Nonnull if this sig's multiplicity is declared to be some.
      * <p> Note: at most one of "lone", "one", "some" can be nonnull for each sig.
      */
     public final Pos isSome;
 
-    /**
-     * Nonnull if the user wanted this sig to be private.
+    /** Nonnull if the user wanted this sig to be private.
      * <p> Note: this value is always null for builtin sigs.
      */
     public final Pos isPrivate;
 
-    /**
-     * Nonnull if the user wanted this sig to be an enum.
+    /** Nonnull if the user wanted this sig to be an enum.
      * <p> Note: this value is always null for builtin sigs.
      */
     public final Pos isEnum;
 
-    /**
-     * Nonnull if this sig is a meta sig.
+    /** Nonnull if this sig is a meta sig.
      * <p> Note: this value is always null for builtin sigs.
      */
     public final Pos isMeta;
@@ -256,8 +245,7 @@ public abstract class Sig extends Expr {
 
     //==============================================================================================================//
 
-    /**
-     * Mutable; reresents a non-subset signature.
+    /** Mutable; reresents a non-subset signature.
      *
      * <p> Note: except for "children()", the return value of every method is always valid for all time;
      * for example, given sigs A and B, and you call C=A.intersect(B), then the result C will always be
@@ -266,14 +254,12 @@ public abstract class Sig extends Expr {
 
     public static final class PrimSig extends Sig {
 
-        /**
-         * Stores its immediate children sigs (not including NONE)
+        /** Stores its immediate children sigs (not including NONE)
          * <p> Note: if this==UNIV, then this list will always be empty, since we don't keep track of UNIV's children
          */
         private final SafeList<PrimSig> children = new SafeList<PrimSig>();
 
-        /**
-         * Returns its immediate children sigs (not including NONE)
+        /** Returns its immediate children sigs (not including NONE)
          * <p> Note: if this==UNIV, then this method will throw an exception, since we don't keep track of UNIV's children
          */
         public SafeList<PrimSig> children() throws Err {
@@ -281,8 +267,7 @@ public abstract class Sig extends Expr {
             return children.dup();
         }
 
-        /**
-         * Returns its subsigs and their subsigs and their subsigs, etc.
+        /** Returns its subsigs and their subsigs and their subsigs, etc.
          * <p> Note: if this==UNIV, then this method will throw an exception, since we don't keep track of UNIV's children
          */
         public Iterable<PrimSig> descendents() throws Err {
@@ -306,8 +291,7 @@ public abstract class Sig extends Expr {
             if (add) this.parent.children.add(this);
         }
 
-        /**
-         * Constructs a non-builtin sig.
+        /** Constructs a non-builtin sig.
          *
          * @param pos - the position in the original file where this sig was defined (can be null if unknown)
          * @param parent - the parent (must not be null, and must not be NONE)
@@ -338,8 +322,7 @@ public abstract class Sig extends Expr {
             this.hint_isLeaf = isLeaf || (parent.hint_isLeaf);
         }
 
-        /**
-         * Constructs a non-builtin sig.
+        /** Constructs a non-builtin sig.
          *
          * @param parent - the parent (must not be null, and must not be NONE)
          * @param label - the name of this sig (it does not need to be unique)
@@ -356,14 +339,12 @@ public abstract class Sig extends Expr {
             this(null, parent, label, isAbstract?Pos.UNKNOWN:null, lone?Pos.UNKNOWN:null, one?Pos.UNKNOWN:null, some?Pos.UNKNOWN:null, null, null, null, null, isLeaf);
         }
 
-        /**
-         * Constructs a non-builtin sig.
+        /** Constructs a non-builtin sig.
          * @param label - the name of this sig (it does not need to be unique)
          */
         public PrimSig(String label) throws Err { this(null, null, label, null,null,null,null,null,null,null,null, false); }
 
-        /**
-         * Constructs a non-builtin sig.
+        /** Constructs a non-builtin sig.
          * @param pos - the position in the original file where this sig was defined (can be null if unknown)
          * @param label - the name of this sig (it does not need to be unique)
          */
@@ -391,8 +372,7 @@ public abstract class Sig extends Expr {
             return false;
         }
 
-        /**
-         * Returns the most-specific-sig that contains this and that.
+        /** Returns the most-specific-sig that contains this and that.
          * In particular, if this extends that, then return that.
          */
         public PrimSig leastParent(PrimSig that) {
@@ -433,8 +413,7 @@ public abstract class Sig extends Expr {
             return (ans!=null) ? ans : (UNIV.type);
         }
 
-        /**
-         * Constructs a subset sig.
+        /** Constructs a subset sig.
          *
          * @param pos - the position in the original file where this sig was defined (can be null if unknown)
          * @param parents - the list of parents (if this list is null or empty, we assume the caller means UNIV)
@@ -463,8 +442,7 @@ public abstract class Sig extends Expr {
             this.parents = temp.makeConst();
         }
 
-        /**
-         * Constructs a subset sig.
+        /** Constructs a subset sig.
          *
          * @param pos - the position in the original file where this sig was defined (can be null if unknown)
          * @param parents - the list of parents (if this list is null or empty, we assume the caller means UNIV)
@@ -590,8 +568,7 @@ public abstract class Sig extends Expr {
         return ans.dup();
     }
 
-    /**
-     * Add then return a new field, where "all x: ThisSig | x.F in bound"
+    /** Add then return a new field, where "all x: ThisSig | x.F in bound"
      * <p> Note: the bound must be fully-typechecked and have exactly 0 free variable, or have "x" as its sole free variable.
      *
      * @param label - the name of this field (it does not need to be unique)
@@ -612,8 +589,7 @@ public abstract class Sig extends Expr {
         return f;
     }
 
-    /**
-     * Add then return a new field, where "all x: ThisSig | x.F in bound"
+    /** Add then return a new field, where "all x: ThisSig | x.F in bound"
      * <p> Note: the bound must be fully-typechecked and have exactly 0 free variable, or have "x" as its sole free variable.
      *
      * @param pos - the position in the original file where this field was defined (can be null if unknown)
@@ -638,8 +614,7 @@ public abstract class Sig extends Expr {
         return f;
     }
 
-    /**
-     * Add then return a new field F where this.F is bound to an exact "definition" expression.
+    /** Add then return a new field F where this.F is bound to an exact "definition" expression.
      * <p> Note: the definition must be fully-typechecked and have exactly 0 free variables.
      * <p> Note: currently the defined field must consist product and union operators over sigs.
      *

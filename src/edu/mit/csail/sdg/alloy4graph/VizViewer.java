@@ -61,8 +61,7 @@ import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Util;
 import static edu.mit.csail.sdg.alloy4.OurUtil.empty;
 
-/**
- * This class displays the graph.
+/** This class displays the graph.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -221,8 +220,7 @@ public final strictfp class VizViewer extends JPanel {
     /** Changes the annotation associated with this object. */
     public void alloySetAnnotation(String newAnnotation) { this.annotation=newAnnotation; }
 
-    /**
-     * This color is used as the background for a JTextField that contains bad data.
+    /** This color is used as the background for a JTextField that contains bad data.
      * <p> Note: we intentionally choose to make it an instance field rather than a static field,
      * since we want to make sure we only instantiate it from the AWT Event Dispatching thread.
      */

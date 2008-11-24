@@ -28,8 +28,7 @@ import com.apple.eawt.ApplicationAdapter;
 import com.apple.eawt.ApplicationListener;
 import com.apple.eawt.ApplicationEvent;
 
-/**
- * This class provides useful methods that may be called only on Mac OS X.
+/** This class provides useful methods that may be called only on Mac OS X.
  *
  * <p> You must not call any methods here if you're not on a Mac,
  * since that triggers the loading of com.apple.eawt.* which are not available on other platforms.
@@ -48,8 +47,7 @@ public final class MacUtil {
    /** The previous listener (or null if there was none). */
    private static ApplicationListener listener = null;
 
-   /**
-    * Register a Mac OS X "ApplicationListener"; if there was a previous listener, it will be removed first.
+   /** Register a Mac OS X "ApplicationListener"; if there was a previous listener, it will be removed first.
     * @param reopen - when the user clicks on the Dock icon, we'll call reopen.run() using SwingUtilities.invokeLater
     * @param about - when the user clicks on About Alloy4, we'll call about.run() using SwingUtilities.invokeLater
     * @param open - when a file needs to be opened, we'll call open.run(filename) using SwingUtilities.invokeLater

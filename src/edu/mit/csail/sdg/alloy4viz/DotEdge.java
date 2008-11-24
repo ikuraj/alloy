@@ -26,8 +26,7 @@ import java.awt.Color;
 import edu.mit.csail.sdg.alloy4graph.VizEdge;
 import edu.mit.csail.sdg.alloy4graph.VizNode;
 
-/**
- * Immutable; this represents an edge to be written out to the DOT file.
+/** Immutable; this represents an edge to be written out to the DOT file.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -70,8 +69,7 @@ public final class DotEdge {
     /** The group that this edge belongs to; edges in the same group will be highlighted together. */
     private final Object group;
 
-    /**
-     * Constructs an edge.
+    /** Constructs an edge.
      * @param uuid - a user-provided annotation that will be associated with this edge (can be null)
      * @param id - a unique id for this edge
      * @param from - the origin node

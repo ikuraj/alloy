@@ -38,8 +38,7 @@ import edu.mit.csail.sdg.alloy4graph.VizGraph;
 import edu.mit.csail.sdg.alloy4graph.VizNode;
 import edu.mit.csail.sdg.alloy4graph.VizViewer;
 
-/**
- * Immutable; this represents a graph to be written out to the DOT file.
+/** Immutable; this represents a graph to be written out to the DOT file.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -89,8 +88,7 @@ public final class DotGraph {
         magicColor = ConstMap.make();
     }
 
-    /**
-     * Creates a new Graph object with specified nodes, edges, attributes, and ranking.
+    /** Creates a new Graph object with specified nodes, edges, attributes, and ranking.
      * @param fontSize - the graph's font size
      * @param orientation - the graph orientation
      * @param nodePalette - the palette for nodes in the graph
@@ -179,8 +177,7 @@ public final class DotGraph {
         return sb.toString();
     }
 
-    /**
-     * Converts a graph into a Dot string and a displayable JPanel.
+    /** Converts a graph into a Dot string and a displayable JPanel.
      * If there's an error, it will throw an exception.
      */
     public Pair<String,JPanel> visualize() throws ErrorFatal {

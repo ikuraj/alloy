@@ -30,8 +30,7 @@ import java.util.LinkedHashSet;
 import java.util.Iterator;
 import java.io.Serializable;
 
-/**
- * This implements an unmodifiable set (where comparison is based on hashCode() and equals())
+/** This implements an unmodifiable set (where comparison is based on hashCode() and equals())
  *
  * @param <K> - the type of element
  */
@@ -58,8 +57,7 @@ public final class ConstSet<K> implements Serializable, Set<K> {
       return (ConstSet<K>) emptyset;
    }
 
-   /**
-    * Return an unmodifiable set with the same elements as the given set.
+   /** Return an unmodifiable set with the same elements as the given set.
     * (If set==null, we'll return an unmodifiable empty set)
     */
    public static<K> ConstSet<K> make(Set<K> set) {

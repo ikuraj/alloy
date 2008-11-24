@@ -152,8 +152,7 @@ import edu.mit.csail.sdg.alloy4whole.SimpleReporter.SimpleCallback1;
 import edu.mit.csail.sdg.alloy4whole.SimpleReporter.SimpleTask1;
 import edu.mit.csail.sdg.alloy4whole.SimpleReporter.SimpleTask2;
 
-/**
- * Simple graphical interface for accessing various features of the analyzer.
+/** Simple graphical interface for accessing various features of the analyzer.
  *
  * <p> Except noted below, methods in this class can only be called by the AWT event thread.
  *

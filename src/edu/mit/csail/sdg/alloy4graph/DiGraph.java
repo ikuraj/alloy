@@ -28,8 +28,7 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
-/**
- * Mutable; represents a digraph.
+/** Mutable; represents a digraph.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -96,8 +95,7 @@ public class DiGraph {
         /** Returns the layer that this node is in. */
         public final int layer() { return layer; }
 
-        /**
-         * Changes the layer that this node is in; the new layer must be 0 or greater.
+        /** Changes the layer that this node is in; the new layer must be 0 or greater.
          * <p> If a node is removed from a layer, the order of the other nodes in that layer remain unchanged.
          * <p> If a node is added to a new layer, then it is added to the right of the original rightmost node in that layer.
          */

@@ -32,8 +32,7 @@ import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.JoinableList;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
-/**
- * Immutable; represents an illegal relation join.
+/** Immutable; represents an illegal relation join.
  *
  * <p> <b>Invariant:</b>  this.type==EMPTY && this.errors.size()>0
  */

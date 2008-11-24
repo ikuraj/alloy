@@ -37,8 +37,7 @@ import edu.mit.csail.sdg.alloy4viz.AlloySet;
 import edu.mit.csail.sdg.alloy4viz.AlloyTuple;
 import edu.mit.csail.sdg.alloy4viz.AlloyType;
 
-/**
- * Immutable; represents an Alloy instance that can be displayed in the visualizer.
+/** Immutable; represents an Alloy instance that can be displayed in the visualizer.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -57,30 +56,26 @@ public final class AlloyInstance {
     /** The AlloyModel that this AlloyInstance is an instance of. */
     public final AlloyModel model;
 
-    /**
-     * Maps each AlloyAtom to the AlloySet(s) it is in; its keySet is considered the universe of all atoms.
+    /** Maps each AlloyAtom to the AlloySet(s) it is in; its keySet is considered the universe of all atoms.
      * <br> The constructor ensures every AlloySet here is in model.getSets()
      * <br> Furthermore, every AlloyAtom's type is in model.getTypes()
      * <br> Finally, if an atom A is in a set S, we guarantee that A.type is equal or subtype of S.type
      */
     private final Map<AlloyAtom,List<AlloySet>> atom2sets;
 
-    /**
-     * Maps each AlloyType to the AlloyAtom(s) in that type; it is derived from atom2sets.keySet() directly.
+    /** Maps each AlloyType to the AlloyAtom(s) in that type; it is derived from atom2sets.keySet() directly.
      * <br> Thus, every AlloyType here is in model.getTypes(), and every AlloyAtom here is in atom2sets.keySet()
      * <br> Furthermore, the constructor ensures that if an atom is in a subtype, it is also in the supertype.
      */
     private final Map<AlloyType,List<AlloyAtom>> type2atoms;
 
-    /**
-     * Maps each AlloySet to the AlloyAtom(s) in that set; it is derived from atom2sets directly.
+    /** Maps each AlloySet to the AlloyAtom(s) in that set; it is derived from atom2sets directly.
      * <br> Thus, every AlloySet here is in model.getSets(), and every AlloyAtom here is in atom2sets.keySet()
      * <br> Finally, if an atom A is in a set S, we guarantee that A.type is equal or subtype of S.type
      */
     private final Map<AlloySet,List<AlloyAtom>> set2atoms;
 
-    /**
-     * Maps each AlloyRelation to a set of AlloyTuple(s).
+    /** Maps each AlloyRelation to a set of AlloyTuple(s).
      * <br> The constructor ensures every AlloyRelation here is in model.getRelations()
      * <br> Furthermore, every AlloyAtom in every AlloyTuple here is in atom2sets.keySet()
      * <br> Finally, if a tuple T is in a relation R, we guarantee that T is a legal tuple for R
@@ -97,8 +92,7 @@ public final class AlloyInstance {
     /** This always stores an empty unmodifiable set of tuples. */
     private static final Set<AlloyTuple> noTuple = Collections.unmodifiableSet(new TreeSet<AlloyTuple>());
 
-    /**
-     * Create a new instance.
+    /** Create a new instance.
      *
      * @param filename - the original filename of the model that generated this instance; can be "" if unknown
      * @param commandname - the original command that generated this instance; can be "" if unknown
@@ -213,8 +207,7 @@ public final class AlloyInstance {
         return answer!=null ? answer : noTuple;
     }
 
-    /**
-     * Two instances are equal if they have the same filename, same commands,
+    /** Two instances are equal if they have the same filename, same commands,
      * same model, and same atoms and tuples relationships.
      */
     @Override public boolean equals(Object other) {

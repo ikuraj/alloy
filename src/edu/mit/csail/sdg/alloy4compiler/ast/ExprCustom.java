@@ -29,8 +29,7 @@ import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.JoinableList;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
-/**
- * Immutable; represents a custom node.
+/** Immutable; represents a custom node.
  *
  * <p> <b>Invariant:</b>  this.type==EMPTY && this.errors.size()==1
  */
@@ -40,8 +39,7 @@ public abstract class ExprCustom extends Expr {
     /** {@inheritDoc} */
     @Override public Pos span() { return pos; }
 
-    /**
-     * Constructs an ExprCustom object.
+    /** Constructs an ExprCustom object.
      * @param pos - the Pos for this expression (can be Pos.UNKNOWN if unknown)
      * @param error - the error to display if this node does not get desugared
      */

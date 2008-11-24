@@ -28,8 +28,7 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.WeakHashMap;
 
-/**
- * Immutable; represents an atom.
+/** Immutable; represents an atom.
  *
  * <p> Outside of this class, we guarantee for any SimAtom x and y, then "x.equals(y) iff x==y".
  * <br> Even though that means "equals()" and "==" are equivalent,
@@ -114,8 +113,7 @@ public final class SimAtom {
         return make(new String(temp, 0, n, "UTF-8"));
     }
 
-    /**
-     * If the atom starts with "-" or "0-9" then convert it into a 32-bit int (here we assume that it came from a 32-bit int)
+    /** If the atom starts with "-" or "0-9" then convert it into a 32-bit int (here we assume that it came from a 32-bit int)
      * <p>
      * If the atom does not start with "-" or "0-9", then return defaultValue.
      */

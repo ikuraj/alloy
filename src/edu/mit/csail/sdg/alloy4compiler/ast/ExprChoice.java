@@ -33,9 +33,7 @@ import edu.mit.csail.sdg.alloy4.ConstList;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
-/**
- * Immutable; represents an unresolved node that has several possibilities.
- */
+/** Immutable; represents an unresolved node that has several possibilities. */
 
 public final class ExprChoice extends Expr {
 

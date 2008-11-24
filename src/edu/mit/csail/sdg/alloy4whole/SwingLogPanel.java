@@ -73,8 +73,7 @@ final class SwingLogPanel {
         }
     }
 
-    /**
-     * This field buffers previous calls to log() so that we can write them out later in a single Swing call
+    /** This field buffers previous calls to log() so that we can write them out later in a single Swing call
      * (If there is nothing buffered, this field can be an empty list or even null).
      */
     private final List<String> batch = new ArrayList<String>();
@@ -94,8 +93,7 @@ final class SwingLogPanel {
     /** This stores the JLabels used for displaying hyperlinks. */
     private final List<JLabel> links = new ArrayList<JLabel>();
 
-    /**
-     * When the window gains focus, we'll call handler.run(ev_logFocused);
+    /** When the window gains focus, we'll call handler.run(ev_logFocused);
      * When a hyperlink is clicked, we'll call handler.run(evs_visualize, linkURL).
      */
     private final SimpleGUI handler;
@@ -118,8 +116,7 @@ final class SwingLogPanel {
     /** This stores a default ViewFactory that will handle the View requests that we don't care to override. */
     private static final ViewFactory defaultFactory = (new StyledEditorKit()).getViewFactory();
 
-    /**
-     * Constructs a new JTextPane logger, and put it inside an existing JScrollPane.
+    /** Constructs a new JTextPane logger, and put it inside an existing JScrollPane.
      * @param parent - the existing JScrollPane to insert the JTextPane into
      * @param fontName - the font family to use
      * @param fontSize - the font size to use

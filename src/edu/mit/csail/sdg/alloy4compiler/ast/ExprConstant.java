@@ -30,9 +30,7 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 
-/**
- * Immutable; represents a constant in the AST.
- */
+/** Immutable; represents a constant in the AST. */
 
 public final class ExprConstant extends Expr {
 
@@ -62,8 +60,7 @@ public final class ExprConstant extends Expr {
         }
     }
 
-    /**
-     * Constructs an ExprConstant node.
+    /** Constructs an ExprConstant node.
      *
      * @param pos - the original position in the file
      * @param op - the choice of which constant it is
@@ -141,15 +138,13 @@ public final class ExprConstant extends Expr {
         /** The human readable label for this operator. */
         private final String label;
 
-        /**
-         * Makes an ExprConstant node
+        /** Makes an ExprConstant node
          * @param pos - the original position in the source file (can be null if unknown)
          * @param number - the number (this argument is ignored if op!=NUMBER)
          */
         public final ExprConstant make(Pos pos, int number) { return new ExprConstant(pos, this, number, ""); }
 
-        /**
-         * Makes an ExprConstant node
+        /** Makes an ExprConstant node
          * @param pos - the original position in the source file (can be null if unknown)
          * @param string - the string (this argument is ignored if op!=STRING)
          */

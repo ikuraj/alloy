@@ -37,8 +37,7 @@ import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopA;
 import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopGL;
 import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopGR;
 
-/**
- * Mutable; represents a graphical edge.
+/** Mutable; represents a graphical edge.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -242,9 +241,7 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
         return path;
     }
 
-    /**
-     * Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the edge.
-     */
+    /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the edge. */
     public void draw(Artist gr, double scale, VizEdge highEdge, Object highGroup) {
        final int top = a().graph.getTop(), left = a().graph.getLeft();
        gr.translate(-left, -top);

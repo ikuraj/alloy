@@ -30,8 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.Set;
 import java.io.Serializable;
 
-/**
- * This implements an unmodifiable map (where comparison is based on hashCode() and equals())
+/** This implements an unmodifiable map (where comparison is based on hashCode() and equals())
  *
  * @param <K> - the type of key
  * @param <V> - the type of value
@@ -59,8 +58,7 @@ public final class ConstMap<K,V> implements Serializable, Map<K,V> {
       return (ConstMap<K,V>) emptymap;
    }
 
-   /**
-    * Return an unmodifiable map with the same entries as the given map.
+   /** Return an unmodifiable map with the same entries as the given map.
     * (If map==null, we'll return an unmodifiable empty map)
     */
    public static<K,V> ConstMap<K,V> make(Map<K,V> map) {

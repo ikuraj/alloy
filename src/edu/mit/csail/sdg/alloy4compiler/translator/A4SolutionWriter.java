@@ -209,9 +209,7 @@ public final class A4SolutionWriter {
         out.print("\n</instance>\n");
     }
 
-    /**
-     * If this solution is a satisfiable solution, this method will write it out in XML format.
-     */
+    /** If this solution is a satisfiable solution, this method will write it out in XML format. */
     static void writeInstance(A4Reporter rep, A4Solution sol, PrintWriter out, Iterable<Func> extraSkolems, Map<String,String> sources) throws Err {
         if (!sol.satisfiable()) throw new ErrorAPI("This solution is unsatisfiable.");
         try {
@@ -227,9 +225,7 @@ public final class A4SolutionWriter {
         if (out.checkError()) throw new ErrorFatal("Error writing the solution XML file.");
     }
 
-    /**
-     * Write the metamodel as &lt;instance&gt;..&lt;/instance&gt; in XML format.
-     */
+    /** Write the metamodel as &lt;instance&gt;..&lt;/instance&gt; in XML format. */
     public static void writeMetamodel(ConstList<Sig> sigs, String originalFilename, PrintWriter out) throws Err {
         try {
             new A4SolutionWriter(null, null, sigs, 4, 4, "show metamodel", originalFilename, out, null);

@@ -31,8 +31,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-/**
- * Graphical checkbox.
+/** Graphical checkbox.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -66,8 +65,7 @@ public abstract class OurCheckbox extends JPanel {
     /** The JLabel object for displaying a label next to the checkbox. */
     private final JLabel jlabel;
 
-    /**
-     * Constructs a OurCheckbox object.
+    /** Constructs a OurCheckbox object.
      * @param label - the label to display next to the checkbox
      * @param tooltip - the tool tip to show when the mouse hovers over this checkbox
      * @param icon - the initial icon to display

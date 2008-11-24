@@ -24,8 +24,7 @@ package edu.mit.csail.sdg.alloy4viz;
 
 import edu.mit.csail.sdg.alloy4.Util;
 
-/**
- * Immutable; represents an Alloy set in an instance.
+/** Immutable; represents an Alloy set in an instance.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -49,8 +48,7 @@ public final class AlloySet extends AlloyNodeElement {
     /** Returns the parent type of the AlloySet. */
     public AlloyType getType() { return type; }
 
-    /**
-     * When comparing two AlloySet objects, we first compare their names, then their types.
+    /** When comparing two AlloySet objects, we first compare their names, then their types.
      * <br> We guarantee x.equals(y) iff x.compareTo(y)==0
      */
     public int compareTo(AlloySet other) {
@@ -59,8 +57,7 @@ public final class AlloySet extends AlloyNodeElement {
         return n!=0 ? n : type.compareTo(other.type);
     }
 
-    /**
-     * When comparing two AlloySet objects, we first compare their names, then their types.
+    /** When comparing two AlloySet objects, we first compare their names, then their types.
      * <br> We guarantee x.equals(y) iff x.compareTo(y)==0
      */
     public int compareTo(AlloyNodeElement other) {
@@ -70,8 +67,7 @@ public final class AlloySet extends AlloyNodeElement {
         return n!=0 ? n : type.compareTo(x.type);
     }
 
-    /**
-     * When comparing two AlloySet objects, we first compare their names, then their types.
+    /** When comparing two AlloySet objects, we first compare their names, then their types.
      * <br> We guarantee x.equals(y) iff x.compareTo(y)==0
      */
     public int compareTo(AlloyElement other) {

@@ -26,8 +26,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * This class implements the automatic visualization inference.
+/** This class implements the automatic visualization inference.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -44,15 +43,13 @@ final class MagicColour {
     private final VizState vizState;
 
 
-    /**
-     * Constructor.
+    /** Constructor.
      */
     private MagicColour(final VizState vizState) {
         this.vizState = vizState;
     }
 
-    /**
-     * Main method to infer settings.
+    /** Main method to infer settings.
      */
     public static void magic(final VizState vizState) {
         vizState.setNodePalette(DotPalette.MARTHA);
@@ -65,8 +62,7 @@ final class MagicColour {
     }
 
 
-    /**
-     * SYNTACTIC/VISUAL: Determine colours for nodes.
+    /** SYNTACTIC/VISUAL: Determine colours for nodes.
      *
      * when do we color things and what is the meaning of color
      * <ul>
@@ -95,10 +91,7 @@ final class MagicColour {
         }
     }
 
-    /**
-     * SYNTACTIC/VISUAL: Determine colour highlighting for skolem constants.
-     *
-     */
+    /** SYNTACTIC/VISUAL: Determine colour highlighting for skolem constants. */
     private void skolemColour() {
         final Set<AlloySet> sets = vizState.getCurrentModel().getSets();
         for (final AlloySet s : sets) {
@@ -114,8 +107,7 @@ final class MagicColour {
         }
     }
 
-    /**
-     * SYNTACTIC/VISUAL: Determine shapes for nodes.
+    /** SYNTACTIC/VISUAL: Determine shapes for nodes.
      *
      * <ul>
      * <li> trapezoid, hexagon, rectangle, ellipse, circle, square -- no others
@@ -207,8 +199,7 @@ final class MagicColour {
     }
 
 
-    /**
-     * Helper for nodeShape().
+    /** Helper for nodeShape().
      * @param t
      * @param subTypes
      * @param isTvisible
@@ -231,8 +222,7 @@ final class MagicColour {
         }
     }
 
-    /**
-     * SYNTACTIC/VISUAL: Should nodes of a given type be numbered?
+    /** SYNTACTIC/VISUAL: Should nodes of a given type be numbered?
      *
      * <ul>
      * <li> only if projecting? (otherwise the topology can distinguish them)
@@ -252,8 +242,7 @@ final class MagicColour {
 
 
 
-    /**
-     * SYNTACTIC/VISUAL: Should the names of nodes be displayed on them?
+    /** SYNTACTIC/VISUAL: Should the names of nodes be displayed on them?
      *
      * when should names be used?
      * <ul>

@@ -27,16 +27,14 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
 
-/**
- * Immutable; represents a set of types to be projected, plus the exact atom chosen for each type to be projected.
+/** Immutable; represents a set of types to be projected, plus the exact atom chosen for each type to be projected.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class AlloyProjection {
 
-    /**
-     * Its keySet is the set of types to be projected; each type is associated with the atom chosen to be projected.
+    /** Its keySet is the set of types to be projected; each type is associated with the atom chosen to be projected.
      *
      * <p> Its keySet is guaranteed to be sorted.
      *
@@ -49,8 +47,7 @@ public final class AlloyProjection {
      */
     private final Map<AlloyType,AlloyAtom> map;
 
-    /**
-     * Constructs a new AlloyProjection object based on the set of types to be projected and the exact atoms chosen.
+    /** Constructs a new AlloyProjection object based on the set of types to be projected and the exact atoms chosen.
      * @param map - this map describes the set of types to be projected and the exact atoms chosen to be projected
      *
      * <p> For each type t in map.keySet(),
@@ -77,8 +74,7 @@ public final class AlloyProjection {
     /** Return the sorted unmodifiable collection of types we are projecting. */
     public Collection<AlloyType> getProjectedTypes() { return map.keySet(); }
 
-    /**
-     * Return the atom chosen for that type;
+    /** Return the atom chosen for that type;
      * returns null if that type is not projected.
      */
     public AlloyAtom getProjectedAtom(AlloyType type) { return map.get(type); }

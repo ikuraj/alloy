@@ -46,8 +46,7 @@ public final class SimTupleset implements Iterable<SimTuple> {
     // else if (min<max && next)   this == tuples + { (min,min+1)...(max-1,max) }
     // else                        this == tuples
 
-    /**
-     * The list of tuples.
+    /** The list of tuples.
      * <br> <b>Invariant:</b> If nonempty, it must contain only same-arity tuples.
      * <br> <b>Invariant:</b> It must not contain duplicate tuples.
      */
@@ -162,8 +161,7 @@ public final class SimTupleset implements Iterable<SimTuple> {
        return false;
     }
 
-    /**
-     * Returns an arbitrary atom from an arbitrary tuple.
+    /** Returns an arbitrary atom from an arbitrary tuple.
      * @throws - ErrorAPI if this tupleset is empty
      */
     public SimAtom getAtom() throws ErrorAPI {
@@ -172,8 +170,7 @@ public final class SimTupleset implements Iterable<SimTuple> {
         return SimAtom.make(min);
     }
 
-    /**
-     * Returns an arbitrary tuple.
+    /** Returns an arbitrary tuple.
      * @throws - ErrorAPI if this tupleset is empty
      */
     public SimTuple getTuple() throws ErrorAPI {
@@ -183,8 +180,7 @@ public final class SimTupleset implements Iterable<SimTuple> {
         if (next) return SimTuple.make(a, SimAtom.make(min+1)); else return SimTuple.make(a);
     }
 
-    /**
-     * Return the union of this and that; (if this tupleset and that tupleset does not have compatible arity, then we return this tupleset as is).
+    /** Return the union of this and that; (if this tupleset and that tupleset does not have compatible arity, then we return this tupleset as is).
      * <br/> Note: the tuples in the result will be ordered as follows:
      * first comes the tuples in "this" in original order,
      * then the tuples that are in "that" but not in "this".
@@ -200,8 +196,7 @@ public final class SimTupleset implements Iterable<SimTuple> {
        return ans==null ? this : new SimTupleset(ans.makeConst(), min, max, next);
     }
 
-    /**
-     * Return the union of this and that; (if this tupleset and that tuple does not have compatible arity, then we return this tupleset as is).
+    /** Return the union of this and that; (if this tupleset and that tuple does not have compatible arity, then we return this tupleset as is).
      * <br/> Note: if this operation is a no-op, we guarantee we'll return this SimTupleset as is.
      */
     public SimTupleset union(SimTuple that) {
@@ -351,8 +346,7 @@ public final class SimTupleset implements Iterable<SimTuple> {
        return ans;
     }
 
-    /**
-     * Return the identity over this tupleset; (if this tupleset's arity is not 1, then we return an emptyset)
+    /** Return the identity over this tupleset; (if this tupleset's arity is not 1, then we return an emptyset)
      * <br/> Note: the result's tuple order is the same as this tupleset's tuple order.
      */
     public SimTupleset iden() {
@@ -362,8 +356,7 @@ public final class SimTupleset implements Iterable<SimTuple> {
        return new SimTupleset(ans.makeConst());
     }
 
-    /**
-     * Return the relational override of this and that; (if this tupleset and that tuple does not have compatible arity, then we return this tupleset as is).
+    /** Return the relational override of this and that; (if this tupleset and that tuple does not have compatible arity, then we return this tupleset as is).
      * <br/> Note: in general, the tuples may be ordered arbitrarily in the result.
      * <br/> Note: if this operation is a no-op, we guarantee we'll return this SimTupleset as is.
      */
@@ -383,8 +376,7 @@ public final class SimTupleset implements Iterable<SimTuple> {
         return new SimTupleset(ans.makeConst());
      }
 
-    /**
-     * Return the relational override of this and that; (if this tupleset and that tupleset does not have compatible arity, then we return this tupleset as is).
+    /** Return the relational override of this and that; (if this tupleset and that tupleset does not have compatible arity, then we return this tupleset as is).
      * <br/> Note: in general, the tuples may be ordered arbitrarily in the result.
      */
     public SimTupleset override(SimTupleset that) throws ErrorAPI {
@@ -398,8 +390,7 @@ public final class SimTupleset implements Iterable<SimTuple> {
        return new SimTupleset(ans.makeConst());
     }
 
-    /**
-     * Return this minus that; (if this tupleset and that tupleset does not have compatible arity, then we return this tupleset as is).
+    /** Return this minus that; (if this tupleset and that tupleset does not have compatible arity, then we return this tupleset as is).
      * <br/> Note: The resulting tuples will keep their original order.
      */
     public SimTupleset difference(SimTupleset that) {
@@ -410,8 +401,7 @@ public final class SimTupleset implements Iterable<SimTuple> {
        return ans.size()==longsize() ? this : (ans.size()==0 ? EMPTY : new SimTupleset(ans.makeConst()));
     }
 
-    /**
-     * Return this minus that; (if this tupleset and that tuple does not have compatible arity, then we return this tupleset as is).
+    /** Return this minus that; (if this tupleset and that tuple does not have compatible arity, then we return this tupleset as is).
      * <br/> Note: The resulting tuples will keep their original order.
      * <br/> Note: if this operation is a no-op, we guarantee we'll return this SimTupleset as is.
      */
@@ -424,8 +414,7 @@ public final class SimTupleset implements Iterable<SimTuple> {
        return that!=null ? this : (ans.size()==0 ? EMPTY : new SimTupleset(ans.makeConst()));
     }
 
-    /**
-     * Return this minus any tuple that contains the given atom.
+    /** Return this minus any tuple that contains the given atom.
      * <br/> Note: The resulting tuples will keep their original order.
      */
     public SimTupleset removeAll(SimAtom that) {
@@ -549,8 +538,7 @@ public final class SimTupleset implements Iterable<SimTuple> {
         return ans.size()==0 ? EMPTY : new SimTupleset(ans.makeConst());
     }
 
-    /**
-     * Returns a modifiable copy of the list of all i-th atom from all tuples in some arbitrary order (0 is first atom, 1 is second atom...)
+    /** Returns a modifiable copy of the list of all i-th atom from all tuples in some arbitrary order (0 is first atom, 1 is second atom...)
      * @throws - ErrorAPI if this tupleset contains at least one tuple whose length is less than or equal to i
      */
     public List<SimAtom> getAllAtoms(int column) throws ErrorAPI {

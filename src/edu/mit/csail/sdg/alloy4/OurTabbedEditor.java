@@ -66,8 +66,7 @@ import javax.swing.text.Highlighter;
 import javax.swing.text.JTextComponent;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 
-/**
- * Graphical tabbed editor.
+/** Graphical tabbed editor.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread (except "highlight()" method,
  * which can be called by any thread)
@@ -309,8 +308,7 @@ public final class OurTabbedEditor extends JPanel {
         return true;
     }
 
-    /**
-     * Save the current tab content to the file system
+    /** Save the current tab content to the file system
      * @return null if an error occurred (otherwise, return the filename)
      */
     private String do_saveAs(String filename) {
@@ -337,8 +335,7 @@ public final class OurTabbedEditor extends JPanel {
         return filename;
     }
 
-    /**
-     * Save the current tab content to the file system.
+    /** Save the current tab content to the file system.
      * @param alwaysPickNewName - if true, it will always pop up a File Selection dialog box to ask for the filename
      * @return null if an error occurred (otherwise, return the filename)
      */
@@ -367,8 +364,7 @@ public final class OurTabbedEditor extends JPanel {
         }
     }
 
-    /**
-     * Close the i-th tab and then create a new empty tab if there were no tabs remaining.
+    /** Close the i-th tab and then create a new empty tab if there were no tabs remaining.
      *
      * If the text editor content is not modified since the last save, return true; otherwise, ask the user.
      * <p> If the user says to save it, we will attempt to save it, then return true iff the save succeeded.
@@ -419,8 +415,7 @@ public final class OurTabbedEditor extends JPanel {
         return tabs.size();
     }
 
-    /**
-     * If allowIO==false, return a new empty map; otherwise return a newly constructed map from each tab's filename to the text content in that tab.
+    /** If allowIO==false, return a new empty map; otherwise return a newly constructed map from each tab's filename to the text content in that tab.
      * Note: the returned map is modifiable, and the caller is free to do whatever with it
      * (the changes do NOT affect this OurTabbedEditor object)
      */
@@ -496,8 +491,7 @@ public final class OurTabbedEditor extends JPanel {
         if (i!=me) do_setSelectedIndex(i);
     }
 
-    /**
-     * Create a new tab with the given filename and initial content.
+    /** Create a new tab with the given filename and initial content.
      * <p> Note: if a text buffer with that filename already exists, we will switch to it and ignore "fileContent" and "isFile"
      */
     private void do_newTab(String filename, String fileContent, boolean isFile) {
@@ -564,8 +558,7 @@ public final class OurTabbedEditor extends JPanel {
         do_newTab(do_newname(), "", false);
     }
 
-    /**
-     * Create a new tab with the given filename.
+    /** Create a new tab with the given filename.
      * <p> If a text buffer with that filename already exists, we will just switch to it.
      * <p> Otherwise, we will read the given filename and create a new tab for it.
      * @return false iff an error occurred
@@ -583,8 +576,7 @@ public final class OurTabbedEditor extends JPanel {
         }
     }
 
-    /**
-     * Highlights the text editor, based on the location information in the set of Pos objects.
+    /** Highlights the text editor, based on the location information in the set of Pos objects.
      * <p> Note: this method can be called by any thread (not just the AWT event thread)
      */
     public void do_highlight(final Iterable<Pos> set, final Color color, final boolean clearOldHighlightsFirst) {
@@ -619,8 +611,7 @@ public final class OurTabbedEditor extends JPanel {
         notifyChange.run();
     }
 
-    /**
-     * Highlights the text editor, based on the location information in the Pos object.
+    /** Highlights the text editor, based on the location information in the Pos object.
      * <p> Note: this method can be called by any thread (not just the AWT event thread)
      */
     public void do_highlight(final Pos pos) { do_highlight(Util.asList(pos), new Color(0.9f, 0.4f, 0.4f), true); }

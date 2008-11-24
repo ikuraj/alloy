@@ -39,8 +39,7 @@ import kodkod.instance.Tuple;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 
-/**
- * Immutable; this class stores the set of solutions from the book, for teaching purpose,
+/** Immutable; this class stores the set of solutions from the book, for teaching purpose,
  * so that users of the tool will see the same illustration as the book and not get confused by SAT solver nondeterminism.
  */
 

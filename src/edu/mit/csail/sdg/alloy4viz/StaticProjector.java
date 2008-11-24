@@ -31,8 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * This utility class performs projection of AlloyModel and AlloyInstance.
+/** This utility class performs projection of AlloyModel and AlloyInstance.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -42,8 +41,7 @@ public final class StaticProjector {
     /** Constructor is private, since this utility class never needs to be instantiated. */
     private StaticProjector() { }
 
-    /**
-     * Given an unprojected model, project it over the given collection of AlloyType(s).
+    /** Given an unprojected model, project it over the given collection of AlloyType(s).
      * @param unprojectedModel - the original unprojected model
      * @param typesToBeProjected - the collection of types to project over
      */
@@ -51,8 +49,7 @@ public final class StaticProjector {
         return project(unprojectedModel, typesToBeProjected, null);
     }
 
-    /**
-     * Given an unprojected model, project it over the given collection of AlloyType(s).
+    /** Given an unprojected model, project it over the given collection of AlloyType(s).
      * @param unprojectedModel - the original unprojected model
      * @param typesToBeProjected - the collection of types to project over
      * @param data - if nonnull, this method will record into this map how the relations are changed by the projection
@@ -108,8 +105,7 @@ public final class StaticProjector {
         return new AlloyModel(types, sets, relations, unprojectedModel);
     }
 
-    /**
-     * Project an instance over the given list of types (and their associated chosen atom).
+    /** Project an instance over the given list of types (and their associated chosen atom).
      * @param oldInstance - the original unprojected instance
      * @param projection - the list of types to be projected and their associated chosen atoms
      *

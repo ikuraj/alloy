@@ -27,16 +27,14 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * This class implements the automatic visualization inference.
+/** This class implements the automatic visualization inference.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 final class MagicUtil {
 
-    /**
-     * Constructor.
+    /** Constructor.
      */
     private MagicUtil() {}
 
@@ -55,8 +53,7 @@ final class MagicUtil {
     }
 
 
-    /**
-     * Determines whether a type is actually visible -- ie, if it has an inherited value,
+    /** Determines whether a type is actually visible -- ie, if it has an inherited value,
      * looks up the hierarchy until that is resolved. NB: abstract types are not actually visible.
      * @param t
      * @return true if this type will be shown to the user, false if this type will be hidden from the user
@@ -93,8 +90,7 @@ final class MagicUtil {
         return isActuallyVisible(vizState, s.getType());
     }
 
-    /**
-     * Returns all of the visible user-types in the current model.
+    /** Returns all of the visible user-types in the current model.
      * @param vizState
      */
     static Set<AlloyType> visibleUserTypes(final VizState vizState) {
@@ -108,8 +104,7 @@ final class MagicUtil {
         return Collections.unmodifiableSet(result);
     }
 
-    /**
-     * Returns all of the top-level types in the original model.
+    /** Returns all of the top-level types in the original model.
      * @param vizState
      */
     static Set<AlloyType> topLevelTypes(final VizState vizState) {
@@ -123,8 +118,7 @@ final class MagicUtil {
         return Collections.unmodifiableSet(result);
     }
 
-    /**
-     * Returns every top-level user type that is itself visible or has a visible subtype.
+    /** Returns every top-level user type that is itself visible or has a visible subtype.
      * @param vizState
      */
     static Set<AlloyType> partiallyVisibleUserTopLevelTypes(final VizState vizState) {
@@ -143,8 +137,7 @@ final class MagicUtil {
         return Collections.unmodifiableSet(result);
     }
 
-    /**
-     * Returns the set of visible subtypes for the given type.
+    /** Returns the set of visible subtypes for the given type.
      * @param vizState
      * @param type
      */

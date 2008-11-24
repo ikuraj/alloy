@@ -81,8 +81,7 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 
 public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
 
-    /**
-     * This is used to detect "function recursion" (which we currently do not allow);
+    /** This is used to detect "function recursion" (which we currently do not allow);
      * also, by knowing the current function name, we can provide a more meaningful name for skolem variables
      */
     private final List<Func> current_function = new ArrayList<Func>();
@@ -117,8 +116,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     /** The maximum allowed loop unrolling and recursion. */
     private final int unrolls;
 
-    /**
-     * Construct a translator based on the given list of sigs and the given command.
+    /** Construct a translator based on the given list of sigs and the given command.
      * @param rep - if nonnull, it's the reporter that will receive diagnostics and progress reports
      * @param opt - the solving options (must not be null)
      * @param sigs - the list of sigs (must not be null, and must be a complete list)
@@ -138,8 +136,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         BoundsComputer.compute(rep, frame, pair.b, sigs);
     }
 
-    /**
-     * Construct a translator based on a already-fully-constructed association map.
+    /** Construct a translator based on a already-fully-constructed association map.
      * @param bitwidth - the integer bitwidth to use
      * @param unrolls - the maximum number of loop unrolling and recursion allowed
      * @param a2k - the mapping from Alloy sig/field/skolem/atom to the corresponding Kodkod expression
@@ -366,8 +363,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         }
     }
 
-    /**
-     * Based on the specified "options", execute one command and return the resulting A4Solution object.
+    /** Based on the specified "options", execute one command and return the resulting A4Solution object.
      *
      * @param rep - if nonnull, we'll send compilation diagnostic messages to it
      * @param sigs - the list of sigs; this list must be complete
@@ -399,8 +395,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         }
     }
 
-    /**
-     * Based on the specified "options", execute one command and return the resulting A4Solution object.
+    /** Based on the specified "options", execute one command and return the resulting A4Solution object.
      *
      * <p> Note: it will first test whether the model fits one of the model from the "Software Abstractions" book;
      * if so, it will use the exact instance that was in the book.
@@ -435,8 +430,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         }
     }
 
-    /**
-     * Translate the Alloy expression into an equivalent Kodkod Expression or IntExpression or Formula object.
+    /** Translate the Alloy expression into an equivalent Kodkod Expression or IntExpression or Formula object.
      * @param sol - an existing satisfiable A4Solution object
      * @param expr - this is the Alloy expression we want to translate
      */
@@ -463,8 +457,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
 
     //==============================================================================================================//
 
-    /**
-     * Convenience method that evalutes x and casts the result to be a Kodkod Formula.
+    /** Convenience method that evalutes x and casts the result to be a Kodkod Formula.
      * @return the formula - if x evaluates to a Formula
      * @throws ErrorFatal - if x does not evaluate to a Formula
      */
@@ -475,8 +468,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         throw new ErrorFatal(x.span(), "This should have been a formula.\nInstead it is "+y);
     }
 
-    /**
-     * Convenience method that evalutes x and cast the result to be a Kodkod IntExpression.
+    /** Convenience method that evalutes x and cast the result to be a Kodkod IntExpression.
      * @return the integer expression - if x evaluates to an IntExpression
      * @throws ErrorFatal - if x does not evaluate to an IntExpression
      */
@@ -487,8 +479,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         throw new ErrorFatal(x.span(), "This should have been an integer expression.\nInstead it is "+y);
     }
 
-    /**
-     * Convenience method that evalutes x and cast the result to be a Kodkod Expression.
+    /** Convenience method that evalutes x and cast the result to be a Kodkod Expression.
      * @return the expression - if x evaluates to an Expression
      * @throws ErrorFatal - if x does not evaluate to an Expression
      */
@@ -501,8 +492,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
 
     //==============================================================================================================//
 
-    /**
-     * Given a variable name "name", prepend the current function name to form a meaningful "skolem name".
+    /** Given a variable name "name", prepend the current function name to form a meaningful "skolem name".
      * (Note: this function does NOT, and need NOT guarantee that the name it generates is unique)
      */
     private String skolem(String name) {

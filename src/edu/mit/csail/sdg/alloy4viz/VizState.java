@@ -37,16 +37,14 @@ import edu.mit.csail.sdg.alloy4.OurCheckbox;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Pair;
 
-/**
- * Mutable; this stores an unprojected model as well as the current theme customization.
+/** Mutable; this stores an unprojected model as well as the current theme customization.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class VizState {
 
-    /**
-     * Construct a new VizState (with default theme settings) for the given instance; if world!=null, it is the root of the AST.
+    /** Construct a new VizState (with default theme settings) for the given instance; if world!=null, it is the root of the AST.
      */
     public VizState(AlloyInstance originalInstance) {
         this.originalInstance=originalInstance;
@@ -136,8 +134,7 @@ public final class VizState {
         changedSinceLastSave=false;
     }
 
-    /**
-     * Load a new instance into this VizState object (the input argument is treated as a new unprojected instance);
+    /** Load a new instance into this VizState object (the input argument is treated as a new unprojected instance);
      * if world!=null, it is the root of the AST
      */
     public void loadInstance(AlloyInstance unprojectedInstance) {
@@ -147,8 +144,7 @@ public final class VizState {
         cache.clear();
     }
 
-    /**
-     * Erase the current theme customizations and then load it from a file.
+    /** Erase the current theme customizations and then load it from a file.
      * @throws IOException - if an error occurred
      */
     public void loadPaletteXML(String filename) throws IOException {
@@ -158,8 +154,7 @@ public final class VizState {
         changedSinceLastSave=false;
     }
 
-    /**
-     * Saves the current theme to a file (which will be overwritten if it exists already).
+    /** Saves the current theme to a file (which will be overwritten if it exists already).
      * @throws IOException - if an error occurred
      */
     public void savePaletteXML(String filename) throws IOException {
@@ -208,8 +203,7 @@ public final class VizState {
 
     /*============================================================================================*/
 
-    /**
-     * If x is an AlloyType, x is not univ, then return its parent (which could be univ);
+    /** If x is an AlloyType, x is not univ, then return its parent (which could be univ);
      * If x is an AlloySet, then return x's type;
      * All else, return null.
      */

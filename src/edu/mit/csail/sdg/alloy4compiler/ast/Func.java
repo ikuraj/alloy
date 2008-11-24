@@ -32,8 +32,7 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.Util;
 
-/**
- * Mutable; represents a predicate or function.
+/** Mutable; represents a predicate or function.
  *
  * <p> <b>Invariant:</b>  the list of parameters do not contain duplicates
  * <p> <b>Invariant:</b>  none of the parameter declaration contains a predicate/function call
@@ -85,8 +84,7 @@ public final class Func extends Browsable {
         return list;
     }
 
-    /**
-     * Constructs a new predicate/function.
+    /** Constructs a new predicate/function.
      *
      * <p>  The first declaration's bound should be an expression with no free variables.
      * <br> The second declaration's bound should be an expression with no free variables, except possibly the parameters in first declaration.
@@ -108,8 +106,7 @@ public final class Func extends Browsable {
         this(pos, null, label, decls, returnDecl, body);
     }
 
-    /**
-     * Constructs a new predicate/function.
+    /** Constructs a new predicate/function.
      *
      * <p>  The first declaration's bound should be an expression with no free variables.
      * <br> The second declaration's bound should be an expression with no free variables, except possibly the parameters in first declaration.
@@ -154,8 +151,7 @@ public final class Func extends Browsable {
     /** The predicate/function body; never null. */
     private Expr body;
 
-    /**
-     * Changes the method body.
+    /** Changes the method body.
      *
      * <b>Precondition:</b> The expression should have no free variables,
      * except possibly the list of function parameters.
@@ -182,8 +178,7 @@ public final class Func extends Browsable {
         this.body = newBody;
     }
 
-    /**
-     * Return the body of this predicate/function.
+    /** Return the body of this predicate/function.
      * <br> If the user has not called setBody() to set the body,
      * <br> then the default body is "false" (if this is a predicate),
      * <br> or the empty set/relation of the appropriate arity (if this is a function).

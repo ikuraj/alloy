@@ -25,8 +25,7 @@ package edu.mit.csail.sdg.alloy4;
 import java.util.Set;
 import java.util.HashSet;
 
-/**
- * This generates unique names based on names provided by the caller.
+/** This generates unique names based on names provided by the caller.
  *
  * <p><b>Thread Safety:</b>  Safe.
  */
@@ -39,24 +38,18 @@ public final class UniqueNameGenerator {
     /** Construct a UniqueNameGenerator with a blank history. */
     public UniqueNameGenerator() { }
 
-    /**
-     * Regard the provided name as "seen".
+    /** Regard the provided name as "seen".
      * <p> For convenience, it returns the argument as the return value.
      */
     public synchronized String seen(String name) { names.add(name); return name; }
 
-    /**
-     * Queries whether the provided name has been "seen" or not.
-     */
+    /** Queries whether the provided name has been "seen" or not. */
     public synchronized boolean hasSeen(String name) { return names.contains(name); }
 
-    /**
-     * Clear the history of previously generated names.
-     */
+    /** Clear the history of previously generated names. */
     public synchronized void clear() { names.clear(); }
 
-    /**
-     * Generate a unique name based on the input name.
+    /** Generate a unique name based on the input name.
      *
      * <p> Specifically: if the name has not been generated/seen already by this generator,
      * then it is returned as is. Otherwise, we append ' to it until the name becomes unique.

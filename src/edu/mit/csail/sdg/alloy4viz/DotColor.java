@@ -31,8 +31,7 @@ import java.util.Map;
 import javax.swing.Icon;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 
-/**
- * Immutable; this defines the set of colors that dot can produce.
+/** Immutable; this defines the set of colors that dot can produce.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -94,20 +93,17 @@ public final class DotColor extends DotAttribute {
         return ans;
     }
 
-    /**
-     * The list of colors to use, corresponding to the current palette;
+    /** The list of colors to use, corresponding to the current palette;
      * if there are more palette choices than colors.size(), then the extra palettes would all use the first color.
      */
     private final List<String> colors = new ArrayList<String>();
 
-    /**
-     * The list of icons to show, corresponding to the current palette;
+    /** The list of icons to show, corresponding to the current palette;
      * if there are more palette choices than icons.size(), then the extra palettes would all use the first icon.
      */
     private final List<Icon> icons = new ArrayList<Icon>();
 
-    /**
-     * Construct a new DotColor.
+    /** Construct a new DotColor.
      * @param displayedText - the text to show when the user is selecting a color from a combobox
      * @param colors - the list of actual colors to show corresponding to each possible palette
      * (if this list is shorter than the number of palettes, then the extra palettes would all use

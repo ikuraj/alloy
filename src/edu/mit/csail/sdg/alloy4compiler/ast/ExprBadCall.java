@@ -33,8 +33,7 @@ import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
-/**
- * Immutable; represents an illegal pred/fun call.
+/** Immutable; represents an illegal pred/fun call.
  *
  * <p> <b>Invariant:</b>  this.type==EMPTY && this.errors.size()>0
  */

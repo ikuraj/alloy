@@ -36,8 +36,7 @@ import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 import javax.swing.border.EmptyBorder;
 
-/**
- * Graphical combobox.
+/** Graphical combobox.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -67,20 +66,17 @@ public class OurCombobox extends JComboBox {
         return answer;
     }
 
-    /**
-     * Constructs a new OurCombobox object.
+    /** Constructs a new OurCombobox object.
      * @param list - the list of allowed values
      */
     public OurCombobox (Vector<Object> list)  { this(false, list, 0, 0, null); }
 
-    /**
-     * Constructs a new OurCombobox object.
+    /** Constructs a new OurCombobox object.
      * @param list - the list of allowed values
      */
     public OurCombobox (Object[] list)  { this(false, Util.asList(list), 0, 0, null); }
 
-    /**
-     * Constructs a new OurCombobox object.
+    /** Constructs a new OurCombobox object.
      * @param addNull - whether we should prepend null onto the beginning of the list of allowed values
      * @param list - the list of allowed values
      * @param width - the width to use (if width==0 && height==0, then we ignore this parameter)

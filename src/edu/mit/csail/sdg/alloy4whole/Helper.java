@@ -59,8 +59,7 @@ final class Helper {
         return alloyHome=ans;
     }
 
-    /**
-     * Create an empty temporary directory for use, designate it "deleteOnExit", then return it.
+    /** Create an empty temporary directory for use, designate it "deleteOnExit", then return it.
      * It is guaranteed to be a canonical absolute path.
      */
     public static String maketemp() {

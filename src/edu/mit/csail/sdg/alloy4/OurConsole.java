@@ -56,8 +56,7 @@ import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 
-/**
- * Graphical input/output prompt.
+/** Graphical input/output prompt.
  *
  * <p> This class's constructor takes a Computer object, then constructs a JScrollPane
  * in which the user can type commands, and the output from the Computer object will be displayed.
@@ -86,8 +85,7 @@ public final class OurConsole extends JScrollPane {
     /** The style for failed result. */
     private final SimpleAttributeSet red;
 
-    /**
-     * The number of characters before the horizontal divider bar.
+    /** The number of characters before the horizontal divider bar.
      * (The interactive console is composed of a JTextPane which contains 0 or more input/output pairs, followed
      * by horizontal divider bar, followed by an embedded sub-JTextPane (where the user can type in the next input))
      */
@@ -211,8 +209,7 @@ public final class OurConsole extends JScrollPane {
         do_pagedown(); // need to do this after the validate() so that the scrollbar knows the new limit
     }
 
-    /**
-     * Construct a JScrollPane that allows the user to interactively type in commands and see replies.
+    /** Construct a JScrollPane that allows the user to interactively type in commands and see replies.
      *
      * @param computer - this object is used to evaluate the user input
      *

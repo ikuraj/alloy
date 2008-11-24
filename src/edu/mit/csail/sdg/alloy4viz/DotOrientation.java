@@ -26,8 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 
-/**
- * Immutable; this defines the set of orientations that dot can use: horizontal and vertical.
+/** Immutable; this defines the set of orientations that dot can use: horizontal and vertical.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -48,8 +47,7 @@ public final class DotOrientation extends DotAttribute {
         values = Collections.unmodifiableList(list);
     }
 
-    /**
-     * Constructs a new DotOrientation object.
+    /** Constructs a new DotOrientation object.
      * @param displayedText - the label to show when the user is selecting a value
      * @param dotText - the attribute to write into the .dot file
      */

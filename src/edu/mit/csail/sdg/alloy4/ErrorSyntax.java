@@ -22,8 +22,7 @@
 
 package edu.mit.csail.sdg.alloy4;
 
-/**
- * Immutable; represents a syntax error that should be reported to the user.
+/** Immutable; represents a syntax error that should be reported to the user.
  *
  * <p><b>Invariant:</b> pos!=null && msg!=null
  */
@@ -33,16 +32,14 @@ public final class ErrorSyntax extends Err {
    /** This silences javac's warning about missing serialVersionUID. */
    private static final long serialVersionUID = 1L;
 
-   /**
-    * Constructs a new syntax error.
+   /** Constructs a new syntax error.
     * @param msg - the actual error message
     */
    public ErrorSyntax(String msg) {
       super(null, msg, null);
    }
 
-   /**
-    * Constructs a new syntax error with "cause" as the underlying cause.
+   /** Constructs a new syntax error with "cause" as the underlying cause.
     * @param msg - the actual error message
     * @param cause - if nonnull, it is the cause of this exception
     */
@@ -50,8 +47,7 @@ public final class ErrorSyntax extends Err {
       super(null, msg, cause);
    }
 
-   /**
-    * Constructs a new syntax error.
+   /** Constructs a new syntax error.
     * @param pos - the filename/line/row information (can be null if unknown)
     * @param msg - the actual error message
     */

@@ -63,8 +63,7 @@ import edu.mit.csail.sdg.alloy4.OurCheckbox;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Util;
 
-/**
- * GUI panel for making customization changes.
+/** GUI panel for making customization changes.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -89,8 +88,7 @@ public final class VizCustomizationPanel extends JPanel {
     /** The JSplitPane separating this customization panel with the main graph panel. */
     private final JSplitPane divider;
 
-    /**
-     * If it's an instance of AlloyElement, that means it's the latest selected type/set/relation.
+    /** If it's an instance of AlloyElement, that means it's the latest selected type/set/relation.
      * If it's an Integer 1, 2, or 3, that means the latest selected panel is
      * the General Graph Settings, Default Type+Set, or Default Relation panels respectively.
      * All else, that means the zoom panel is empty.
@@ -99,8 +97,7 @@ public final class VizCustomizationPanel extends JPanel {
 
     //=============================================================================================================//
 
-    /**
-     * Constructs a customization panel.
+    /** Constructs a customization panel.
      * @param divider - the JSplitPane separating the left-customization-half with the right-graph-half
      * @param vizState - the VizState object that will be customized by this customization panel
      */
@@ -119,8 +116,7 @@ public final class VizCustomizationPanel extends JPanel {
 
     //=============================================================================================================//
 
-    /**
-     * This method selects a particular treenode and shows the details of a particular Type/Set/Relation.
+    /** This method selects a particular treenode and shows the details of a particular Type/Set/Relation.
      *
      * <p>
      * If x is an instance of AlloyElement, that means it's the latest selected type/set/relation.
@@ -153,8 +149,7 @@ public final class VizCustomizationPanel extends JPanel {
 
     //=============================================================================================================//
 
-    /**
-     * Custom TreeCellRenderer to print the tree nodes better.
+    /** Custom TreeCellRenderer to print the tree nodes better.
      * The idea of using JLabel is inspired by the DefaultTreeCellRenderer implementation.
      */
     private final class OurRenderer extends JLabel implements TreeCellRenderer {

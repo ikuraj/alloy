@@ -34,20 +34,17 @@ public final class JoinableList<E> implements Serializable, Iterable<E> {
    /** This ensures the class can be serialized reliably. */
    private static final long serialVersionUID = 1L;
 
-   /**
-    * The number of items stored in this list.
+   /** The number of items stored in this list.
     * <p> <b>Invariant:</b> count == (pre!=null ? pre.count : 0) + (item!=null ? 1 : 0) + (post!=null ? post.count : 0)
     */
    private final int count;
 
-   /**
-    * The list of items before "this.item"; may be null.
+   /** The list of items before "this.item"; may be null.
     * <p> <b>Invariant:</b> pre!=null iff pre.count!=0
     */
    private final JoinableList<E> pre;
 
-   /**
-    * The list of items after "this.item"; may be null.
+   /** The list of items after "this.item"; may be null.
     * <p> <b>Invariant:</b> post!=null iff post.count!=0
     */
    private final JoinableList<E> post;
@@ -92,8 +89,7 @@ public final class JoinableList<E> implements Serializable, Iterable<E> {
    /** If the list if nonempty, arbitrarily return one of the item, otherwise throw ArrayIndexOutOfBoundsException. */
    public E pick() { return get(0); }
 
-   /**
-    * Return the i-th element
+   /** Return the i-th element
     * @throws ArrayIndexOutOfBoundsException if the given index doesn't exist
     */
    private E get(int i) {

@@ -24,8 +24,7 @@ package edu.mit.csail.sdg.alloy4viz;
 
 import javax.swing.Icon;
 
-/**
- * Immutable; this is the abstract class for all attributes used in generating dot files.
+/** Immutable; this is the abstract class for all attributes used in generating dot files.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -41,8 +40,7 @@ abstract class DotAttribute {
     /** This is the icon to display in the GUI, unless overridden by the subclass; can be null if there's no icon. */
     private final Icon icon;
 
-    /**
-     * Constructs a new DotAttribute.
+    /** Constructs a new DotAttribute.
      * @param displayedText - the label to display in the GUI for this value
      * @param dotText - the value to write into the actual dot file for this value
      * @param icon - the icon to display on the GUI for this value (Can be null if no icon is needed)

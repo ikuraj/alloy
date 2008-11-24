@@ -38,8 +38,7 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.TabSet;
 import javax.swing.text.TabStop;
 
-/**
- * Graphical syntax-highlighting implementation of StyledDocument.
+/** Graphical syntax-highlighting implementation of StyledDocument.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread
  */
@@ -286,8 +285,7 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
         return lineCount;
     }
 
-    /**
-     * Apply appropriate styles based on the new changes.
+    /** Apply appropriate styles based on the new changes.
      * @param comment - the comment mode at the start of the given line (-1 if unknown)
      * @param startLine - the line where changes begin
      * @param numLines - the number of lines directly affected; we still have to check beyond it to see if more styling are needed

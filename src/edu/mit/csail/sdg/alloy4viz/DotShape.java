@@ -29,8 +29,7 @@ import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4graph.VizShape;
 
-/**
- * Immutable; this defines the set of shapes that dot can produce.
+/** Immutable; this defines the set of shapes that dot can produce.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -106,8 +105,7 @@ public final class DotShape extends DotAttribute {
         return Util.asList(shapes);
     }
 
-    /**
-     * Construct a new DotShape.
+    /** Construct a new DotShape.
      * @param displayedText - the label to show when the user selects a style from a combobox
      * @param dotText - the actual attribute that we will write into the DOT file
      */

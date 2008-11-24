@@ -243,8 +243,7 @@ public final class Module extends Browsable {
             return visitThis(x);
         }
 
-        /**
-         * Returns true if the function's parameters have reasonable intersection with the list of arguments.
+        /** Returns true if the function's parameters have reasonable intersection with the list of arguments.
          * <br> If args.length() > f.params.size(), the extra arguments are ignored by this check
          */
         private static boolean applicable(Func f, List<Expr> args) {
@@ -565,8 +564,7 @@ public final class Module extends Browsable {
     /** The list of paths pointing to this Module; it is always nonempty and already sorted by Util.slashComparator */
     private final List<String> paths;
 
-    /**
-     * 1: has seen the "module" line
+    /** 1: has seen the "module" line
      * 2: has seen the "open" lines
      * 3: has seen the "sig/pred/fun/fact/assert/check/run" commands
      */
@@ -629,8 +627,7 @@ public final class Module extends Browsable {
     /** This stores a set of global values; given a unresolved name, we query this map first before all else. */
     private final Map<String,Expr> globals = new LinkedHashMap<String,Expr>();
 
-    /**
-     * Constructs a new Module object
+    /** Constructs a new Module object
      * @param world - the world that this Module belongs to (null if this is the beginning of a new World)
      * @param filename - the filename corresponding to this module
      * @param path - one of the path pointing to this module

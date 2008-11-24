@@ -51,8 +51,7 @@ import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options.SatSolver;
 import edu.mit.csail.sdg.alloy4viz.StaticInstanceReader;
 
-/**
- * This class is used by the Alloy developers to drive the regression test suite.
+/** This class is used by the Alloy developers to drive the regression test suite.
  * For a more detailed guide on how to use Alloy API, please see "ExampleUsingTheCompiler.java"
  */
 

@@ -27,9 +27,7 @@ import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
 
-/**
- * This interface represents a node that can be browsed in the graphical parse tree displayer.
- */
+/** This interface represents a node that can be browsed in the graphical parse tree displayer. */
 
 public abstract class Browsable {
 

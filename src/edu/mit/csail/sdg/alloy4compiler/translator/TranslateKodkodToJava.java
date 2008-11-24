@@ -70,8 +70,7 @@ import kodkod.instance.TupleSet;
 import kodkod.instance.Tuple;
 import kodkod.util.ints.IndexedEntry;
 
-/**
- * Translate a Kodkod formula node to an equivalent Java program that solves the formula.
+/** Translate a Kodkod formula node to an equivalent Java program that solves the formula.
  *
  * <p> Requirements: atoms must be String objects (since we cannot possibly
  * output a Java source code that can re-generate arbitrary Java objects).
@@ -143,8 +142,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         if (ans instanceof Integer) return ((Integer)ans).intValue(); else return 0;
     }
 
-    /**
-     * Given a Kodkod formula node, return a Java program that (when compiled and executed) would solve that formula.
+    /** Given a Kodkod formula node, return a Java program that (when compiled and executed) would solve that formula.
      *
      * <p> Requirement: atoms must be String objects (since we cannot possibly
      * output a Java source code that can re-generate arbitrary Java objects).

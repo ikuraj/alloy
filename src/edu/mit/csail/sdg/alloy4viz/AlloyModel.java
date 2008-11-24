@@ -32,8 +32,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-/**
- * Immutable; represents an Alloy model.
+/** Immutable; represents an Alloy model.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -43,20 +42,17 @@ public final class AlloyModel {
     /** An unmodifiable sorted set of all types in this model. */
     private final Set<AlloyType> types;
 
-    /**
-     * An unmodifiable sorted set of all sets in this model.
+    /** An unmodifiable sorted set of all sets in this model.
      * <br> AlloyModel's constructor guarantees that, for each set here, set.getType() is in this.types
      */
     private final Set<AlloySet> sets;
 
-    /**
-     * An unmodifiable sorted set of all relations in this model.
+    /** An unmodifiable sorted set of all relations in this model.
      * <br> AlloyModel's constructor guarantees that, for each relation here, relation.getTypes() are in this.types
      */
     private final Set<AlloyRelation> relations;
 
-    /**
-     * If A extends B, then "(A,B)" will be in this map.
+    /** If A extends B, then "(A,B)" will be in this map.
      *
      * <p>  AlloyModel's constructor ensures the following:
      * <br> (1) hierachy.keySet() is always a subset of this.types
@@ -67,14 +63,12 @@ public final class AlloyModel {
      */
     private final Map<AlloyType,AlloyType> hierarchy;
 
-    /**
-     * The map from name to AlloyType.
+    /** The map from name to AlloyType.
      * <br> AlloyModel's constructor guarantees that this.name2types.values() has the same entries as this.types
      */
     private final Map<String,AlloyType> name2types = new HashMap<String,AlloyType>();
 
-    /**
-     * Returns true iff the nodes x, map.get(x), map.get(map.get(x))... form an infinite chain of nonnull objects.
+    /** Returns true iff the nodes x, map.get(x), map.get(map.get(x))... form an infinite chain of nonnull objects.
      * @param map - a map from AlloyType to AlloyType
      * @param x - the AlloyType object we want to check
      */
@@ -84,8 +78,7 @@ public final class AlloyModel {
         return false;
     }
 
-    /**
-     * Construct a new AlloyModel object.
+    /** Construct a new AlloyModel object.
      * @param types - the types; we will always add "univ" to it if it's not there already
      * @param sets - the sets
      * @param rels - the relations
@@ -118,8 +111,7 @@ public final class AlloyModel {
         for(AlloyType t: this.types) this.name2types.put(t.getName(), t);
     }
 
-    /**
-     * Construct a new AlloyModel object.
+    /** Construct a new AlloyModel object.
      * @param types - the types ; we will always add "univ" to it if it's not there already
      * @param sets - the sets
      * @param rels - the relations
@@ -132,8 +124,7 @@ public final class AlloyModel {
         this(types, sets, rels, old.hierarchy);
     }
 
-    /**
-     * If type==univ, return null; otherwise, return a nonnull AlloyType object representing its super type.
+    /** If type==univ, return null; otherwise, return a nonnull AlloyType object representing its super type.
      * <br> (In particular, if "type" does not exist in this model, we'll return "univ" as the answer).
      */
     public AlloyType getSuperType(AlloyType type) {
@@ -142,8 +133,7 @@ public final class AlloyModel {
         return answer==null ? AlloyType.UNIV : answer;
     }
 
-    /**
-     * If type==univ, return null; otherwise,
+    /** If type==univ, return null; otherwise,
      * return a nonnull AlloyType object representing its topmost non-univ super type.
      *
      * <p> Thus, if "type" is in this model, but its supertype is univ, then we'll return type as-is.
@@ -159,8 +149,7 @@ public final class AlloyModel {
         return type;
     }
 
-    /**
-     * Returns a sorted, unmodifiable list of types that are direct or indirect subtypes of the given type.
+    /** Returns a sorted, unmodifiable list of types that are direct or indirect subtypes of the given type.
      * <br> This method will search recursively, so if the subtypes themselves have subtypes, they too are included.
      * <br> If type==null, or it does not exist in this model, or it has no subsigs, then we return an empty set.
      */
@@ -170,8 +159,7 @@ public final class AlloyModel {
         return Collections.unmodifiableList(subtypes); // Since this.types is sorted, the result is already sorted.
     }
 
-    /**
-     * Returns a sorted, unmodifiable list of types that are direct subtypes of the given type.
+    /** Returns a sorted, unmodifiable list of types that are direct subtypes of the given type.
      * <br> This method will only return types that are direct subtypes of the given argument.
      * <br> If type==null, or it does not exist in this model, or it has no subsigs, then we return an empty set.
      */
@@ -181,8 +169,7 @@ public final class AlloyModel {
         return Collections.unmodifiableList(subtypes); // Since this.types is sorted, the result is already sorted.
     }
 
-    /**
-     * Returns true iff "subType" is a direct or indirect subsig of "superType".
+    /** Returns true iff "subType" is a direct or indirect subsig of "superType".
      * <br> If subType==null or superType==null, it always returns false.
      */
     public boolean isSubtype(AlloyType subType, AlloyType superType) {
@@ -195,8 +182,7 @@ public final class AlloyModel {
         return false;
     }
 
-    /**
-     * Returns true iff "subType" is a direct subsig of "superType".
+    /** Returns true iff "subType" is a direct subsig of "superType".
      * <br> If subType==null or superType==null, it always returns false.
      */
     public boolean isDirectSubtype(AlloyType subType, AlloyType superType) {
@@ -206,8 +192,7 @@ public final class AlloyModel {
         return superType.equals(hierarchy.get(subType));
     }
 
-    /**
-     * Returns true iff "subType" is equal to, or is a direct or indirect subsig of "superType".
+    /** Returns true iff "subType" is equal to, or is a direct or indirect subsig of "superType".
      * <br> If subType==null or superType==null, it always returns false.
      */
     public boolean isEqualOrSubtype(AlloyType subType, AlloyType superType) {

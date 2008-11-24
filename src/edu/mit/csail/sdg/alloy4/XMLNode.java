@@ -112,8 +112,7 @@ public final class XMLNode implements Iterable<XMLNode> {
         /** Throws an IOException with the given msg, and associate with it the current line and column location. */
         private void malform(String msg) throws IOException { throw new IOException("Error at line "+y+" column "+x+": "+msg); }
 
-        /**
-         * Read the next character.
+        /** Read the next character.
          * @throws IOException if end-of-file is reached.
          * @throws IOException if an I/O error occurred.
          */
@@ -125,8 +124,7 @@ public final class XMLNode implements Iterable<XMLNode> {
             return ans;
         }
 
-        /**
-         * Peek without consuming the next character, or return -1 if end-of-file is reached.
+        /** Peek without consuming the next character, or return -1 if end-of-file is reached.
          * @throws IOException if an I/O error occurred.
          */
         private int peek() throws IOException {
@@ -134,8 +132,7 @@ public final class XMLNode implements Iterable<XMLNode> {
             return read;
         }
 
-        /**
-         * Consume up to and including the consecutive characters "char1" and "char2".
+        /** Consume up to and including the consecutive characters "char1" and "char2".
          * @throws IOException if we reached end-of-file without seeing the pattern.
          * @throws IOException if an I/O error occurred.
          */
@@ -146,8 +143,7 @@ public final class XMLNode implements Iterable<XMLNode> {
             }
         }
 
-        /**
-         * If the next N characters match the given string (where N == length of string), then consume them, else throw IOException.
+        /** If the next N characters match the given string (where N == length of string), then consume them, else throw IOException.
          * @throws IOException if the next N characters do not match the given string.
          * @throws IOException if an I/O error occurred.
          */
@@ -158,8 +154,7 @@ public final class XMLNode implements Iterable<XMLNode> {
             }
         }
 
-        /**
-         * Skip whitespace if any, then return the first non-whitespace character after that.
+        /** Skip whitespace if any, then return the first non-whitespace character after that.
          * @throws IOException if after skipping 0 or more white space character we reach end-of-file.
          * @throws IOException if an I/O error occurred.
          */
@@ -223,8 +218,7 @@ public final class XMLNode implements Iterable<XMLNode> {
          *   any char that is not '<' nor '>' nor '[' nor ']' nor ''' nor '"'
          */
 
-        /**
-         * Skip as much nondata as possible, then return the first character after that (or -1 if we end up at end-of-file).
+        /** Skip as much nondata as possible, then return the first character after that (or -1 if we end up at end-of-file).
          * <p> Specifically, skipNondata(false) consumes (Misc | doctypedecl)* from XML specification
          * <p> Likewise,     skipNondata(true)  consumes (intSubset)*          from XML specification
          * @throws IOException if the XML input is malformed.
@@ -255,8 +249,7 @@ public final class XMLNode implements Iterable<XMLNode> {
            }
         }
 
-        /**
-         * Parse an element name or attribute name.
+        /** Parse an element name or attribute name.
          * @throws IOException if the XML input is malformed.
          * @throws IOException if an I/O error occurred.
          */
@@ -272,8 +265,7 @@ public final class XMLNode implements Iterable<XMLNode> {
             }
         }
 
-        /**
-         * Parse a value up to delim (which is always either ' or "), assuming the initial ' or " has already been consumed.
+        /** Parse a value up to delim (which is always either ' or "), assuming the initial ' or " has already been consumed.
          * @throws IOException if the XML input is malformed.
          * @throws IOException if an I/O error occurred.
          */
@@ -316,8 +308,7 @@ public final class XMLNode implements Iterable<XMLNode> {
          * CharData ::=  [^<&]* - ([^<&]* ']]>' [^<&]*)
          */
 
-        /**
-         * Parse an element (and all its subelements), assuming the initial "less than" sign has already been consumed.
+        /** Parse an element (and all its subelements), assuming the initial "less than" sign has already been consumed.
          * @throws IOException if the XML input is malformed.
          * @throws IOException if an I/O error occurred.
          */
@@ -350,8 +341,7 @@ public final class XMLNode implements Iterable<XMLNode> {
             }
         }
 
-        /**
-         * Parses the content until the rightful closing "LESS THAN SIGN followed by FORWARD SLASH" are both consumed.
+        /** Parses the content until the rightful closing "LESS THAN SIGN followed by FORWARD SLASH" are both consumed.
          * @throws IOException if the XML input is malformed.
          * @throws IOException if an I/O error occurred.
          */

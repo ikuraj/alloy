@@ -34,8 +34,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import static edu.mit.csail.sdg.alloy4compiler.parser.CompSym.*;
 
-/**
- * This class sits between the lexer and the parser.
+/** This class sits between the lexer and the parser.
  *
  * <p>
  * Reason: there are 3 sets of "special tokens" that the lexer will not output.

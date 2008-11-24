@@ -42,8 +42,7 @@ import javax.swing.text.StyledEditorKit;
 import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
 
-/**
- * Graphical syntax-highlighting editor.
+/** Graphical syntax-highlighting editor.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread
  */

@@ -33,8 +33,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-/**
- * Graphical convenience methods for producing PDF files.
+/** Graphical convenience methods for producing PDF files.
  *
  * <p> This implementation explicitly generates a very simple 8.5 inch by 11 inch one-page PDF
  * which consists of a single stream of graphical operations.
@@ -92,8 +91,7 @@ public final strictfp class OurPDFWriter {
     /** The number of bytes written into the file thus far. */
     private long now = 0;
 
-    /**
-     * Write the PDF header into the file, then begins a Contents stream; (if the file already exists, it will be overwritten).
+    /** Write the PDF header into the file, then begins a Contents stream; (if the file already exists, it will be overwritten).
      * @throws IllegalArgumentException if dpi is less than 50 or is greater than 3000
      * @throws IOException if an error occurred in opening or writing to the file
      */
@@ -122,8 +120,7 @@ public final strictfp class OurPDFWriter {
         }
     }
 
-    /**
-     * Writes the String into the current Contents stream object, then return the OurPDFWriter object itself as the return value.
+    /** Writes the String into the current Contents stream object, then return the OurPDFWriter object itself as the return value.
      * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
      */
     private OurPDFWriter write(String string) {
@@ -133,14 +130,12 @@ public final strictfp class OurPDFWriter {
         return this;
     }
 
-    /**
-     * Writes the number into the current Contents stream object, write a space character, then return the OurPDFWriter object itself as the return value.
+    /** Writes the number into the current Contents stream object, write a space character, then return the OurPDFWriter object itself as the return value.
      * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
      */
     private OurPDFWriter writes(long x)  { return write(Long.toString(x)).write(" "); }
 
-    /**
-     * Writes the number into the current Contents stream object, write a space character, then return the OurPDFWriter object itself as the return value.
+    /** Writes the number into the current Contents stream object, write a space character, then return the OurPDFWriter object itself as the return value.
      * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
      */
     private OurPDFWriter writes(double x) {
@@ -157,8 +152,7 @@ public final strictfp class OurPDFWriter {
         return write(sign).write(str.substring(0, str.length()-6)).write(".").write(str.substring(str.length()-6)).write(" ");
     }
 
-    /**
-     * Changes the color for subsequent graphical drawing.
+    /** Changes the color for subsequent graphical drawing.
      * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
      */
     public OurPDFWriter setColor(Color color) {
@@ -168,38 +162,32 @@ public final strictfp class OurPDFWriter {
         return this;
     }
 
-    /**
-     * Changes the line style to be bold.
+    /** Changes the line style to be bold.
      * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
      */
     public OurPDFWriter setBoldLine()  { return write("2 w [] 0 d\n"); }
 
-    /**
-     * Changes the line style to be dotted.
+    /** Changes the line style to be dotted.
      * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
      */
     public OurPDFWriter setDottedLine()  { return write("1 w [1 3] 0 d\n"); }
 
-    /**
-     * Changes the line style to be dashed.
+    /** Changes the line style to be dashed.
      * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
      */
     public OurPDFWriter setDashedLine()  { return write("1 w [6 3] 0 d\n"); }
 
-    /**
-     * Changes the line style to be normal.
+    /** Changes the line style to be normal.
      * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
      */
     public OurPDFWriter setNormalLine()  { return write("1 w [] 0 d\n"); }
 
-    /**
-     * Shifts the coordinate space by the given amount.
+    /** Shifts the coordinate space by the given amount.
      * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
      */
     public OurPDFWriter shiftCoordinateSpace(int x, int y)  { return write("1 0 0 1 ").writes(x).writes(y).write("cm\n"); }
 
-    /**
-     * Draws a circle of the given radius, centered at (0,0).
+    /** Draws a circle of the given radius, centered at (0,0).
      * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
      */
     public OurPDFWriter drawCircle(int radius, boolean fillOrNot) {
@@ -212,14 +200,12 @@ public final strictfp class OurPDFWriter {
         return this;
     }
 
-    /**
-     * Draws a line from (x1,y1) to (x2,y2).
+    /** Draws a line from (x1,y1) to (x2,y2).
      * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
      */
     public OurPDFWriter drawLine(int x1, int y1, int x2, int y2)  { return writes(x1).writes(y1).write("m ").writes(x2).writes(y2).write("l S\n"); }
 
-    /**
-     * Draws a shape.
+    /** Draws a shape.
      * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
      */
     public OurPDFWriter drawShape(Shape shape, boolean fillOrNot) {
@@ -389,8 +375,7 @@ public final strictfp class OurPDFWriter {
      *  %%EOF\n
      */
 
-    /**
-     * Closes the content stream, write the PDF end-of-file, then flushes and closes the file.
+    /** Closes the content stream, write the PDF end-of-file, then flushes and closes the file.
      * @throws IOException if an error occurred in writing or closing the file
      */
     public void close() throws IOException {

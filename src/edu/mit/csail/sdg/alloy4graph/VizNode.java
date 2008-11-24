@@ -38,8 +38,7 @@ import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopA;
 import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopGL;
 import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopGR;
 
-/**
- * Mutable; represents a graphical node.
+/** Mutable; represents a graphical node.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -88,32 +87,27 @@ public final strictfp class VizNode extends DiGraph.DiNode {
     /** The Y coordinate of the center of the node. */
     private int centerY = 0;
 
-    /**
-     * The font boldness.
+    /** The font boldness.
      * <p> When this value changes, we automatically invalidate the previously computed bounds information.
      */
     private boolean fontBold = false;
 
-    /**
-     * The node labels; if null or empty, then the node has no labels.
+    /** The node labels; if null or empty, then the node has no labels.
      * <p> When this value changes, we automatically invalidate the previously computed bounds information.
      */
     private List<String> labels = null;
 
-    /**
-     * The node color; never null.
+    /** The node color; never null.
      * <p> When this value changes, we automatically invalidate the previously computed bounds information.
      */
     private Color color = WHITE;
 
-    /**
-     * The line style; never null.
+    /** The line style; never null.
      * <p> When this value changes, we automatically invalidate the previously computed bounds information.
      */
     private VizStyle style = VizStyle.SOLID;
 
-    /**
-     * The node shape; if null, then the node is a dummy node.
+    /** The node shape; if null, then the node is a dummy node.
      * <p> When this value changes, we automatically invalidate the previously computed bounds information.
      */
     private VizShape shape = VizShape.BOX;
@@ -207,20 +201,17 @@ public final strictfp class VizNode extends DiGraph.DiNode {
     /** If (updown>=0), this is the amount of space on the right set-aside for self-loops (which is 0 if node has no self loops) */
     private int reserved = 0;
 
-    /**
-     * If (updown>=0 and shape!=null), this is the bounding polygon.
+    /** If (updown>=0 and shape!=null), this is the bounding polygon.
      * Note: if not null, it must be either a GeneralPath or a Polygon.
      */
     private Shape poly = null;
 
-    /**
-     * If (updown>=0 and shape!=null and poly2!=null), then poly2 will also be drawn during the draw() method.
+    /** If (updown>=0 and shape!=null and poly2!=null), then poly2 will also be drawn during the draw() method.
      * Note: if not null, it must be either a GeneralPath or a Polygon.
      */
     private Shape poly2 = null;
 
-    /**
-     * If (updown>=0 and shape!=null and poly3!=null), then poly3 will also be drawn during the draw() method.
+    /** If (updown>=0 and shape!=null and poly3!=null), then poly3 will also be drawn during the draw() method.
      * Note: if not null, it must be either a GeneralPath or a Polygon.
      */
     private Shape poly3 = null;

@@ -31,8 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-/**
- * Immutable; represents a tuple.
+/** Immutable; represents a tuple.
  *
  * <p><b>Thread Safety:</b>  Safe.
  */

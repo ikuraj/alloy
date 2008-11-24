@@ -39,8 +39,7 @@ import kodkod.ast.operator.ExprOperator;
 import kodkod.ast.operator.FormulaOperator;
 import kodkod.instance.TupleSet;
 
-/**
- * Immutable; this class shrinks the unknowns as much as possible in order to reduce the number of variables in final CNF.
+/** Immutable; this class shrinks the unknowns as much as possible in order to reduce the number of variables in final CNF.
  *
  * <p> Currently it recognizes the following patterns:
  *
@@ -64,8 +63,7 @@ public class Simplifier {
     /* Stores the equivalence relation discovered so far. */
     //private final IdentityHashMap<Node,List<Expression>> equiv = new IdentityHashMap<Node,List<Expression>>();
 
-    /**
-     * Simplify sol.bounds() based on the set of formulas, or to modify the formulas list itself.
+    /** Simplify sol.bounds() based on the set of formulas, or to modify the formulas list itself.
      * Subclasses should override this method to implement different simplification algorithms.
      * (Note: this method is allowed to modify the "formulas" array if it sees an opportunity for optimization)
      */

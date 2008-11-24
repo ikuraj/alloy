@@ -286,8 +286,7 @@ parser code {:
 :};
 
 action code {:
-    /**
-     * This function is needed to handle a difficult parsing ambiguity.
+    /** This function is needed to handle a difficult parsing ambiguity.
      *
      * <p>
      * "some EXPR", "one EXPR", and "lone EXPR"

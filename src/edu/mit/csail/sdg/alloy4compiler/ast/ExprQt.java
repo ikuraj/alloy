@@ -36,8 +36,7 @@ import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
-/**
- * Immutable; represents a quantified expression.
+/** Immutable; represents a quantified expression.
  *
  * It can have one of the following forms:
  *
@@ -157,8 +156,7 @@ public final class ExprQt extends Expr {
       /** The human readable label for this operator. */
       private final String label;
 
-      /**
-       * Constructs a quantification expression with "this" as the operator.
+      /** Constructs a quantification expression with "this" as the operator.
        *
        * @param pos - the position of the "quantifier" in the source file (or null if unknown)
        * @param closingBracket - the position of the "closing bracket" in the source file (or null if unknown)

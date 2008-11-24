@@ -24,9 +24,7 @@ package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import edu.mit.csail.sdg.alloy4.Pos;
 
-/**
- * Immutable; represents a named entity (such as a Field, or a LET or QUANTIFICATION variable, or a function/predicate parameter).
- */
+/** Immutable; represents a named entity (such as a Field, or a LET or QUANTIFICATION variable, or a function/predicate parameter). */
 
 public abstract class ExprHasName extends Expr {
 

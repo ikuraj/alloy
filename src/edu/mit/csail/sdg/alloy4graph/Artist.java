@@ -37,8 +37,7 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import edu.mit.csail.sdg.alloy4.OurPDFWriter;
 
-/**
- * This class abstracts the drawing operations so that we can
+/** This class abstracts the drawing operations so that we can
  * draw the graph using different frameworks such as Java2D or PDF.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
@@ -114,8 +113,7 @@ public final strictfp class Artist {
     /** The pattern for dashed line. */
     private static float[] dashed = new float[]{6f,3f};
 
-    /**
-     * Modifies the given Graphics2D object to use the line style representing by this object.
+    /** Modifies the given Graphics2D object to use the line style representing by this object.
      * <p> NOTE: as a special guarantee, if gr2d==null, then this method returns immediately without doing anything.
      * <p> NOTE: just like the typical AWT and Swing methods, this method can be called only by the AWT event dispatching thread.
      */

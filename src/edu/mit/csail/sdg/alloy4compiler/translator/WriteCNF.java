@@ -28,8 +28,7 @@ import edu.mit.csail.sdg.alloy4.Util;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.engine.satlab.SATSolver;
 
-/**
- * An implementation of SATSolver that dumps the CNF to a file and then throws an exception
+/** An implementation of SATSolver that dumps the CNF to a file and then throws an exception
  * (this code is adapted from ExternalSolver from Kodkod).
  */
 

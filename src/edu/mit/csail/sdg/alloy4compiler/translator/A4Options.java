@@ -129,8 +129,7 @@ public final class A4Options implements Serializable {
     /** Constructs an A4Options object with default values for everything. */
     public A4Options() { }
 
-    /**
-     * This option specifies the amount of symmetry breaking to do (when symmetry breaking isn't explicitly disabled).
+    /** This option specifies the amount of symmetry breaking to do (when symmetry breaking isn't explicitly disabled).
      *
      * <p> If a formula is unsatisfiable, then in general, the higher this value,
      * the faster you finish the solving. But if this value is too high, it will instead slow down the solving.
@@ -142,57 +141,45 @@ public final class A4Options implements Serializable {
      */
     public int symmetry = 20;
 
-    /**
-     * This option specifies the maximum skolem-function depth.
+    /** This option specifies the maximum skolem-function depth.
      * <p> Default value is 0, which means it will only generate skolem constants, and will not generate skolem functions.
      */
     public int skolemDepth = 0;
 
-    /**
-     * This option specifies the unsat core minimization strategy (0=GuaranteedLocalMinimum 1=FasterButLessAccurate 2=EvenFaster...)
+    /** This option specifies the unsat core minimization strategy (0=GuaranteedLocalMinimum 1=FasterButLessAccurate 2=EvenFaster...)
      * <p> Default value is set to the fastest current strategy.
      */
     public int coreMinimization = 2;
 
-    /**
-     * This option specifies the SAT solver to use (SAT4J, MiniSatJNI, MiniSatProverJNI, ZChaffJNI...)
+    /** This option specifies the SAT solver to use (SAT4J, MiniSatJNI, MiniSatProverJNI, ZChaffJNI...)
      * <p> Default value is SAT4J.
      */
     public SatSolver solver = SatSolver.SAT4J;
 
-    /**
-     * When this.solver is external, and the solver filename is a relative filename, then this option specifies
+    /** When this.solver is external, and the solver filename is a relative filename, then this option specifies
      * the directory that the solver filename is relative to.
      */
     public String solverDirectory = "";
 
-    /**
-     * This specifies the directory where we may write temporary files to.
-     */
+    /** This specifies the directory where we may write temporary files to. */
     public String tempDirectory = System.getProperty("java.io.tmpdir");
 
-    /**
-     * This option tells the compiler the "original filename" that these AST nodes came from;
+    /** This option tells the compiler the "original filename" that these AST nodes came from;
      * it is only used for generating comments and other diagnostic messages.
      * <p> Default value is "".
      */
     public String originalFilename = "";
 
-    /**
-     * This option specifies whether the compiler should record
+    /** This option specifies whether the compiler should record
      * the original Kodkod formula being generated and the resulting Kodkod instances.
      * <p> Default value is false.
      */
     public boolean recordKodkod = false;
 
-    /**
-     * This option constrols how deep we unroll loops and unroll recursive predicate/function/macros (negative means it's disallowed)
-     */
+    /** This option constrols how deep we unroll loops and unroll recursive predicate/function/macros (negative means it's disallowed) */
     public int unrolls = (-1);
 
-    /**
-     * This method makes a copy of this Options object.
-     */
+    /** This method makes a copy of this Options object. */
     public A4Options dup() {
         A4Options x = new A4Options();
         x.unrolls = unrolls;

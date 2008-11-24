@@ -84,8 +84,7 @@ final class Macro extends ExprCustom {
         return new Macro(pos, isPrivate, realModule, name, params, args, body);
     }
 
-    /**
-     * Instantiate it.
+    /** Instantiate it.
      *
      * @param warnings - the list that will receive any warning we generate; can be null if we wish to ignore warnings
      */

@@ -26,8 +26,7 @@ import java.io.InputStream;
 import java.util.Timer;
 import java.util.TimerTask;
 
-/**
- * This provides a convenience wrapper around a Process object.
+/** This provides a convenience wrapper around a Process object.
  *
  * <p> To launch a subprocess, simply write Subprocess.exec(timeout, args);
  *
@@ -48,8 +47,7 @@ public final class Subprocess {
     /** Constructor is private since we only allow the static method exec() to construct objects of this class. */
     private Subprocess() { }
 
-    /**
-     * Executes the given command line, wait for its completion, then return its output.
+    /** Executes the given command line, wait for its completion, then return its output.
      * @param timeLimit - we will attempt to terminate the process after that many milliseconds have passed
      * @param p - preconstructed Process object
      */
@@ -85,8 +83,7 @@ public final class Subprocess {
         return "Error: wait timeout";
     }
 
-    /**
-     * Executes the given command line, wait for its completion, then return its output.
+    /** Executes the given command line, wait for its completion, then return its output.
      * @param timeLimit - we will attempt to terminate the process after that many milliseconds have passed
      * @param commandline - the command line
      */

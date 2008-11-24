@@ -24,8 +24,7 @@ package edu.mit.csail.sdg.alloy4;
 
 import java.io.Serializable;
 
-/**
- * Immutable; stores the filename and line/column position.
+/** Immutable; stores the filename and line/column position.
  *
  * <p> <b>Invariant:</b>     filename!=null && x>0 && y>0 && ((y2>y && x2>0) || (y2==y && x2>=x))
  *
@@ -55,8 +54,7 @@ public final class Pos implements Serializable {
     /** The default "unknown" location. */
     public static final Pos UNKNOWN = new Pos("",1,1);
 
-    /**
-     * Constructs a new Pos object.
+    /** Constructs a new Pos object.
      * @param filename - the filename (it can be an empty string if unknown)
      * @param x - the column position (from 1..)
      * @param y - the row position (from 1..)
@@ -69,8 +67,7 @@ public final class Pos implements Serializable {
         this.y2 = this.y;
     }
 
-    /**
-     * Constructs a new Pos object.
+    /** Constructs a new Pos object.
      * @param filename - the filename (it can be an empty string if unknown)
      * @param x - the starting column position (from 1..)
      * @param y - the starting row position (from 1..)
@@ -91,8 +88,7 @@ public final class Pos implements Serializable {
         this.y2 = y2;
     }
 
-    /**
-     * Return a new position that merges this and that (it is assumed that the two Pos objects have same filename)
+    /** Return a new position that merges this and that (it is assumed that the two Pos objects have same filename)
      * @param that - the other position object
      */
     public Pos merge(Pos that) {
@@ -118,9 +114,7 @@ public final class Pos implements Serializable {
         return a.y2<b.y || (a.y2==b.y && a.x2<b.x);
     }
 
-    /**
-     * Two Pos objects are equal if the filename x y x2 y2 are the same.
-     */
+    /** Two Pos objects are equal if the filename x y x2 y2 are the same. */
     @Override public boolean equals(Object other) {
         if (this==other) return true;
         if (!(other instanceof Pos)) return false;
@@ -128,9 +122,7 @@ public final class Pos implements Serializable {
         return x==that.x && y==that.y && x2==that.x2 && y2==that.y2 && filename.equals(that.filename);
     }
 
-    /**
-     * Returns a hash code consistent with equals()
-     */
+    /** Returns a hash code consistent with equals() */
     @Override public int hashCode() {
         return x*111 + y*171 + x2*1731 + y2*2117;
     }

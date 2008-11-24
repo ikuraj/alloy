@@ -34,8 +34,7 @@ import edu.mit.csail.sdg.alloy4.Util;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
-/**
- * Immutable; represents an if-then-else expression.
+/** Immutable; represents an if-then-else expression.
  *
  * <p> <b>Invariant:</b>  type!=EMPTY => (cond.mult==0 && left.mult==0 && right.mult==0)
  */
@@ -97,8 +96,7 @@ public final class ExprITE extends Expr {
         return cond.isSame(x.cond) && left.isSame(x.left) && right.isSame(x.right);
     }
 
-    /**
-     * Constructs a ExprITE expression.
+    /** Constructs a ExprITE expression.
      *
      * @param cond - the condition formula
      * @param left - the then-clause

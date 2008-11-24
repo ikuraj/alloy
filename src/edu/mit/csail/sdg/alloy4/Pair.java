@@ -24,8 +24,7 @@ package edu.mit.csail.sdg.alloy4;
 
 import java.io.Serializable;
 
-/**
- * Immutable; stores a pair of object references; Pair.equals() compares by value.
+/** Immutable; stores a pair of object references; Pair.equals() compares by value.
  *
  * <p><b>Thread Safety:</b>  Safe (since objects of this class are immutable).
  */
