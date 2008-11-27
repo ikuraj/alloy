@@ -779,9 +779,9 @@ public final class VizGUI implements ComponentListener {
         if (defaultTheme==null) defaultTheme="";
         if (myState==null) return null; // Can only load if there is a VizState loaded
         if (myState.changedSinceLastSave()) {
-            Boolean opt = OurDialog.askSaveDiscardCancel(frame, "The current theme");
-            if (opt==null) return null;
-            if (opt.booleanValue()) if (!saveThemeFile(thmFileName.length()==0 ? null : thmFileName)) return null;
+            char opt = OurDialog.askSaveDiscardCancel(frame, "The current theme");
+            if (opt=='c') return null;
+            if (opt=='s' && !saveThemeFile(thmFileName.length()==0 ? null : thmFileName)) return null;
         }
         File file=OurDialog.askFile(frame, true, null, ".thm", ".thm theme files");
         if (file!=null) { Util.setCurrentDirectory(file.getParentFile()); loadThemeFile(file.getPath()); }
@@ -795,9 +795,9 @@ public final class VizGUI implements ComponentListener {
         if (defaultTheme==null) defaultTheme="";
         if (myState==null) return null; // Can only load if there is a VizState loaded
         if (myState.changedSinceLastSave()) {
-            Boolean opt = OurDialog.askSaveDiscardCancel(frame, "The current theme");
-            if (opt==null) return null;
-            if (opt.booleanValue()) if (!saveThemeFile(thmFileName.length()==0 ? null : thmFileName)) return null;
+            char opt = OurDialog.askSaveDiscardCancel(frame, "The current theme");
+            if (opt=='c') return null;
+            if (opt=='s' && !saveThemeFile(thmFileName.length()==0 ? null : thmFileName)) return null;
         }
         File file=OurDialog.askFile(frame, true, defaultTheme, ".thm", ".thm theme files");
         if (file!=null) loadThemeFile(file.getPath());

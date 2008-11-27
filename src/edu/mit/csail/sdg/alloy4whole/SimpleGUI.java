@@ -128,7 +128,6 @@ import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.MailBug;
 import edu.mit.csail.sdg.alloy4.MacUtil;
-import edu.mit.csail.sdg.alloy4.OurAntiAlias;
 import edu.mit.csail.sdg.alloy4.OurBorder;
 import edu.mit.csail.sdg.alloy4.OurCombobox;
 import edu.mit.csail.sdg.alloy4.OurDialog;
@@ -1312,7 +1311,7 @@ public final class SimpleGUI implements ComponentListener {
 
     /** This method toggles the "antialias" checkbox. */
     private Runner doOptAntiAlias() {
-        if (!wrap) { boolean newValue = !AntiAlias.get(); AntiAlias.set(newValue); OurAntiAlias.enableAntiAlias(newValue); }
+        if (!wrap) { boolean newValue = !AntiAlias.get(); AntiAlias.set(newValue); OurTextArea.enableAntiAlias(newValue); }
         return wrapMe();
     }
 
@@ -1896,7 +1895,7 @@ public final class SimpleGUI implements ComponentListener {
         }
 
         // Choose the antiAlias setting
-        OurAntiAlias.enableAntiAlias(AntiAlias.get());
+        OurTextArea.enableAntiAlias(AntiAlias.get());
 
         // Create the message area
         logpane = OurUtil.scrollpane(null);
@@ -1919,7 +1918,7 @@ public final class SimpleGUI implements ComponentListener {
         lefthalf.add(text, BorderLayout.CENTER);
         splitpane = OurUtil.splitpane(JSplitPane.HORIZONTAL_SPLIT, lefthalf, logpane, width/2);
         splitpane.setResizeWeight(0.5D);
-        status = OurUtil.make(OurAntiAlias.label(" "), new Font(fontName, Font.PLAIN, fontSize), Color.BLACK, background);
+        status = OurUtil.make(OurTextArea.label(" "), new Font(fontName, Font.PLAIN, fontSize), Color.BLACK, background);
         status.setBorder(new OurBorder(true,false,false,false));
         all.add(splitpane, BorderLayout.CENTER);
         all.add(status, BorderLayout.SOUTH);

@@ -47,7 +47,7 @@ import javax.swing.text.StyledDocument;
 import javax.swing.text.StyledEditorKit;
 import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
-import edu.mit.csail.sdg.alloy4.OurAntiAlias;
+import edu.mit.csail.sdg.alloy4.OurTextArea;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 
 /** This helper method is used by SimpleGUI; only the AWT Event Thread may call methods in this class. */
@@ -132,7 +132,7 @@ final class SwingLogPanel {
         this.handler = handler;
         this.fontName = fontName;
         this.fontSize = fontSize;
-        this.log = OurUtil.make(OurAntiAlias.pane(), Color.BLACK, background, new EmptyBorder(1,1,1,1), new Font(fontName, Font.PLAIN, fontSize));
+        this.log = OurUtil.make(OurTextArea.pane(), Color.BLACK, background, new EmptyBorder(1,1,1,1), new Font(fontName, Font.PLAIN, fontSize));
         // This customized StyledEditorKit prevents line-wrapping up to 30000 pixels wide.
         // 30000 is a good number; value higher than about 32768 will cause errors.
         this.log.setEditorKit(new StyledEditorKit() {
@@ -190,7 +190,7 @@ final class SwingLogPanel {
         clearError();
         StyledDocument doc = log.getStyledDocument();
         Style linkStyle = doc.addStyle("link", styleRegular);
-        final JLabel label = OurUtil.make(OurAntiAlias.label(link), new Font(fontName, Font.BOLD, fontSize), linkColor);
+        final JLabel label = OurUtil.make(OurTextArea.label(link), new Font(fontName, Font.BOLD, fontSize), linkColor);
         label.setAlignmentY(0.8f);
         label.setMaximumSize(label.getPreferredSize());
         label.addMouseListener(new MouseListener(){

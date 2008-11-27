@@ -29,7 +29,11 @@ import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.util.Map;
+import java.util.WeakHashMap;
 import javax.swing.AbstractAction;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JTextPane;
 import javax.swing.KeyStroke;
 import javax.swing.border.EmptyBorder;
@@ -49,117 +53,160 @@ import javax.swing.text.ViewFactory;
 
 public final class OurTextArea extends JTextPane {
 
-    /** This silences javac's warning about missing serialVersionUID. */
-    private static final long serialVersionUID = 1L;
+   /** This silences javac's warning about missing serialVersionUID. */
+   private static final long serialVersionUID = 1L;
 
-    /** The styled document being displayed. */
-    private final OurTextAreaDocument doc;
+   /** The styled document being displayed. */
+   private final OurTextAreaDocument doc;
 
-    /** Constructs a text area widget. */
-    public OurTextArea(boolean syntaxHighlighting, String text, String fontFamily, int fontSize, int tabSize) {
-        super();
-        OurAntiAlias.register(this);
-        // This customized StyledEditorKit prevents line-wrapping up to 30000 pixels wide.
-        // 30000 is a good number; value higher than about 32768 will cause errors.
-        // Also, it tells the JTextPane to use our syntax-highlighting document object.
-        final ViewFactory defaultFactory = (new StyledEditorKit()).getViewFactory();
-        setEditorKit(new StyledEditorKit() {
-          private static final long serialVersionUID = 1L;
-          @Override public Document createDefaultDocument() { return new OurTextAreaDocument(); }
-          @Override public final ViewFactory getViewFactory() {
-             return new ViewFactory() {
-                public final View create(Element x) {
-                   if (!AbstractDocument.SectionElementName.equals(x.getName())) return defaultFactory.create(x);
-                   return new BoxView(x, View.Y_AXIS) {
-                      @Override public final float getMinimumSpan(int axis) { return super.getPreferredSpan(axis); }
-                      @Override public final void layout(int width, int height) { try {super.layout(30000, height);} catch(Throwable ex) {} }
-                   };
-                }
-             };
-          }
-        });
-        doc = (OurTextAreaDocument) getStyledDocument();
-        doc.do_syntaxHighlighting(this, syntaxHighlighting);
-        doc.do_setFont(this, fontFamily, fontSize);
-        doc.do_setTabSize(this, tabSize);
-        if (text.length()>0) { setText(text); setCaretPosition(0); }
-        doc.do_clearUndo();
-        setBackground(Color.WHITE);
-        setBorder(new EmptyBorder(1, 1, 1, 1));
-        getActionMap().put("alloy_copy", new AbstractAction("alloy_copy") {
-            private static final long serialVersionUID = 1L;
-            public final void actionPerformed(ActionEvent e) { copy(); }
-        });
-        getActionMap().put("alloy_cut", new AbstractAction("alloy_cut") {
-            private static final long serialVersionUID = 1L;
-            public final void actionPerformed(ActionEvent e) { cut(); }
-        });
-        getActionMap().put("alloy_paste", new AbstractAction("alloy_paste") {
-            private static final long serialVersionUID = 1L;
-            public final void actionPerformed(ActionEvent e) { paste(); }
-        });
-        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_MASK), "alloy_copy");
-        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_X, InputEvent.CTRL_MASK), "alloy_cut");
-        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK), "alloy_paste");
-        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, InputEvent.CTRL_MASK), "alloy_copy");
-        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, InputEvent.SHIFT_MASK), "alloy_paste");
-        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, InputEvent.SHIFT_MASK), "alloy_cut");
-    }
+   /** Use anti-alias or not. */
+   private static boolean antiAlias = Util.onMac() || Util.onWindows();
 
-    /** Changes the font for the document. */
-    public void do_setFont(String fontFamily, int fontSize) { if (doc!=null) doc.do_setFont(this, fontFamily, fontSize); }
+   /** Stores a weak-reference set of all objects that need to be redrawn when anti-alias setting changes. */
+   private static WeakHashMap<JComponent, Boolean> map = new WeakHashMap<JComponent, Boolean>();
 
-    /** Changes the tab size for the document. */
-    public void do_setTabSize(int tab) { if (doc!=null) doc.do_setTabSize(this, tab); }
+   /** Changes whether anti-aliasing should be done or not (when this changes, we will automatically repaint all affected components). */
+   public static void enableAntiAlias(boolean enableAntiAlias) {
+      if (Util.onMac() || Util.onWindows()) enableAntiAlias = true; // On Mac and Windows they are already antialiased
+      if (antiAlias == enableAntiAlias) return;
+      antiAlias = enableAntiAlias;
+      for(Map.Entry<JComponent, Boolean> x: map.entrySet()) {
+         JComponent y = x.getKey();
+         if (y!=null) { y.invalidate(); y.repaint(); y.validate(); }
+      }
+   }
 
-    /** Enables or disables syntax highlighting. */
-    public void do_syntaxHighlighting(boolean flag) { if (doc!=null) doc.do_syntaxHighlighting(this, flag); }
+   /** Constructs an antialias-capable JLabel */
+   public static JLabel label(String label) {
+      JLabel ans = new JLabel(label) {
+         private static final long serialVersionUID = 1L;
+         @Override public void paint(Graphics gr) {
+            if (antiAlias && gr instanceof Graphics2D) ((Graphics2D)gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            super.paint(gr);
+         }
+      };
+      map.put(ans, Boolean.TRUE);
+      return ans;
+   }
 
-    /** Implements the core traversal logic in getLineStartOffset, getLineCount, and getLineOfOffset. */
-    private static int do_helper(String text, int action, int target) throws BadLocationException {
-        final int n = text.length();
-        if (action==3) if (target<0 || target>text.length()) throw new BadLocationException("", target);
-        for(int i=0, line=0; i<=n; line++) {
-            // loop invariant #1:  line == the number of lines we've seen already before text[i]
-            // loop invariant #2:  i==0 or text[i-1]=='\n'
-            int j = (i>=n) ? n : text.indexOf('\n',i); if (j<0) j=n; // offset of the end of this line
-            if (action==1 && line==target) return i;
-            if (action==2 && j==n) return line+1;
-            if (action==3 && target>=i && target<=j) return line;
-            i=j+1;
-        }
-        throw new BadLocationException("", target);
-    }
+   /** Constructs an antialias-capable JTextPane */
+   public static JTextPane pane() {
+      JTextPane ans = new JTextPane() {
+         private static final long serialVersionUID = 1L;
+         @Override public void paint(Graphics gr) {
+            if (antiAlias && gr instanceof Graphics2D) ((Graphics2D)gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            super.paint(gr);
+         }
+      };
+      map.put(ans, Boolean.TRUE);
+      return ans;
+   }
 
-    /** Implements JTextArea's {@link javax.swing.JTextArea#getLineStartOffset(int) getLineStartOffset} method. */
-    public int do_getLineStartOffset(int line) throws BadLocationException { return do_helper(getText(), 1, line); }
+   /** Constructs a text area widget. */
+   public OurTextArea(boolean syntaxHighlighting, String text, String fontFamily, int fontSize, int tabSize) {
+      super();
+      // This customized StyledEditorKit prevents line-wrapping up to 30000 pixels wide.
+      // 30000 is a good number; value higher than about 32768 will cause errors.
+      // Also, it tells the JTextPane to use our syntax-highlighting document object.
+      final ViewFactory defaultFactory = (new StyledEditorKit()).getViewFactory();
+      setEditorKit(new StyledEditorKit() {
+         private static final long serialVersionUID = 1L;
+         @Override public Document createDefaultDocument() { return new OurTextAreaDocument(); }
+         @Override public final ViewFactory getViewFactory() {
+            return new ViewFactory() {
+               public final View create(Element x) {
+                  if (!AbstractDocument.SectionElementName.equals(x.getName())) return defaultFactory.create(x);
+                  return new BoxView(x, View.Y_AXIS) {
+                     @Override public final float getMinimumSpan(int axis) { return super.getPreferredSpan(axis); }
+                     @Override public final void layout(int width, int height) { try {super.layout(30000, height);} catch(Throwable ex) {} }
+                  };
+               }
+            };
+         }
+      });
+      doc = (OurTextAreaDocument) getStyledDocument();
+      doc.do_syntaxHighlighting(this, syntaxHighlighting);
+      doc.do_setFont(this, fontFamily, fontSize);
+      doc.do_setTabSize(this, tabSize);
+      if (text.length()>0) { setText(text); setCaretPosition(0); }
+      doc.do_clearUndo();
+      setBackground(Color.WHITE);
+      setBorder(new EmptyBorder(1, 1, 1, 1));
+      getActionMap().put("alloy_copy", new AbstractAction("alloy_copy") {
+         private static final long serialVersionUID = 1L;
+         public final void actionPerformed(ActionEvent e) { copy(); }
+      });
+      getActionMap().put("alloy_cut", new AbstractAction("alloy_cut") {
+         private static final long serialVersionUID = 1L;
+         public final void actionPerformed(ActionEvent e) { cut(); }
+      });
+      getActionMap().put("alloy_paste", new AbstractAction("alloy_paste") {
+         private static final long serialVersionUID = 1L;
+         public final void actionPerformed(ActionEvent e) { paste(); }
+      });
+      getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_MASK), "alloy_copy");
+      getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_X, InputEvent.CTRL_MASK), "alloy_cut");
+      getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK), "alloy_paste");
+      getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, InputEvent.CTRL_MASK), "alloy_copy");
+      getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, InputEvent.SHIFT_MASK), "alloy_paste");
+      getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, InputEvent.SHIFT_MASK), "alloy_cut");
+      map.put(this, Boolean.TRUE);
+   }
 
-    /** Implements JTextArea's {@link javax.swing.JTextArea#getLineCount() getLineCount} method. */
-    public int do_getLineCount() { try {return do_helper(getText(), 2, 0);} catch(BadLocationException ex) {return 0;} }
+   /** Changes the font for the document. */
+   public void do_setFont(String fontFamily, int fontSize) { if (doc!=null) doc.do_setFont(this, fontFamily, fontSize); }
 
-    /** Implements JTextArea's {@link javax.swing.JTextArea#getLineOfOffset(int) getLineOfOffset} method. */
-    public int do_getLineOfOffset(int offset) throws BadLocationException { return do_helper(getText(), 3, offset); }
+   /** Changes the tab size for the document. */
+   public void do_setTabSize(int tab) { if (doc!=null) doc.do_setTabSize(this, tab); }
 
-    /** Returns true if we can perform undo right now. */
-    public boolean do_canUndo() { return doc.do_canUndo(); }
+   /** Enables or disables syntax highlighting. */
+   public void do_syntaxHighlighting(boolean flag) { if (doc!=null) doc.do_syntaxHighlighting(this, flag); }
 
-    /** Returns true if we can perform redo right now. */
-    public boolean do_canRedo() { return doc.do_canRedo(); }
+   /** Implements the core traversal logic in getLineStartOffset, getLineCount, and getLineOfOffset. */
+   private static int do_helper(String text, int action, int target) throws BadLocationException {
+      final int n = text.length();
+      if (action==3) if (target<0 || target>text.length()) throw new BadLocationException("", target);
+      for(int i=0, line=0; i<=n; line++) {
+         // loop invariant #1:  line == the number of lines we've seen already before text[i]
+         // loop invariant #2:  i==0 or text[i-1]=='\n'
+         int j = (i>=n) ? n : text.indexOf('\n',i); if (j<0) j=n; // offset of the end of this line
+         if (action==1 && line==target) return i;
+         if (action==2 && j==n) return line+1;
+         if (action==3 && target>=i && target<=j) return line;
+         i=j+1;
+      }
+      throw new BadLocationException("", target);
+   }
 
-    /** Perform undo if possible. */
-    public void do_undo() { int i = doc.do_undo(); if (i>=0 && i<=getText().length()) setCaretPosition(i); }
+   /** Implements JTextArea's {@link javax.swing.JTextArea#getLineStartOffset(int) getLineStartOffset} method. */
+   public int do_getLineStartOffset(int line) throws BadLocationException { return do_helper(getText(), 1, line); }
 
-    /** Perform redo if possible. */
-    public void do_redo() { int i = doc.do_redo(); if (i>=0 && i<=getText().length()) setCaretPosition(i); }
+   /** Implements JTextArea's {@link javax.swing.JTextArea#getLineCount() getLineCount} method. */
+   public int do_getLineCount() { try {return do_helper(getText(), 2, 0);} catch(BadLocationException ex) {return 0;} }
 
-    /** Clear the undo history. */
-    public void do_clearUndo() { doc.do_clearUndo(); }
+   /** Implements JTextArea's {@link javax.swing.JTextArea#getLineOfOffset(int) getLineOfOffset} method. */
+   public int do_getLineOfOffset(int offset) throws BadLocationException { return do_helper(getText(), 3, offset); }
 
-    /** This method is called by Swing to draw this component. */
-    @Override public void paint(Graphics gr) {
-        if (OurAntiAlias.antiAlias() && gr instanceof Graphics2D) {
-            ((Graphics2D)gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        }
-        super.paint(gr);
-    }
+   /** Returns true if we can perform undo right now. */
+   public boolean do_canUndo() { return doc.do_canUndo(); }
+
+   /** Returns true if we can perform redo right now. */
+   public boolean do_canRedo() { return doc.do_canRedo(); }
+
+   /** Perform undo if possible. */
+   public void do_undo() { int i = doc.do_undo(); if (i>=0 && i<=getText().length()) setCaretPosition(i); }
+
+   /** Perform redo if possible. */
+   public void do_redo() { int i = doc.do_redo(); if (i>=0 && i<=getText().length()) setCaretPosition(i); }
+
+   /** Clear the undo history. */
+   public void do_clearUndo() { doc.do_clearUndo(); }
+
+   /** This method is called by Swing to draw this component. */
+   @Override public void paint(Graphics gr) {
+      if (antiAlias && gr instanceof Graphics2D) {
+         ((Graphics2D)gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+      }
+      super.paint(gr);
+   }
 }

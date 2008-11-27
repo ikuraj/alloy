@@ -167,9 +167,9 @@ public final class MailBug implements UncaughtExceptionHandler {
       for(int n=(trace==null ? 0 : trace.length), i=0; i<n; i++) {
          StackTraceElement elem = trace[i];
          if (!elem.getClassName().startsWith("java."))
-           if (!elem.getClassName().startsWith("javax."))
-              if (!elem.getClassName().startsWith("sun."))
-                 return false;
+            if (!elem.getClassName().startsWith("javax."))
+               if (!elem.getClassName().startsWith("sun."))
+                  return false;
       }
       return true;
    }
@@ -219,30 +219,30 @@ public final class MailBug implements UncaughtExceptionHandler {
       }
       if (latestAlloyVersion > Version.buildNumber()) {
          JOptionPane.showMessageDialog(null, new Object[] {
-            "Sorry. A fatal error has occurred.",
-            " ",
-            "You are running Alloy build#"+Version.buildNumber()+",",
-            "but the most recent is Alloy build#"+latestAlloyVersion+":",
-            "( version "+latestAlloyVersionName+" )",
-            " ",
-            "Please try to upgrade to the newest version",
-            "as the problem may have already been fixed.",
-            " ",
-            "There is no way for Alloy to continue execution, so pressing OK will shut down Alloy."
+               "Sorry. A fatal error has occurred.",
+               " ",
+               "You are running Alloy build#"+Version.buildNumber()+",",
+               "but the most recent is Alloy build#"+latestAlloyVersion+":",
+               "( version "+latestAlloyVersionName+" )",
+               " ",
+               "Please try to upgrade to the newest version",
+               "as the problem may have already been fixed.",
+               " ",
+               "There is no way for Alloy to continue execution, so pressing OK will shut down Alloy."
          }, "Fatal Error", JOptionPane.ERROR_MESSAGE);
       } else {
          if (JOptionPane.showOptionDialog(null, new Object[] {
-            "Sorry. A fatal internal error has occurred.",
-            " ",
-            "You may submit a bug report (via HTTP).",
-            "The error report will include your system",
-            "configuration, but no other information.",
-            " ",
-            "If you'd like to be notified about a fix,",
-            "please describe the problem, and enter your email address.",
-            " ",
-            makeHT("Email:", 5, email, null),
-            makeHT("Problem:", 5, scroll, null)
+               "Sorry. A fatal internal error has occurred.",
+               " ",
+               "You may submit a bug report (via HTTP).",
+               "The error report will include your system",
+               "configuration, but no other information.",
+               " ",
+               "If you'd like to be notified about a fix,",
+               "please describe the problem, and enter your email address.",
+               " ",
+               makeHT("Email:", 5, email, null),
+               makeHT("Problem:", 5, scroll, null)
          }, "Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
          null, new Object[]{yes,no}, no) == JOptionPane.YES_OPTION) { sendCrashReport(thread, ex, email.getText(), problem.getText()); return; }
       }

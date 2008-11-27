@@ -43,71 +43,70 @@ import javax.swing.border.EmptyBorder;
 
 public class OurCombobox extends JComboBox {
 
-    /** This silences javac's warning about missing serialVersionUID. */
-    private static final long serialVersionUID = 1L;
+   /** This silences javac's warning about missing serialVersionUID. */
+   private static final long serialVersionUID = 1L;
 
-    /** This caches a preconstructed JLabel that is used for the rendering of each Combo value. */
-    private final JLabel renderer = OurUtil.label("", Color.BLACK, Color.WHITE, new EmptyBorder(0, 2, 0, 0));
+   /** This caches a preconstructed JLabel that is used for the rendering of each Combo value. */
+   private final JLabel renderer = OurUtil.label("", Color.BLACK, Color.WHITE, new EmptyBorder(0, 2, 0, 0));
 
-    /** Subclass can override this method to provide the custom text for any given value (or "" if no text is needed) */
-    public String do_getText(Object value) { return String.valueOf(value); }
+   /** Subclass can override this method to provide the custom text for any given value (or "" if no text is needed) */
+   public String do_getText(Object value) { return String.valueOf(value); }
 
-    /** Subclass can override this method to provide the custom icon for any given value (or null if no icon is needed) */
-    public Icon do_getIcon(Object value) { return null; }
+   /** Subclass can override this method to provide the custom icon for any given value (or null if no icon is needed) */
+   public Icon do_getIcon(Object value) { return null; }
 
-    /** Subclass can override this method to react upon selection change. */
-    public void do_changed(Object newValue) { }
+   /** Subclass can override this method to react upon selection change. */
+   public void do_changed(Object newValue) { }
 
-    /** This helper method makes a copy of the list, and then optionally prepend null at the beginning of the list. */
-    private static<T> Vector<T> copy (Collection<T> list, boolean addNull) {
-        Vector<T> answer = new Vector<T>(list.size() + (addNull ? 1 : 0));
-        if (addNull) answer.add(null);
-        answer.addAll(list);
-        return answer;
-    }
+   /** This helper method makes a copy of the list, and then optionally prepend null at the beginning of the list. */
+   private static<T> Vector<T> copy (Collection<T> list, boolean addNull) {
+      Vector<T> answer = new Vector<T>(list.size() + (addNull ? 1 : 0));
+      if (addNull) answer.add(null);
+      answer.addAll(list);
+      return answer;
+   }
 
-    /** Constructs a new OurCombobox object.
-     * @param list - the list of allowed values
-     */
-    public OurCombobox (Vector<Object> list)  { this(false, list, 0, 0, null); }
+   /** Constructs a new OurCombobox object.
+    * @param list - the list of allowed values
+    */
+   public OurCombobox (Collection<?> list)  { this(false, list, 0, 0, null); }
 
-    /** Constructs a new OurCombobox object.
-     * @param list - the list of allowed values
-     */
-    public OurCombobox (Object[] list)  { this(false, Util.asList(list), 0, 0, null); }
+   /** Constructs a new OurCombobox object.
+    * @param list - the list of allowed values
+    */
+   public OurCombobox (Object[] list)  { this(false, Util.asList(list), 0, 0, null); }
 
-    /** Constructs a new OurCombobox object.
-     * @param addNull - whether we should prepend null onto the beginning of the list of allowed values
-     * @param list - the list of allowed values
-     * @param width - the width to use (if width==0 && height==0, then we ignore this parameter)
-     * @param height - the height to use (if width==0 && height==0, then we ignore this parameter)
-     * @param initialValue - the initial value to choose in this combo box
-     */
-    public OurCombobox (boolean addNull, Collection<?> list, int width, int height, Object initialValue) {
-        super(copy(list, addNull));
-        setFont(OurUtil.getVizFont());
-        setRenderer(new ListCellRenderer() {
-            public Component getListCellRendererComponent(JList list, Object value, int i, boolean selected, boolean focused) {
-               renderer.setText(do_getText(value));
-               renderer.setIcon(do_getIcon(value));
-               renderer.setBackground(selected ? list.getSelectionBackground() : list.getBackground());
-               renderer.setForeground(selected ? list.getSelectionForeground() : list.getForeground());
-               return renderer;
-            }
-        });
-        if (width>0 && height>0) {
-            if (Util.onWindows() && height>25) height=25; // Otherwise, the height is too high on Windows
-            setPreferredSize(new Dimension(width, height));
-            setMaximumSize(new Dimension(width, height));
-        }
-        if (!Util.onWindows() && !Util.onMac() && width>0 && height>0) {
-            setBorder(new EmptyBorder(4, 3, 4, 0));
-        }
-        if (initialValue!=null) {
-            setSelectedItem(initialValue);
-        }
-        addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) { do_changed(getSelectedItem()); }
-        });
-    }
+   /** Constructs a new OurCombobox object.
+    * @param addNull - whether we should prepend null onto the beginning of the list of allowed values
+    * @param list - the list of allowed values
+    * @param width - the width to use (if width==0 && height==0, then we ignore this parameter)
+    * @param height - the height to use (if width==0 && height==0, then we ignore this parameter)
+    * @param initialValue - if nonnull it is the initial value to choose in this combo box
+    */
+   public OurCombobox (boolean addNull, Collection<?> list, int width, int height, Object initialValue) {
+      super(copy(list, addNull));
+      setFont(OurUtil.getVizFont());
+      setRenderer(new ListCellRenderer() {
+         public Component getListCellRendererComponent(JList list, Object value, int i, boolean selected, boolean focused) {
+            renderer.setText(do_getText(value));
+            renderer.setIcon(do_getIcon(value));
+            renderer.setBackground(selected ? list.getSelectionBackground() : list.getBackground());
+            renderer.setForeground(selected ? list.getSelectionForeground() : list.getForeground());
+            return renderer;
+         }
+      });
+      if (width>0 && height>0) {
+         // Make some platform-specific adjustments which should make the combobox look nicer
+         if (Util.onWindows() && height>25) height=25; // Otherwise, the height is too high on Windows
+         setPreferredSize(new Dimension(width, height));
+         setMaximumSize(new Dimension(width, height));
+         if (!Util.onWindows() && !Util.onMac()) setBorder(new EmptyBorder(4, 3, 4, 0));
+      }
+      if (initialValue!=null) {
+         setSelectedItem(initialValue);
+      }
+      addActionListener(new ActionListener() {
+         public void actionPerformed(ActionEvent e) { do_changed(getSelectedItem()); }
+      });
+   }
 }
