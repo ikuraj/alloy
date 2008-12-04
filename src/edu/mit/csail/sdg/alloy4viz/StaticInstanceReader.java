@@ -89,10 +89,10 @@ public final class StaticInstanceReader {
     private final Map<String,AlloyAtom> string2atom = new LinkedHashMap<String,AlloyAtom>();
 
     /** Create a new AlloyType whose label is unambiguous with any existing one. */
-    private AlloyType makeType(String label, boolean isOne, boolean isAbstract, boolean isBuiltin, boolean isPrivate, boolean isMeta, boolean isLeaf) {
+    private AlloyType makeType(String label, boolean isOne, boolean isAbstract, boolean isBuiltin, boolean isPrivate, boolean isMeta, boolean isEnum) {
         while(label.equals(Sig.UNIV.label) || label.equals(Sig.SIGINT.label) || label.equals(Sig.SEQIDX.label) || label.equals(Sig.STRING.label)) label=label+"'";
         while(true) {
-            AlloyType ans = new AlloyType(label, isOne, isAbstract, isBuiltin, isPrivate, isMeta, isLeaf);
+            AlloyType ans = new AlloyType(label, isOne, isAbstract, isBuiltin, isPrivate, isMeta, isEnum);
             if (!sig2type.values().contains(ans)) return ans;
             label=label+"'";
         }
@@ -123,7 +123,7 @@ public final class StaticInstanceReader {
         if (s==Sig.NONE) throw new ErrorFatal("Unexpected sig \"none\" encountered.");
         AlloyType ans = sig2type.get(s);
         if (ans == null) {
-           ans = makeType(s.label, s.isOne!=null, s.isAbstract!=null, false, s.isPrivate!=null, s.isMeta!=null, s.isLeaf());
+           ans = makeType(s.label, s.isOne!=null, s.isAbstract!=null, false, s.isPrivate!=null, s.isMeta!=null, s.isEnum!=null);
            sig2type.put(s, ans);
            if (s.parent!=Sig.UNIV) ts.put(ans, sig(s.parent));
         }
@@ -139,7 +139,7 @@ public final class StaticInstanceReader {
            else if (s==Sig.SIGINT) type=AlloyType.INT;
            else if (s==Sig.SEQIDX) type=AlloyType.SEQINT;
            else if (s==Sig.STRING) type=AlloyType.STRING;
-           else type = makeType(s.label, s.isOne!=null, s.isAbstract!=null, false, s.isPrivate!=null, s.isMeta!=null, s.isLeaf());
+           else type = makeType(s.label, s.isOne!=null, s.isAbstract!=null, false, s.isPrivate!=null, s.isMeta!=null, s.isEnum!=null);
         sig2type.put(s, type);
         AlloyAtom atom = new AlloyAtom(type, (type==AlloyType.SEQINT ? Integer.MIN_VALUE : Integer.MAX_VALUE), s.label);
         atom2sets.put(atom, new LinkedHashSet<AlloySet>());
@@ -158,7 +158,7 @@ public final class StaticInstanceReader {
         AlloyAtom atom;
         AlloyType type = sig2type.get(s);
         if (type != null) return;
-        type = makeType(s.label, s.isOne!=null, s.isAbstract!=null, false, s.isPrivate!=null, s.isMeta!=null, s.isLeaf());
+        type = makeType(s.label, s.isOne!=null, s.isAbstract!=null, false, s.isPrivate!=null, s.isMeta!=null, s.isEnum!=null);
         atom = new AlloyAtom(type, Integer.MAX_VALUE, s.label);
         atom2sets.put(atom, new LinkedHashSet<AlloySet>());
         sig2atom.put(s, atom);

@@ -216,8 +216,8 @@ public final class OurDialog {
       for(Object obj: objects) if (obj instanceof JTextField || obj instanceof JCheckBox) {
          ((JComponent)obj).addKeyListener(new KeyListener() {
             public void keyPressed(KeyEvent e)  { if (e.getKeyCode()==KeyEvent.VK_ENTER) { pane.setValue("Ok"); dialog.dispose(); } }
-            public void keyTyped(KeyEvent e)    { }
             public void keyReleased(KeyEvent e) { }
+            public void keyTyped(KeyEvent e)    { }
          });
       }
       dialog.setVisible(true); // This method blocks until the user either chooses something or cancels the dialog.

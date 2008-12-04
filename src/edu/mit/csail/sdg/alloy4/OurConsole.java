@@ -162,14 +162,14 @@ public final class OurConsole extends JScrollPane {
 
    /** Performs "page up" in the JScrollPane. */
    private void do_pageup() {
-      JScrollBar b = getVerticalScrollBar();
-      b.setValue(b.getValue() - 200);
+      JScrollBar bar = getVerticalScrollBar();
+      bar.setValue(bar.getValue() - 200);
    }
 
    /** Performs "page down" in the JScrollPane. */
    private void do_pagedown() {
-      JScrollBar b = getVerticalScrollBar();
-      b.setValue(b.getValue() + 200);
+      JScrollBar bar = getVerticalScrollBar();
+      bar.setValue(bar.getValue() + 200);
    }
 
    /** Insert the given text into the given location and with the given style if where>=0; append the text if where<0. */

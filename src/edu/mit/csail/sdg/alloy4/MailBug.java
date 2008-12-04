@@ -43,7 +43,6 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
-import static edu.mit.csail.sdg.alloy4.OurUtil.*;
 
 /** This class asks the user for permission to email a bug report when an uncaught exception occurs. */
 
@@ -138,11 +137,11 @@ public final class MailBug implements UncaughtExceptionHandler {
    private static void sendCrashReport (Thread thread, Throwable ex, String email, String problem) {
       String report = prepareCrashReport(thread, ex, email, problem);
       try {
-         int w = getScreenWidth(), h = getScreenHeight();
+         int w = OurUtil.getScreenWidth(), h = OurUtil.getScreenHeight();
          JFrame statusWindow = new JFrame("Sending the bug report... please wait...");
-         JButton done = button("Close", Runner.createExit(1));
-         JTextArea status = textarea("Sending the bug report... please wait...", 10, 40, false, true, new EmptyBorder(2,2,2,2));
-         JScrollPane statusPane = scrollpane(status);
+         JButton done = OurUtil.button("Close", Runner.createExit(1));
+         JTextArea status = OurUtil.textarea("Sending the bug report... please wait...", 10, 40, false, true, new EmptyBorder(2,2,2,2));
+         JScrollPane statusPane = OurUtil.scrollpane(status);
          statusWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
          statusWindow.setBackground(Color.LIGHT_GRAY);
          statusWindow.getContentPane().setLayout(new BorderLayout());
@@ -188,9 +187,9 @@ public final class MailBug implements UncaughtExceptionHandler {
       }
       final String yes = "Send the Bug Report";
       final String no = "Don't Send the Bug Report";
-      final JTextField email = textfield("", 20, new LineBorder(Color.DARK_GRAY));
-      final JTextArea problem = textarea("", 50, 50, true, false, empty);
-      final JScrollPane scroll = scrollpane(problem, new LineBorder(Color.DARK_GRAY), new Dimension(300, 200));
+      final JTextField email = OurUtil.textfield("", 20, new LineBorder(Color.DARK_GRAY));
+      final JTextArea problem = OurUtil.textarea("", 50, 50, true, false, OurUtil.empty);
+      final JScrollPane scroll = OurUtil.scrollpane(problem, new LineBorder(Color.DARK_GRAY), new Dimension(300, 200));
       for(Throwable ex2=ex; ex2!=null; ex2=ex2.getCause()) {
          if (ex2 instanceof StackOverflowError) {
             JOptionPane.showMessageDialog(null, new Object[] {
@@ -241,8 +240,8 @@ public final class MailBug implements UncaughtExceptionHandler {
                "If you'd like to be notified about a fix,",
                "please describe the problem, and enter your email address.",
                " ",
-               makeHT("Email:", 5, email, null),
-               makeHT("Problem:", 5, scroll, null)
+               OurUtil.makeHT("Email:", 5, email, null),
+               OurUtil.makeHT("Problem:", 5, scroll, null)
          }, "Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
          null, new Object[]{yes,no}, no) == JOptionPane.YES_OPTION) { sendCrashReport(thread, ex, email.getText(), problem.getText()); return; }
       }

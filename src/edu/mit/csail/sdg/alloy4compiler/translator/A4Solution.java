@@ -780,7 +780,6 @@ public final class A4Solution {
         String signame = s.label;
         if (signame.startsWith("this/")) signame=signame.substring(5);
         signame = un.make(signame);
-        if (list.size()==1 && s.isOne!=null) { frame.atom2name.put(list.get(0).atom(0), signame); return; }
         StringBuilder sb = new StringBuilder();
         int i=0;
         for(Tuple t:list) {

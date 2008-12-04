@@ -98,8 +98,8 @@ public final strictfp class OurPDFWriter {
    public OurPDFWriter(String filename, int dpi, double scale) throws IOException {
       boolean ok = false;
       if (dpi<50 || dpi>3000) throw new IllegalArgumentException("The DPI must be between 50 and 3000");
-      width = dpi*8L + (dpi/2L); // "8.5 inch"
-      height = dpi*11L;          // "11 inch"
+      width = dpi*8 + (dpi/2); // "8.5 inches"
+      height = dpi*11;         // "11 inches"
       try {
          // Write %PDF-1.3, followed by a non-ASCII comment to force the PDF into binary mode
          out = new BufferedOutputStream(new FileOutputStream(filename));
@@ -142,7 +142,7 @@ public final strictfp class OurPDFWriter {
    private OurPDFWriter writes(double x) {
       // These extreme values shouldn't happen, but we want to protect against them
       x = x * 1000000;
-      if (Double.isNaN(x)) return write("0 ");
+      if (Double.isNaN(x))             return write("0 ");
       if (x==Double.POSITIVE_INFINITY) return write("32767 ");  // this is the maximum requirement stated in PDF Spec 1.3
       if (x==Double.NEGATIVE_INFINITY) return write("-32767 "); // this is the minimum requirement stated in PDF Spec 1.3
       // Now, regular doubles... we only want up to 6 digits after the decimal point

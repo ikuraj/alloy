@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4compiler.ast.Attr;
 import edu.mit.csail.sdg.alloy4compiler.ast.Decl;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
@@ -50,16 +51,16 @@ public final class ExampleUsingTheAPI {
         opt.solver = A4Options.SatSolver.SAT4J;
 
         // abstract sig A {}
-        PrimSig A = new PrimSig(UNIV, "A", true, false, false, false, false);
+        PrimSig A = new PrimSig(null, UNIV, "A", Attr.ABSTRACT);
 
         // sig B {}
-        PrimSig B = new PrimSig(UNIV, "B", false, false, false, false, false);
+        PrimSig B = new PrimSig(null, UNIV, "B");
 
         // one sig A1 extends A {}
-        PrimSig A1 = new PrimSig(A, "A1", false, false, true, false, false);
+        PrimSig A1 = new PrimSig(null, A, "A1", Attr.ONE);
 
         // one sig A2 extends A {}
-        PrimSig A2 = new PrimSig(A, "A2", false, false, true, false, false);
+        PrimSig A2 = new PrimSig(null, A, "A2", Attr.ONE);
 
         // A { f: B lone->lone B }
         Expr f = A.addField("f", B.lone_arrow_lone(B));

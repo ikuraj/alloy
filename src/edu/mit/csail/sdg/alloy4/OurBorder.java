@@ -22,8 +22,8 @@
 
 package edu.mit.csail.sdg.alloy4;
 
-import java.awt.Component;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Insets;
 import java.awt.Graphics;
 import javax.swing.border.Border;
@@ -90,5 +90,5 @@ public final class OurBorder implements Border {
    public Insets getBorderInsets (Component c)  { return new Insets(top!=null?1:0, left!=null?1:0, bottom!=null?1:0, right!=null?1:0); }
 
    /** This method is called by Swing to find out whether this border object needs to fill in its own background. */
-   public boolean isBorderOpaque ()  { return true; }
+   public boolean isBorderOpaque()  { return true; }
 }

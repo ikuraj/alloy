@@ -47,14 +47,14 @@ public final class AlloyType extends AlloyNodeElement {
     public static final AlloyType SET=new AlloyType("set", false, false, false, false, false, false);
 
     /** Constructs an AlloyType object with that name. */
-    public AlloyType(String name, boolean isOne, boolean isAbstract, boolean isBuiltin, boolean isPrivate, boolean isMeta, boolean isLeaf) {
+    public AlloyType(String name, boolean isOne, boolean isAbstract, boolean isBuiltin, boolean isPrivate, boolean isMeta, boolean isEnum) {
         super(name);
         this.isOne = isOne;
         this.isAbstract = isAbstract;
         this.isBuiltin = isBuiltin;
         this.isPrivate = isPrivate;
         this.isMeta = isMeta;
-        this.isLeaf = isLeaf;
+        this.isEnum = isEnum;
     }
 
     /** Records whether this sig is known to be "one"; NOTE: this value is NOT USED during equals() comparison. */
@@ -72,8 +72,8 @@ public final class AlloyType extends AlloyNodeElement {
     /** Records whether this sig is known to be "meta"; NOTE: this value is NOT USED during equals() comparison. */
     public final boolean isMeta;
 
-    /** Records whether this sig is known to be "leaf"; NOTE: this value is NOT USED during equals() comparison. */
-    public final boolean isLeaf;
+    /** Records whether this sig is known to be "enum"; NOTE: this value is NOT USED during equals() comparison. */
+    public final boolean isEnum;
 
     /** When comparing two AlloyType objects, we compare their names.
      * <br> We guarantee x.equals(y) iff x.compareTo(y)==0

@@ -45,6 +45,7 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4compiler.ast.Attr;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
@@ -131,14 +132,14 @@ public final class A4SolutionReader {
         if (node==null) throw new IOException("Unknown SigID "+id+" encountered.");
         if (!node.is("sig")) throw new IOException("ID "+id+" is not a sig.");
         String label   = label(node);
-        Pos isAbstract = yes(node,"abstract") ? Pos.UNKNOWN : null;
-        Pos isOne      = yes(node,"one")      ? Pos.UNKNOWN : null;
-        Pos isLone     = yes(node,"lone")     ? Pos.UNKNOWN : null;
-        Pos isSome     = yes(node,"some")     ? Pos.UNKNOWN : null;
-        Pos isPrivate  = yes(node,"private")  ? Pos.UNKNOWN : null;
-        Pos isMeta     = yes(node,"meta")     ? Pos.UNKNOWN : null;
-        Pos isExact    = yes(node,"exact")    ? Pos.UNKNOWN : null;
-        boolean isLeaf = yes(node,"leaf");
+        Attr isAbstract = yes(node,"abstract") ? Attr.ABSTRACT : null;
+        Attr isOne      = yes(node,"one")      ? Attr.ONE      : null;
+        Attr isLone     = yes(node,"lone")     ? Attr.LONE     : null;
+        Attr isSome     = yes(node,"some")     ? Attr.SOME     : null;
+        Attr isPrivate  = yes(node,"private")  ? Attr.PRIVATE  : null;
+        Attr isMeta     = yes(node,"meta")     ? Attr.META     : null;
+        Attr isEnum     = yes(node,"enum")     ? Attr.ENUM     : null;
+        Attr isExact    = yes(node,"exact")    ? Attr.EXACT    : null;
         if (yes(node,"builtin")) {
            if (label.equals(UNIV.label))   { id2sig.put(id, UNIV);   return UNIV;   }
            if (label.equals(SIGINT.label)) { id2sig.put(id, SIGINT); return SIGINT; }
@@ -152,8 +153,8 @@ public final class A4SolutionReader {
         for(XMLNode sub:node) {
            if (sub.is("atom")) { ts.add(factory.tuple(sub.getAttribute("label"))); continue; }
            if (!sub.is("type")) continue;
-           Sig parent=parseSig(sub.getAttribute("ID"), depth+1);
-           if (parents==null) parents=new ArrayList<Sig>();
+           Sig parent = parseSig(sub.getAttribute("ID"), depth+1);
+           if (parents==null) parents = new ArrayList<Sig>();
            parents.add(parent);
         }
         if (parents==null) {
@@ -164,7 +165,7 @@ public final class A4SolutionReader {
               if (choice instanceof PrimSig && parent==((PrimSig)choice).parent && label(((Sig)choice).label).equals(label))
                  { ans=(Sig)choice; choices.remove(choice); break; }
            if (ans==null) {
-              ans = new PrimSig(Pos.UNKNOWN, (PrimSig)parent, label, isAbstract, isLone, isOne, isSome, null, isPrivate, isMeta, null, isLeaf);
+              ans = new PrimSig(Pos.UNKNOWN, (PrimSig)parent, label, isAbstract, isLone, isOne, isSome, isPrivate, isMeta, isEnum);
               allsigs.add(ans);
            }
         } else {
@@ -172,12 +173,20 @@ public final class A4SolutionReader {
               if (choice instanceof SubsetSig && label(((Sig)choice).label).equals(label) && sameset(parents, ((SubsetSig)choice).parents))
                  { ans=(Sig)choice; choices.remove(choice); break; }
            if (ans==null) {
-              ans = new SubsetSig(Pos.UNKNOWN, parents, label, isExact!=null, Pos.UNKNOWN, isLone, isOne, isSome, isPrivate, isMeta);
+              ans = new SubsetSig(Pos.UNKNOWN, parents, label, isExact, isLone, isOne, isSome, isPrivate, isMeta);
               allsigs.add(ans);
            }
         }
         id2sig.put(id, ans);
         expr2ts.put(ans, ts);
+        if (ans instanceof PrimSig) {
+           // Add the atoms in this SIG into all parent sigs
+           for(PrimSig ans2 = ((PrimSig)ans).parent; ans2!=null && !ans2.builtin; ans2 = ans2.parent) {
+              TupleSet ts2 = expr2ts.get(ans2);
+              if (ts2==null) ts2 = ts.clone(); else { ts2 = ts2.clone(); ts2.addAll(ts); }
+              expr2ts.put(ans2, ts2);
+           }
+        }
         return ans;
     }
 

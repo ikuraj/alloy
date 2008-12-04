@@ -77,7 +77,7 @@ public abstract class OurCheckbox extends JPanel {
       box.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent e) {
             Icon icon = do_action();
-            if (icon!=null && icon!=box.getIcon()) box.setIcon(icon);
+            if (icon != null && icon != box.getIcon()) box.setIcon(icon);
          }
       });
       box.setMaximumSize(box.getPreferredSize());
@@ -92,14 +92,14 @@ public abstract class OurCheckbox extends JPanel {
 
    /** This method is called by Swing to enable/disable a component. */
    @Override public final void setEnabled(boolean enabled) {
-      if (box!=null) box.setEnabled(enabled);
-      if (jlabel!=null) jlabel.setEnabled(enabled);
+      if (box != null) box.setEnabled(enabled);
+      if (jlabel != null) jlabel.setEnabled(enabled);
    }
 
    /** This method is called by Swing to change its background color. */
    @Override public final void setBackground(Color color) {
       super.setBackground(color);
-      if (box!=null) box.setBackground(color);
-      if (jlabel!=null) jlabel.setBackground(color);
+      if (box != null) box.setBackground(color);
+      if (jlabel != null) jlabel.setBackground(color);
    }
 }

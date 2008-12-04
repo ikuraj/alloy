@@ -24,6 +24,7 @@ import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.Version;
+import edu.mit.csail.sdg.alloy4compiler.ast.Attr.AttrType;
 import edu.mit.csail.sdg.alloy4compiler.ast.CommandScope;
 import edu.mit.csail.sdg.alloy4compiler.ast.Decl;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
@@ -20321,7 +20322,12 @@ class CUP$CompParser$actions {
    if (e==null) e = ExprConstant.Op.TRUE.make(o, 0);
    ExprVar cc = (c!=null && c.size()>0) ? c.remove(c.size()-1) : null;
    for(ExprVar bb:b) {
-      parser.alloymodule.addSig(null, bb.pos.merge(e==null ? o : e.span()), bb.label, a.get(0), a.get(1), a.get(2), a.get(3), a.get(4), null, cc, c, d, o, e);
+      parser.alloymodule.addSig(bb.pos.merge(e==null ? o : e.span()), bb.label, cc, c, d, e,
+         AttrType.ABSTRACT.makenull(a.get(0)),
+         AttrType.LONE    .makenull(a.get(1)),
+         AttrType.ONE     .makenull(a.get(2)),
+         AttrType.SOME    .makenull(a.get(3)),
+         AttrType.PRIVATE .makenull(a.get(4)));
    }
 
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Sig",60, RESULT);
@@ -20745,7 +20751,7 @@ class CUP$CompParser$actions {
    Pos p = a.pos.merge(b);
    if (a.endingScope>a.startingScope) throw new ErrorSyntax(p, "Cannot specify a growing scope for \"seq\"");
    if (a.isExact) throw new ErrorSyntax(p, "The exactly keyword is redundant here since the number of sequence index has to be exact.");
-   RESULT = new CommandScope(p, new PrimSig(p, "seq"), a.isExact, a.startingScope, a.startingScope, 1);
+   RESULT = new CommandScope(p, new PrimSig(p, null, "seq"), a.isExact, a.startingScope, a.startingScope, 1);
 
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Typescope",70, RESULT);
             }
@@ -20761,7 +20767,7 @@ class CUP$CompParser$actions {
    Pos p = a.pos.merge(b);
    if (a.endingScope>a.startingScope) throw new ErrorSyntax(p, "Cannot specify a growing scope for \"int\"");
    if (a.isExact) throw new ErrorSyntax(p, "The exactly keyword is redundant here since the integer bitwidth must be exact.");
-   RESULT = new CommandScope(p, new PrimSig(p, "int"), a.isExact, a.startingScope, a.startingScope, 1);
+   RESULT = new CommandScope(p, new PrimSig(p, null, "int"), a.isExact, a.startingScope, a.startingScope, 1);
 
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Typescope",70, RESULT);
             }
@@ -20775,7 +20781,7 @@ class CUP$CompParser$actions {
         ExprVar b = (ExprVar)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
 
    nod(b);
-   RESULT = new CommandScope(a.pos.merge(b.pos), new PrimSig(a.pos.merge(b.pos), b.label), a.isExact, a.startingScope, a.endingScope, a.increment);
+   RESULT = new CommandScope(a.pos.merge(b.pos), new PrimSig(a.pos.merge(b.pos), null, b.label), a.isExact, a.startingScope, a.endingScope, a.increment);
 
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Typescope",70, RESULT);
             }
@@ -20827,7 +20833,7 @@ class CUP$CompParser$actions {
               List<CommandScope> RESULT =null;
         ExprConstant a = (ExprConstant)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         List<CommandScope> b = (List<CommandScope>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=b;                                  b.add(new CommandScope(a.pos, new PrimSig(a.pos, "univ"), true, a.num, a.num, 1));
+         RESULT=b;                                  b.add(new CommandScope(a.pos, new PrimSig(a.pos, null, "univ"), true, a.num, a.num, 1));
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Scope",59, RESULT);
             }
           return CUP$CompParser$result;
@@ -20837,7 +20843,7 @@ class CUP$CompParser$actions {
             {
               List<CommandScope> RESULT =null;
         ExprConstant a = (ExprConstant)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=new ArrayList<CommandScope>(); RESULT.add(new CommandScope(a.pos, new PrimSig(a.pos, "univ"), true, a.num, a.num, 1));
+         RESULT=new ArrayList<CommandScope>(); RESULT.add(new CommandScope(a.pos, new PrimSig(a.pos, null, "univ"), true, a.num, a.num, 1));
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Scope",59, RESULT);
             }
           return CUP$CompParser$result;

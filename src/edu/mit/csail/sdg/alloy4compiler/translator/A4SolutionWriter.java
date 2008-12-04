@@ -119,9 +119,14 @@ public final class A4SolutionWriter {
     }
 
     /** Write the given Sig. */
-    private void writesig(final Sig x) throws Err {
-       if (x==Sig.NONE) return; // should not happen, but we test for it anyway
-       if (sol==null && x.isMeta!=null) return; // When writing the metamodel, skip the metamodel sigs!
+    private A4TupleSet writesig(final Sig x) throws Err {
+       A4TupleSet ts = null, ts2 = null;
+       if (x==Sig.NONE) return null; // should not happen, but we test for it anyway
+       if (sol==null && x.isMeta!=null) return null; // When writing the metamodel, skip the metamodel sigs!
+       if (x instanceof PrimSig) for(final PrimSig sub:children((PrimSig)x)) {
+          A4TupleSet ts3 = writesig(sub);
+          if (ts2==null) ts2 = ts3; else ts2 = ts2.plus(ts3);
+       }
        if (rep!=null) rep.write(x);
        Util.encodeXMLs(out, "\n<sig label=\"", label(x.label), "\" ID=\"", map(x));
        if (x instanceof PrimSig && x!=Sig.UNIV) Util.encodeXMLs(out, "\" parentID=\"", map(((PrimSig)x).parent));
@@ -133,17 +138,20 @@ public final class A4SolutionWriter {
        if (x.isPrivate!=null) out.print("\" private=\"yes");
        if (x.isMeta!=null) out.print("\" meta=\"yes");
        if (x instanceof SubsetSig && ((SubsetSig)x).exact) out.print("\" exact=\"yes");
-       if (x.isLeaf()) out.print("\" leaf=\"yes");
+       if (x.isEnum!=null) out.print("\" enum=\"yes");
        out.print("\">\n");
        try {
-           if (sol!=null) for(A4Tuple t: (A4TupleSet)(sol.eval(x)))  Util.encodeXMLs(out, "   <atom label=\"", t.atom(0), "\"/>\n");
+           if (sol!=null && x!=Sig.UNIV && x!=Sig.SIGINT && x!=Sig.SEQIDX) {
+              ts = (A4TupleSet)(sol.eval(x));
+              for(A4Tuple t: ts.minus(ts2))  Util.encodeXMLs(out, "   <atom label=\"", t.atom(0), "\"/>\n");
+           }
        } catch(Throwable ex) {
-           throw new ErrorFatal("Error evaluating sig "+x.label, ex);
+           throw new ErrorFatal("Error evaluating sig " + x.label, ex);
        }
        if (x instanceof SubsetSig) for(Sig p:((SubsetSig)x).parents) Util.encodeXMLs(out, "   <type ID=\"", map(p), "\"/>\n");
        out.print("</sig>\n");
        for(Field field: x.getFields()) writeField(field);
-       if (x instanceof PrimSig) for(final PrimSig sub:children((PrimSig)x)) writesig(sub);
+       return ts;
     }
 
     /** Write the given Field. */

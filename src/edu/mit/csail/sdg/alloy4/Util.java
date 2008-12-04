@@ -126,6 +126,15 @@ public final class Util {
         return ans.makeConst();
     }
 
+    /** Copy the input array, append "element" to it, then return the result as a new array. */
+    @SuppressWarnings("unchecked")
+    public static<T> T[] append(T[] list, T element) {
+       T[] ans = (T[]) java.lang.reflect.Array.newInstance(list.getClass().getComponentType(), list.length+1);
+       System.arraycopy(list, 0, ans, 0, list.length);
+       ans[ans.length-1] = element;
+       return ans;
+    }
+
     /** Copy the input list, prepend "element" to it, then return the result as an unmodifiable list. */
     public static<T> ConstList<T> prepend(List<T> list, T element) {
         TempList<T> ans = new TempList<T>(list.size()+1);

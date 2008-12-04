@@ -75,8 +75,24 @@ public final class A4TupleSet implements Iterable<A4Tuple> {
         return new A4TupleSet(tuples.product(that.tuples), sol);
     }
 
-    /** Construct a new tupleset as the subtraction of this and that; this and that must be come from the same solution. */
+    /** Construct a new tupleset as the union of this and that; this and that must be come from the same solution.
+     * Note: if that==null, then the method returns this A4TupleSet as-is. */
+    public A4TupleSet plus(A4TupleSet that) throws ErrorAPI {
+        if (that==null) return this;
+        if (sol != that.sol) throw new ErrorAPI("A4TupleSet.plus() requires 2 tuplesets from the same A4Solution.");
+        if (arity() != that.arity()) throw new ErrorAPI("A4TupleSet.plus() requires 2 tuplesets with the same arity.");
+        if (this==that || tuples.size()==0) return that; else if (that.tuples.size()==0) return this; // special short cut
+        TupleSet ts = tuples.clone();
+        ts.addAll(that.tuples);
+        if (tuples.size()==ts.size()) return this;
+        if (that.tuples.size()==ts.size()) return that;
+        return new A4TupleSet(ts, sol);
+    }
+
+    /** Construct a new tupleset as the subtraction of this and that; this and that must be come from the same solution.
+     * Note: if that==null, then the method returns this A4TupleSet as-is. */
     public A4TupleSet minus(A4TupleSet that) throws ErrorAPI {
+        if (that==null) return this;
         if (sol != that.sol) throw new ErrorAPI("A4TupleSet.minus() requires 2 tuplesets from the same A4Solution.");
         if (arity() != that.arity()) throw new ErrorAPI("A4TupleSet.minus() requires 2 tuplesets with the same arity.");
         if (tuples.size()==0 || that.tuples.size()==0) return this; // special short cut

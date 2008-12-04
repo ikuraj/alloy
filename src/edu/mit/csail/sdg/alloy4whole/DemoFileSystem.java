@@ -26,6 +26,7 @@ import static edu.mit.csail.sdg.alloy4.A4Reporter.NOP;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import edu.mit.csail.sdg.alloy4.Err;
+import edu.mit.csail.sdg.alloy4compiler.ast.Attr;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Decl;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
@@ -47,13 +48,13 @@ public class DemoFileSystem {
     Set<Sig> sigs = new LinkedHashSet<Sig>();
 
     PrimSig makeSig(String name, boolean isAbstract, boolean isOne) throws Err {
-        PrimSig ans = new PrimSig(null, name, isAbstract, false, isOne, false, false);
+        PrimSig ans = new PrimSig(null, null, name, (isAbstract ? Attr.ABSTRACT : null), (isOne ? Attr.ONE : null));
         sigs.add(ans);
         return ans;
     }
 
     PrimSig makeSig(PrimSig parent, String name, boolean isAbstract, boolean isOne) throws Err {
-        PrimSig ans = new PrimSig(parent, name, isAbstract, false, isOne, false, false);
+        PrimSig ans = new PrimSig(null, parent, name, (isAbstract ? Attr.ABSTRACT : null), (isOne ? Attr.ONE : null));
         sigs.add(ans);
         return ans;
     }
