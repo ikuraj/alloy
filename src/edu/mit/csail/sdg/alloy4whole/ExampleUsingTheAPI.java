@@ -51,16 +51,16 @@ public final class ExampleUsingTheAPI {
         opt.solver = A4Options.SatSolver.SAT4J;
 
         // abstract sig A {}
-        PrimSig A = new PrimSig(null, UNIV, "A", Attr.ABSTRACT);
+        PrimSig A = new PrimSig("A", Attr.ABSTRACT);
 
         // sig B {}
-        PrimSig B = new PrimSig(null, UNIV, "B");
+        PrimSig B = new PrimSig("B");
 
         // one sig A1 extends A {}
-        PrimSig A1 = new PrimSig(null, A, "A1", Attr.ONE);
+        PrimSig A1 = new PrimSig("A1", A, Attr.ONE);
 
         // one sig A2 extends A {}
-        PrimSig A2 = new PrimSig(null, A, "A2", Attr.ONE);
+        PrimSig A2 = new PrimSig("A2", A, Attr.ONE);
 
         // A { f: B lone->lone B }
         Expr f = A.addField("f", B.lone_arrow_lone(B));

@@ -24,44 +24,47 @@ package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import edu.mit.csail.sdg.alloy4.Pos;
 
-/** This class represents attributes that can be associated with Signatures and some other AST objects. */
+/** Immutable; represents attributes that can be associated with Signatures and some other AST objects. */
 
 public final class Attr {
 
-   /** This represents the types of attributes. */
+   /** This class contains all possible attribute types. */
    public enum AttrType {
 
-      /** ABSTRACT. If a PrimSig is abstract, it is equal to the union of its subsigs. */
+      /** WHERE; if a Sig has a WHERE attribute, it defines where the sig was declared in the user model. */
+      WHERE("where"),
+
+      /** ABSTRACT; if a PrimSig is abstract, it is equal to the union of its subsigs. */
       ABSTRACT("abstract"),
 
-      /** SOME. If a Sig is some, it has at least one atom. */
+      /** SOME; if a Sig is some, it has at least one atom. */
       SOME("some"),
 
-      /** ONE. If a Sig is one, it has exactly one atom. */
+      /** ONE; if a Sig is one, it has exactly one atom. */
       ONE("one"),
 
-      /** LONE. If a Sig is lone, it has at most one atom. */
+      /** LONE; if a Sig is lone, it has at most one atom. */
       LONE("lone"),
 
-      /** EXACT. If a SubsetSig is exact, it is equal to the union of its parents. */
+      /** EXACT; if a SubsetSig is exact, it is equal to the union of its parents. */
       EXACT("exact"),
 
-      /** SUBSIG. Every PrimSig (including the builtin sigs) has the SUBSIG attribute set, and the SUBSET attribute unset. */
+      /** SUBSIG; every PrimSig (including the builtin sigs) has the SUBSIG attribute set, and the SUBSET attribute unset. */
       SUBSIG("subsig"),
 
-      /** SUBSET. Every SubsetSig has the SUBSET attribute set, and the SUBSIG attribute unset. */
+      /** SUBSET; every SubsetSig has the SUBSET attribute set, and the SUBSIG attribute unset. */
       SUBSET("subset"),
 
-      /** META. If a Sig has the META attribute, it means it is a META atom corresponding to some real signature or field. */
+      /** META; if a Sig has the META attribute, it means it is a META atom corresponding to some real signature or field. */
       META("meta"),
 
-      /** PRIVATE. If a Sig has the PRIVATE attribute, it means its label is private within the same module. */
+      /** PRIVATE; if a Sig has the PRIVATE attribute, it means its label is private within the same module. */
       PRIVATE("private"),
 
-      /** BUILTIN. Every builtin Sig has the BUILTIN attribute, and every non-builtin Sig does not. */
+      /** BUILTIN; every builtin Sig has the BUILTIN attribute, and every non-builtin Sig does not. */
       BUILTIN("builtin"),
 
-      /** ENUM. If a PrimSig has the ENUM attribute, it is toplevel and abstract and has only singleton children. */
+      /** ENUM; if a PrimSig has the ENUM attribute, it is toplevel and abstract and has only singleton children. */
       ENUM("enum");
 
       /** The label for this attribute type. */
@@ -70,14 +73,21 @@ public final class Attr {
       /** Constructor for this attribute type. */
       private AttrType(String label) { this.label = label; }
 
-      /** {@inheritDoc} */
-      @Override public final String toString() { return label; }
-
       /** Construct an attribute of this type with this position; if pos==null, it is treated as Pos.UNKNOWN. */
       public final Attr make(Pos pos) { return new Attr(this, pos); }
 
       /** Construct an attribute of this type with this position; if pos==null, this method returns null. */
       public final Attr makenull(Pos pos) { return pos==null ? null : new Attr(this, pos); }
+
+      /** Returns the combined position for all Attribute of this type in the given array; null entries in the collection are ignored; if none are found we return null. */
+      public Pos find(Attr... attributes) {
+         Pos p = null;
+         if (attributes!=null) for(Attr a: attributes) if (a!=null && a.type==this) p = a.pos.merge(p);
+         return p;
+      }
+
+      /** {@inheritDoc} */
+      @Override public final String toString() { return label; }
    }
 
    /** The type of this attribute. */
@@ -86,37 +96,37 @@ public final class Attr {
    /** The position associated with this attribute. */
    public final Pos pos;
 
-   /** ABSTRACT. If a PrimSig is abstract, it is equal to the union of its subsigs. */
+   /** ABSTRACT; if a PrimSig is abstract, it is equal to the union of its subsigs. */
    public static final Attr ABSTRACT = new Attr(AttrType.ABSTRACT, null);
 
-   /** SOME. If a Sig is some, it has at least one atom. */
+   /** SOME; if a Sig is some, it has at least one atom. */
    public static final Attr SOME = new Attr(AttrType.SOME,     null);
 
-   /** ONE. If a Sig is one, it has exactly one atom. */
+   /** ONE; if a Sig is one, it has exactly one atom. */
    public static final Attr ONE = new Attr(AttrType.ONE,      null);
 
-   /** LONE. If a Sig is lone, it has at most one atom. */
+   /** LONE; if a Sig is lone, it has at most one atom. */
    public static final Attr LONE = new Attr(AttrType.LONE,     null);
 
-   /** EXACT. If a SubsetSig is exact, it is equal to the union of its parents. */
+   /** EXACT; if a SubsetSig is exact, it is equal to the union of its parents. */
    public static final Attr EXACT = new Attr(AttrType.EXACT,    null);
 
-   /** SUBSIG. Every PrimSig (including the builtin sigs) has the SUBSIG attribute set, and the SUBSET attribute unset. */
+   /** SUBSIG; every PrimSig (including the builtin sigs) has the SUBSIG attribute set, and the SUBSET attribute unset. */
    public static final Attr SUBSIG = new Attr(AttrType.SUBSIG,   null);
 
-   /** SUBSET. Every SubsetSig has the SUBSET attribute set, and the SUBSIG attribute unset. */
+   /** SUBSET; every SubsetSig has the SUBSET attribute set, and the SUBSIG attribute unset. */
    public static final Attr SUBSET = new Attr(AttrType.SUBSET,   null);
 
-   /** META. If a Sig has the META attribute, it means it is a META atom corresponding to some real signature or field. */
+   /** META; if a Sig has the META attribute, it means it is a META atom corresponding to some real signature or field. */
    public static final Attr META = new Attr(AttrType.META,     null);
 
-   /** PRIVATE. If a Sig has the PRIVATE attribute, it means its label is private within the same module. */
+   /** PRIVATE; if a Sig has the PRIVATE attribute, it means its label is private within the same module. */
    public static final Attr PRIVATE = new Attr(AttrType.PRIVATE,  null);
 
-   /** BUILTIN. Every builtin Sig has the BUILTIN attribute, and every non-builtin Sig does not. */
+   /** BUILTIN; every builtin Sig has the BUILTIN attribute, and every non-builtin Sig does not. */
    public static final Attr BUILTIN = new Attr(AttrType.BUILTIN,  null);
 
-   /** ENUM. If a PrimSig has the ENUM attribute, it is toplevel and abstract and has only singleton children. */
+   /** ENUM; if a PrimSig has the ENUM attribute, it is toplevel and abstract and has only singleton children. */
    public static final Attr ENUM = new Attr(AttrType.ENUM,     null);
 
    /** Construct an attribute of the given type with the given position; if pos==null, it is treated as Pos.UNKNOWN. */

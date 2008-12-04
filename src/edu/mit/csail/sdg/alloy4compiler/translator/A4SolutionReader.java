@@ -165,7 +165,7 @@ public final class A4SolutionReader {
               if (choice instanceof PrimSig && parent==((PrimSig)choice).parent && label(((Sig)choice).label).equals(label))
                  { ans=(Sig)choice; choices.remove(choice); break; }
            if (ans==null) {
-              ans = new PrimSig(Pos.UNKNOWN, (PrimSig)parent, label, isAbstract, isLone, isOne, isSome, isPrivate, isMeta, isEnum);
+              ans = new PrimSig(label, (PrimSig)parent, isAbstract, isLone, isOne, isSome, isPrivate, isMeta, isEnum);
               allsigs.add(ans);
            }
         } else {
@@ -173,7 +173,7 @@ public final class A4SolutionReader {
               if (choice instanceof SubsetSig && label(((Sig)choice).label).equals(label) && sameset(parents, ((SubsetSig)choice).parents))
                  { ans=(Sig)choice; choices.remove(choice); break; }
            if (ans==null) {
-              ans = new SubsetSig(Pos.UNKNOWN, parents, label, isExact, isLone, isOne, isSome, isPrivate, isMeta);
+              ans = new SubsetSig(label, parents, isExact, isLone, isOne, isSome, isPrivate, isMeta);
               allsigs.add(ans);
            }
         }

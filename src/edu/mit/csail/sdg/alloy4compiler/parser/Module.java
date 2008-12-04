@@ -70,11 +70,16 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
-import edu.mit.csail.sdg.alloy4compiler.ast.Attr.AttrType;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Attr.AttrType.WHERE;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Attr.AttrType.ONE;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Attr.AttrType.ABSTRACT;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Attr.AttrType.SUBSET;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Attr.AttrType.SUBSIG;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Attr.AttrType.PRIVATE;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.STRING;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
@@ -511,30 +516,23 @@ public final class Module extends Browsable {
         private final ConstList<Decl> fields;
         private final Expr appendedFact; // never null
         private final Attr attributes[];
-        private SigAST(Pos pos, String fullname, List<ExprVar> parents, List<Decl> fields, Expr appendedFacts, Module realModule, Sig realSig, Attr... attributes) {
-            this.pos=(pos==null ? Pos.UNKNOWN : pos);
-            Pos isPrivate=null, abs=null, one=null, subset=null;
-            for(Attr a: attributes) if (a != null) switch(a.type) {
-               case ABSTRACT:  abs = a.pos.merge(abs); break;
-               case ONE:       one = a.pos.merge(one); break;
-               case SUBSET:    subset = a.pos.merge(subset); break;
-               case PRIVATE:   isPrivate = a.pos.merge(isPrivate); break;
-            }
-            this.attributes = Util.append(attributes, null); // this makes a copy
-            this.isPrivate = isPrivate;
-            this.fullname = fullname;
-            this.abs = abs;
-            this.one = one;
-            this.subset = subset;
-            this.parents = ConstList.make(parents);
-            this.fields = ConstList.make(fields);
+        private SigAST(String fullname, List<ExprVar> parents, List<Decl> fields, Expr appendedFacts, Module realModule, Sig realSig, Attr... attributes) {
+            this.pos          = Pos.UNKNOWN.merge(WHERE.find(attributes));
+            this.isPrivate    = PRIVATE .find(attributes);
+            this.abs          = ABSTRACT.find(attributes);
+            this.one          = ONE     .find(attributes);
+            this.subset       = SUBSET  .find(attributes);
+            this.attributes   = Util.append(attributes, null); // this makes a copy
+            this.fullname     = fullname;
+            this.parents      = ConstList.make(parents);
+            this.fields       = ConstList.make(fields);
             this.appendedFact = appendedFacts;
-            this.realModule = realModule;
-            this.realSig = realSig;
-            this.realParents = new ArrayList<SigAST>(this.parents.size());
+            this.realModule   = realModule;
+            this.realSig      = realSig;
+            this.realParents  = new ArrayList<SigAST>(this.parents.size());
         }
         private SigAST(String fullname, List<ExprVar> parents, Sig realSig) {
-            this(null, fullname, parents, null, null, null, realSig);
+            this(fullname, parents, null, null, null, realSig);
         }
         @Override public String toString() { return fullname; }
     }
@@ -844,7 +842,7 @@ public final class Module extends Browsable {
             String name = expr.label;
             dup(expr.span(), name, true);
             if (path.length()==0) {
-                SigAST newSig = addSig(expr.span(), name, null, null, null, null, null, null, null, null, null, null);
+                SigAST newSig = addSig(name, null, null, null, null, WHERE.make(expr.span()));
                 if (nextIsExact) exactSigs.add(newSig);
             } else {
                 params.put(name, null);
@@ -972,8 +970,8 @@ public final class Module extends Browsable {
     //============================================================================================================================//
 
     /** Add a sig declaration. */
-    SigAST addSig(Pos pos, String name, ExprVar par, List<ExprVar> parents, List<Decl> fields, Expr fact, Attr... attributes) throws Err {
-        if (pos==null) pos = Pos.UNKNOWN;
+    SigAST addSig(String name, ExprVar par, List<ExprVar> parents, List<Decl> fields, Expr fact, Attr... attributes) throws Err {
+        Pos pos = Pos.UNKNOWN.merge(WHERE.find(attributes));
         status = 3;
         dup(pos, name, true);
         String full = (path.length()==0) ? "this/"+name : path+"/"+name;
@@ -984,9 +982,9 @@ public final class Module extends Browsable {
             else { exact=!par.label.equals("in"); subset=par.span(); for(ExprVar p:parents) subset=p.span().merge(subset); }
         }
         attributes = Util.append(attributes, exact ? Attr.EXACT : null);
-        attributes = Util.append(attributes, AttrType.SUBSIG.makenull(subsig));
-        attributes = Util.append(attributes, AttrType.SUBSET.makenull(subset));
-        SigAST obj = new SigAST(pos, full, parents, fields, fact, this, null, attributes);
+        attributes = Util.append(attributes, SUBSIG.makenull(subsig));
+        attributes = Util.append(attributes, SUBSET.makenull(subset));
+        SigAST obj = new SigAST(full, parents, fields, fact, this, null, attributes);
         sigs.put(name, obj);
         return obj;
     }
@@ -997,8 +995,8 @@ public final class Module extends Browsable {
         ExprVar THIS = ExprVar.make(null, "this/"+name);
         List<ExprVar> THESE = Arrays.asList(THIS);
         if (atoms==null || atoms.size()==0) throw new ErrorSyntax(pos, "Enumeration must contain at least one name.");
-        addSig(name.pos, name.label, null, null, null, null, AttrType.ABSTRACT.make(name.pos), AttrType.PRIVATE.makenull(priv), Attr.ENUM);
-        for(ExprVar a:atoms) addSig(a.pos, a.label, EXTENDS, THESE, null, null, AttrType.ONE.make(a.pos), AttrType.PRIVATE.makenull(priv));
+        addSig(name.label, null, null, null, null, WHERE.make(name.pos), ABSTRACT.make(name.pos), PRIVATE.makenull(priv), Attr.ENUM);
+        for(ExprVar a:atoms) addSig(a.label, EXTENDS, THESE, null, null, WHERE.make(a.pos), ONE.make(a.pos), PRIVATE.makenull(priv));
         int oldStatus = status;
         status = 0;
         try {
@@ -1025,7 +1023,7 @@ public final class Module extends Browsable {
                oldS.realParents.add(parentAST);
                parents.add(resolveSig(sorted, parentAST));
             }
-            oldS.realSig = new SubsetSig(pos, parents, fullname, oldS.attributes);
+            oldS.realSig = new SubsetSig(fullname, parents, oldS.attributes);
         } else {
             ExprVar sup = null;
             if (oldS.parents.size()==1) {sup=oldS.parents.get(0); if (sup!=null && sup.label.length()==0) sup=null;}
@@ -1037,7 +1035,7 @@ public final class Module extends Browsable {
             if (!(parent instanceof PrimSig)) throw new ErrorSyntax(suppos, "Cannot extend the subset signature \"" + parent
                + "\".\n" + "A signature can only extend a toplevel signature or a subsignature.");
             PrimSig p = (PrimSig)parent;
-            oldS.realSig = new PrimSig(pos, p, fullname, oldS.attributes);
+            oldS.realSig = new PrimSig(fullname, p, oldS.attributes);
         }
         sorted.add(oldS);
         return oldS.realSig;
@@ -1401,23 +1399,23 @@ public final class Module extends Browsable {
         ExprVar EXTENDS = ExprVar.make(null, "extends");
         ExprVar THIS = ExprVar.make(null, "univ");
         List<ExprVar> THESE = Arrays.asList(THIS);
-        SigAST metasig   = root.addSig(null, "sig$", EXTENDS, THESE, null, null, Attr.ABSTRACT, Attr.META);
-        SigAST metafield = root.addSig(null, "field$", EXTENDS, THESE, null, null, Attr.ABSTRACT, Attr.META);
+        SigAST metasig   = root.addSig("sig$", EXTENDS, THESE, null, null, Attr.ABSTRACT, Attr.META);
+        SigAST metafield = root.addSig("field$", EXTENDS, THESE, null, null, Attr.ABSTRACT, Attr.META);
         metasig.topo = true;
         metasig.realParents.add(UNIVast);
-        metasig.realSig = new PrimSig(null, UNIV, "this/sig$", Attr.ABSTRACT, Attr.META);
+        metasig.realSig = new PrimSig("this/sig$", UNIV, Attr.ABSTRACT, Attr.META);
         metafield.topo = true;
         metafield.realParents.add(UNIVast);
-        metafield.realSig = new PrimSig(null, UNIV, "this/field$", Attr.ABSTRACT, Attr.META);
+        metafield.realSig = new PrimSig("this/field$", UNIV, Attr.ABSTRACT, Attr.META);
         root.metaSig = (PrimSig)(metasig.realSig);      sorted.add(metasig);
         root.metaField = (PrimSig)(metafield.realSig);  sorted.add(metafield);
         for(Module m: modules) for(SigAST sig: new ArrayList<SigAST>(m.sigs.values())) if (m!=root || (sig!=metasig && sig!=metafield)) {
             final Sig s = sig.realSig;
             String slab = base(sig);
-            SigAST ast = m.addSig(null, slab+"$", EXTENDS, THESE, null, null, Attr.ONE, AttrType.PRIVATE.makenull(s.isPrivate), Attr.META);
+            SigAST ast = m.addSig(slab+"$", EXTENDS, THESE, null, null, Attr.ONE, PRIVATE.makenull(s.isPrivate), Attr.META);
             ast.topo = true;
             ast.realParents.add(metasig);
-            ast.realSig = new PrimSig(null, root.metaSig, m.paths.contains("") ? "this/"+slab+"$" : (m.paths.get(0)+"/"+slab+"$"), AttrType.ONE.makenull(ast.one), AttrType.PRIVATE.makenull(ast.isPrivate), Attr.META);
+            ast.realSig = new PrimSig(m.paths.contains("") ? "this/"+slab+"$" : (m.paths.get(0)+"/"+slab+"$"), root.metaSig, ONE.makenull(ast.one), PRIVATE.makenull(ast.isPrivate), Attr.META);
             sig2meta.put(s, (PrimSig)(ast.realSig));
             ast.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "value", s);
             sorted.add(ast);
@@ -1425,10 +1423,10 @@ public final class Module extends Browsable {
             Expr allfields = ExprConstant.EMPTYNESS;
             for(Field field: s.getFields()) {
                 String slab2 = slab + "$" + field.label;
-                SigAST ast2 = m.addSig(null, slab2, EXTENDS, THESE, null, null, Attr.ONE, AttrType.PRIVATE.makenull(field.isPrivate), Attr.META);
+                SigAST ast2 = m.addSig(slab2, EXTENDS, THESE, null, null, Attr.ONE, PRIVATE.makenull(field.isPrivate), Attr.META);
                 ast2.topo = true;
                 ast2.realParents.add(metafield);
-                ast2.realSig = new PrimSig(Pos.UNKNOWN, root.metaField, m.paths.contains("") ? "this/"+slab2 : (m.paths.get(0)+"/"+slab2), AttrType.ONE.makenull(ast2.one), AttrType.PRIVATE.makenull(ast2.isPrivate), Attr.META);
+                ast2.realSig = new PrimSig(m.paths.contains("") ? "this/"+slab2 : (m.paths.get(0)+"/"+slab2), root.metaField, ONE.makenull(ast2.one), PRIVATE.makenull(ast2.isPrivate), Attr.META);
                 field2meta.put(field, (PrimSig)(ast2.realSig));
                 sorted.add(ast2);
                 hasMetaField = true;

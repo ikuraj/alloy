@@ -161,8 +161,8 @@ public abstract class Sig extends Expr {
    }
 
    /** Constructs a new PrimSig or SubsetSig. */
-   private Sig(Pos pos, Type type, String label, Attr... attributes) throws Err {
-      super(pos, type);
+   private Sig(Type type, String label, Attr... attributes) throws Err {
+      super(AttrType.WHERE.find(attributes), type);
       Expr oneof = ExprUnary.Op.ONEOF.make(null, this);
       ExprVar v = ExprVar.make(null, "this", oneof.type);
       this.decl = new Decl(null, null, null, Util.asList(v), oneof);
@@ -288,20 +288,15 @@ public abstract class Sig extends Expr {
 
       /** Constructs a non-builtin sig.
        *
-       * @param pos - the position in the original file where this sig was defined (can be null if unknown)
-       * @param parent - the parent (must not be null, and must not be NONE)
        * @param label - the name of this sig (it does not need to be unique)
+       * @param parent - the parent (must not be null, and must not be NONE)
        * @param attributes - the list of optional attributes such as ABSTRACT, LONE, ONE, SOME, SUBSIG, PRIVATE, META, or ENUM
        *
        * @throws ErrorSyntax if the signature has two or more multiplicities
        * @throws ErrorType if you attempt to extend the builtin sigs NONE, SIGINT, SEQIDX, or STRING
        */
-      public PrimSig (Pos pos, PrimSig parent, String label, Attr... attributes) throws Err {
-         super(pos,
-            ((parent!=null && parent.isEnum!=null) ? parent.type : null),
-            label,
-            Util.append(attributes, Attr.SUBSIG)
-         );
+      public PrimSig (String label, PrimSig parent, Attr... attributes) throws Err {
+         super(((parent!=null && parent.isEnum!=null) ? parent.type : null), label, Util.append(attributes, Attr.SUBSIG));
          if (parent==SIGINT) throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"Int\" signature");
          if (parent==SEQIDX) throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"seq/Int\" signature");
          if (parent==STRING) throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"fun/String\" signature");
@@ -315,10 +310,14 @@ public abstract class Sig extends Expr {
          }
       }
 
-      /** Constructs a non-builtin sig.
+      /** Constructs a toplevel non-builtin sig.
+       *
        * @param label - the name of this sig (it does not need to be unique)
+       * @param attributes - the list of optional attributes such as ABSTRACT, LONE, ONE, SOME, SUBSIG, PRIVATE, META, or ENUM
+       *
+       * @throws ErrorSyntax if the signature has two or more multiplicities
        */
-      public PrimSig(String label) throws Err { this(null, null, label); }
+      public PrimSig(String label, Attr... attributes) throws Err { this(label, null, attributes); }
 
       /** {@inheritDoc} */
       @Override public boolean isSameOrDescendentOf(Sig that) {
@@ -369,14 +368,9 @@ public abstract class Sig extends Expr {
       public final boolean exact;
 
       /** Computes the type for this sig. */
-      private static Type getType(Pos pos, String label, Iterable<Sig> parents) throws Err {
-         Type ans=null;
+      private static Type getType(String label, Iterable<Sig> parents) throws Err {
+         Type ans = null;
          if (parents!=null) for(Sig parent: parents) {
-            if (!Version.experimental) {
-               if (parent==SIGINT) throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"Int\" signature");
-               if (parent==SEQIDX) throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"seq/Int\" signature");
-               if (parent==STRING) throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"fun/String\" signature");
-            }
             if (parent==UNIV) return UNIV.type;
             if (ans==null) ans=parent.type; else ans=ans.unionWithCommonArity(parent.type);
          }
@@ -385,28 +379,15 @@ public abstract class Sig extends Expr {
 
       /** Constructs a subset sig.
        *
-       * @param parents - the list of parents (if this list is null or empty, we assume the caller means UNIV)
        * @param label - the name of this sig (it does not need to be unique)
-       *
-       * @throws ErrorSyntax if the signature has two or more multiplicities
-       * @throws ErrorType if parents only contains NONE
-       */
-      public SubsetSig(Collection<Sig> parents, String label) throws Err {
-         this(null, parents, label);
-      }
-
-      /** Constructs a subset sig.
-       *
-       * @param pos - the position in the original file where this sig was defined (can be null if unknown)
        * @param parents - the list of parents (if this list is null or empty, we assume the caller means UNIV)
-       * @param label - the name of this sig (it does not need to be unique)
        * @param attributes - the list of optional attributes such as EXACT, SUBSET, LONE, ONE, SOME, PRIVATE, or META
        *
        * @throws ErrorSyntax if the signature has two or more multiplicities
        * @throws ErrorType if parents only contains NONE
        */
-      public SubsetSig(Pos pos, Collection<Sig> parents, String label, Attr... attributes) throws Err {
-         super(pos, getType(pos,label,parents), label, Util.append(attributes, Attr.SUBSET));
+      public SubsetSig(String label, Collection<Sig> parents, Attr... attributes) throws Err {
+         super(getType(label,parents), label, Util.append(attributes, Attr.SUBSET));
          if (isEnum!=null) throw new ErrorType(pos, "Subset signature cannot be an enum.");
          boolean exact = false;
          for(Attr a: attributes) if (a!=null && a.type==AttrType.EXACT) exact = true;
@@ -416,8 +397,13 @@ public abstract class Sig extends Expr {
             temp.add(UNIV);
          } else {
             for(Sig parent:parents) {
+               if (!Version.experimental) {
+                  if (parent==SIGINT) throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"Int\" signature");
+                  if (parent==SEQIDX) throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"seq/Int\" signature");
+                  if (parent==STRING) throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"fun/String\" signature");
+               }
                if (parent==Sig.UNIV) {temp.clear(); temp.add(UNIV); break;}
-               else if (parent!=Sig.NONE && !temp.contains(parent)) temp.add(parent);
+               if (parent!=Sig.NONE && !temp.contains(parent)) temp.add(parent);
             }
          }
          if (temp.size()==0) throw new ErrorType(pos, "Sig "+label+" must have at least one non-empty parent.");
