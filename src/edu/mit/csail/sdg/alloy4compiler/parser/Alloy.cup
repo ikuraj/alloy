@@ -215,6 +215,7 @@ parser code {:
     ch.put(CompSym.SOME2, "some");
     ch.put(CompSym.SOME, "some");
     ch.put(CompSym.STAR, "*");
+    ch.put(CompSym.STRING, "String");
     ch.put(CompSym.SUM2, "sum");
     ch.put(CompSym.SUM, "sum");
     ch.put(CompSym.THIS, "this");
@@ -465,6 +466,7 @@ terminal Pos SLASH;            //  /
 terminal Pos SOME2;            //  some      // The filter enables us to disambiguate
 terminal Pos SOME;             //  some      // The filter enables us to disambiguate
 terminal Pos STAR;             //  *
+terminal Pos STRING;           //  String
 terminal Pos SUM2;             //  sum       // The filter enables us to disambiguate
 terminal Pos SUM;              //  sum       // The filter enables us to disambiguate
 terminal Pos THIS;             //  this
@@ -626,6 +628,8 @@ Typescope ::= TypeNumber:a SEQ:b  {:
 
 Typescope  ::= TypeNumber:e UNIV:f    {: if (1==1) throw new ErrorSyntax(e.pos.merge(f), "You cannot set a scope on univ."); :};
 
+Typescope  ::= TypeNumber:a STRING:b  {: RESULT = new CommandScope(a.pos.merge(b), new PrimSig("String", AttrType.WHERE.make(a.pos.merge(b))), a.isExact, a.startingScope, a.endingScope, a.increment); :};
+
 Typescope  ::= TypeNumber:e SIGINT:f  {: if (1==1) throw new ErrorSyntax(e.pos.merge(f), "You can no longer set a scope on Int; the number of Int atoms is always exactly equal to 2^(integer bitwidth).\n"); :};
 
 Typescope  ::= TypeNumber:e NONE:f    {: if (1==1) throw new ErrorSyntax(e.pos.merge(f), "You cannot set a scope on none."); :};
@@ -694,8 +698,9 @@ SigIn    ::= IN:a SigRefu:x           {: RESULT=x;  x.add(ExprVar.make(a,"in"));
 SigIn    ::= EQUALS:a SigRefu:x       {: RESULT=x;  x.add(ExprVar.make(a,"="));                                                   :};
 SigIn    ::=                          {: RESULT=null;                                                                             :};
 
-SigRef   ::= Name:x                   {: RESULT=x;                                   :};
+SigRef   ::= Name:x                   {: RESULT=x;                                    :};
 SigRef   ::= UNIV:x                   {: RESULT=ExprVar.make(x, "univ");              :};
+SigRef   ::= STRING:x                 {: RESULT=ExprVar.make(x, "String");            :};
 SigRef   ::= SIGINT:x                 {: RESULT=ExprVar.make(x, "Int");               :};
 SigRef   ::= SEQ:a SLASH SIGINT:b     {: RESULT=ExprVar.make(a.merge(b), "seq/Int");  :};
 SigRef   ::= NONE:x                   {: RESULT=ExprVar.make(x, "none");              :};

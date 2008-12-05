@@ -175,7 +175,6 @@ final class CompFilter implements Scanner {
                if (z.sym==ID && ((ExprVar)(z.value)).label.equals("min"))   return merge(x, z, INTMIN);
                if (z.sym==ID && ((ExprVar)(z.value)).label.equals("max"))   return merge(x, z, INTMAX);
                if (z.sym==ID && ((ExprVar)(z.value)).label.equals("next"))  return merge(x, z, INTNEXT);
-               if (z.sym==ID && ((ExprVar)(z.value)).label.equals("String")) { z.pos=x.pos.merge(z.pos); z.value=ExprVar.make(z.pos, "fun/String"); return z; }
             } else if (x.sym==ONE) {
                Symbol y = A.next_token();
                if (y.sym!=ARROW) { undo=y; return x; }

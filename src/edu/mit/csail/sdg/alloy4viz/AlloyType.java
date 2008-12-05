@@ -40,8 +40,8 @@ public final class AlloyType extends AlloyNodeElement {
     /** This caches an instance of the "seq/Int" AlloyType, so we don't have to keep re-constructing it. */
     public static final AlloyType SEQINT=new AlloyType("seq/Int", false, false, true, false, false, false);
 
-    /** This caches an instance of the "fun/String" AlloyType, so we don't have to keep re-constructing it. */
-    public static final AlloyType STRING=new AlloyType("fun/String", false, false, true, false, false, false);
+    /** This caches an instance of the "String" AlloyType, so we don't have to keep re-constructing it. */
+    public static final AlloyType STRING=new AlloyType("String", false, false, true, false, false, false);
 
     /** This caches an instance of the "set" AlloyType, so we don't have to keep re-constructing it. */
     public static final AlloyType SET=new AlloyType("set", false, false, false, false, false, false);

@@ -279,8 +279,8 @@ final class ScopeComputer {
                     "You cannot set a scope on \"seq/Int\". "
                     +"To set the maximum allowed sequence length, use the seq keyword.\n");
             if (s==STRING) {
-               if (maxstring>=0) throw new ErrorSyntax(cmd.pos, "Sig \"fun/String\" already has a scope of "+maxstring+", so we cannot set it to be "+scope);
-               if (!exact) throw new ErrorSyntax(cmd.pos, "Sig \"fun/String\" must have an exact scope.");
+               if (maxstring>=0) throw new ErrorSyntax(cmd.pos, "Sig \"String\" already has a scope of "+maxstring+", so we cannot set it to be "+scope);
+               if (!exact) throw new ErrorSyntax(cmd.pos, "Sig \"String\" must have an exact scope.");
                maxstring = scope;
                continue;
             }
@@ -349,7 +349,7 @@ final class ScopeComputer {
     static Pair<A4Solution,ScopeComputer> compute (A4Reporter rep, A4Options opt, Iterable<Sig> sigs, Command cmd) throws Err {
         ScopeComputer sc = new ScopeComputer(rep, sigs, cmd);
         Set<String> set = cmd.getAllStringConstants();
-        if (sc.maxstring>=0 && set.size()>sc.maxstring) rep.scope("Sig fun/String expanded to contain all "+set.size()+" String constant(s) referenced by this command.\n");
+        if (sc.maxstring>=0 && set.size()>sc.maxstring) rep.scope("Sig String expanded to contain all "+set.size()+" String constant(s) referenced by this command.\n");
         for(int i=0; set.size()<sc.maxstring; i++) set.add("\"String" + i + "\"");
         sc.atoms.addAll(set);
         A4Solution sol = new A4Solution(cmd.toString(), sc.bitwidth, sc.maxseq, set, sc.atoms, rep, opt, cmd.expects);

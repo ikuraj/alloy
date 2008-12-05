@@ -4,7 +4,7 @@ open util/integer
 
 sig LongString, Email, Date, DateTime { }
 
-enum String { StringAlex, StringBrian, StringEmina, StringDaniel, StringFelix, StringIan, StringJukka,
+enum Stringz { StringAlex, StringBrian, StringEmina, StringDaniel, StringFelix, StringIan, StringJukka,
               StringMIT, StringNokia, StringWindowsDiscussion, StringLinuxDiscussion,
               StringMachineLearning, StringNumericOptimization, StringTrueMultithreading, StringEfficientCompilerConstruction,
               StringHowToOptimize, StringHelpNeeded }
@@ -19,7 +19,7 @@ abstract sig Entity {
 
 one sig me in Entity { }
 
-abstract sig LoginUser extends Entity { suspended: Boolean,  email: disjoint Email,  password: String } // magic GUI support
+abstract sig LoginUser extends Entity { suspended: Boolean,  email: disjoint Email,  password: Stringz } // magic GUI support
 
 one sig ADD1, ADD2, DELETE1, DELETE2 { }
 enum Action { R, A, D, AS, DS }
@@ -41,7 +41,7 @@ fun policy : univ -> univ -> univ
 }
 
 sig User extends LoginUser {
-    name    : disjoint String,
+    name    : disjoint Stringz,
     bio     : lone LongString,
     super   : Boolean,
     getMail : Boolean
@@ -53,7 +53,7 @@ fun User.points : Int       { 25.mul[#(Talk<:owners . this)] + 20.mul[#(Msg<:own
 ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 sig Group extends Entity {
-    name       : disjoint String,
+    name       : disjoint Stringz,
     descr      : lone LongString,
     homeMsg    : lone LongString,
     restricted : Boolean,
@@ -73,18 +73,18 @@ pred members.onAdd {
 }
 
 sig Talk extends Entity {
-    title    : String,
+    title    : Stringz,
     datetime : DateTime,
     location : lone LongString,
     descr    : lone LongString,
-    speakers : some String,
+    speakers : some Stringz,
     tags     : set Group
 } {
     tags in owners.groups
 }
 
 sig Forum extends Entity {
-    name     : disjoint String,
+    name     : disjoint Stringz,
     descr    : lone LongString,
     weight   : Int,
     readOnly : Boolean,
@@ -95,7 +95,7 @@ fun Forum.numTopics : Int { #(this.topics) }
 fun Forum.numText   : Int { #(this.topics) + #(this.topics.replies) }
 
 sig Topic extends Entity {
-    title    : String,
+    title    : Stringz,
     text     : LongString,
     pinned   : Boolean,
     readOnly : Boolean,

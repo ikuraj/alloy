@@ -23,7 +23,7 @@ final class CompSym {
   public static final int EXH = 48;
   public static final int INTMIN = 23;
   public static final int COMMA = 40;
-  public static final int SUM = 108;
+  public static final int SUM = 109;
   public static final int RBRACE = 92;
   public static final int RPAREN = 94;
   public static final int LONE_ARROW_LONE = 17;
@@ -37,18 +37,18 @@ final class CompSym {
   public static final int LPAREN = 67;
   public static final int SHR = 99;
   public static final int NOT = 75;
-  public static final int TILDE = 110;
+  public static final int TILDE = 111;
   public static final int PART = 86;
   public static final int SHL = 98;
   public static final int NOTEQUALS = 76;
-  public static final int STR = 114;
+  public static final int STR = 115;
   public static final int SHA = 100;
   public static final int LONE_ARROW_ONE = 16;
   public static final int SOME_ARROW_LONE = 9;
   public static final int INTADD = 18;
   public static final int INTDIV = 21;
   public static final int INTMAX = 24;
-  public static final int NUMBER = 113;
+  public static final int NUMBER = 114;
   public static final int ABSTRACT = 27;
   public static final int INTNEXT = 25;
   public static final int SLASH = 103;
@@ -56,7 +56,7 @@ final class CompSym {
   public static final int TOTALORDER = 26;
   public static final int ONE_ARROW_LONE = 13;
   public static final int NOTIN = 79;
-  public static final int UNIV = 111;
+  public static final int UNIV = 112;
   public static final int PLUS = 87;
   public static final int FACT = 51;
   public static final int LONE = 66;
@@ -79,7 +79,7 @@ final class CompSym {
   public static final int SIGINT = 102;
   public static final int DISJ = 41;
   public static final int EOF = 0;
-  public static final int THIS = 109;
+  public static final int THIS = 110;
   public static final int INTREM = 22;
   public static final int ANY_ARROW_LONE = 5;
   public static final int BUT = 36;
@@ -87,7 +87,7 @@ final class CompSym {
   public static final int ALL2 = 29;
   public static final int MINUS = 70;
   public static final int SOME_ARROW_SOME = 7;
-  public static final int SUM2 = 107;
+  public static final int SUM2 = 108;
   public static final int IN = 60;
   public static final int OR = 85;
   public static final int SET = 97;
@@ -95,7 +95,7 @@ final class CompSym {
   public static final int NOTGT = 77;
   public static final int SEQ = 96;
   public static final int GTE = 55;
-  public static final int ID = 112;
+  public static final int ID = 113;
   public static final int ONE_ARROW_SOME = 11;
   public static final int ONE_ARROW_ONE = 12;
   public static final int COLON = 39;
@@ -107,6 +107,7 @@ final class CompSym {
   public static final int CARET = 37;
   public static final int EXPECT = 49;
   public static final int PLUSPLUS = 88;
+  public static final int STRING = 107;
   public static final int RANGE = 91;
   public static final int NO = 73;
   public static final int SOME_ARROW_ONE = 8;

@@ -113,7 +113,7 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
     private final String[] keywords = new String[] {"abstract", "all", "and", "as", "assert", "but", "check", "disj",
       "disjoint", "else", "enum", "exactly", "exh", "exhaustive", "expect", "extends", "fact", "for", "fun", "iden",
       "iff", "implies", "in", "Int", "int", "let", "lone", "module", "no", "none", "not", "one", "open", "or", "part",
-      "partition", "pred", "private", "run", "seq", "set", "sig", "some", "sum", "this", "univ"
+      "partition", "pred", "private", "run", "seq", "set", "sig", "some", "String", "sum", "this", "univ"
     };
 
     /** Returns true if "c" can be the start of an identifier. */

@@ -53,7 +53,7 @@ public final class AlloyAtom implements Comparable<AlloyAtom> {
     /** Return a label for this atom as recommended by a theme (theme can be null if there's no theme to consult). */
     public String getVizName(VizState theme, boolean numberAtoms) {
         if (theme!=null) {
-            if (theme.useOriginalName() || type.getName().equals("fun/String")) return originalName;
+            if (theme.useOriginalName() || type.getName().equals("String")) return originalName;
             if (index==Integer.MAX_VALUE && type.getName().equals("Int") && theme.label.get(type).length()==0) {
                 // Special handling for Meta Model. (Only meta model could have index==MAX_VALUE)
                 return "Int";

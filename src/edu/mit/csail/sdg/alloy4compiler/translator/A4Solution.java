@@ -121,8 +121,8 @@ public final class A4Solution {
     /** The constant unary relation representing the set of all seq/Int atoms. */
     static final Relation SEQ_SEQIDX = Relation.unary("seq/Int");
 
-    /** The constant unary relation representing the set of all fun/String atoms. */
-    static final Relation KK_STRING = Relation.unary("fun/String");
+    /** The constant unary relation representing the set of all String atoms. */
+    static final Relation KK_STRING = Relation.unary("String");
 
     //====== immutable fields ===========================================================================//
 
@@ -153,7 +153,7 @@ public final class A4Solution {
     /** The set of all seq/Int atoms; immutable. */
     private final TupleSet seqidxBounds;
 
-    /** The set of all fun/String atoms; immutable. */
+    /** The set of all String atoms; immutable. */
     private final TupleSet stringBounds;
 
     /** The Kodkod Solver object. */

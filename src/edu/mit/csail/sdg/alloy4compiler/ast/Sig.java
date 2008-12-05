@@ -52,7 +52,7 @@ public abstract class Sig extends Expr {
    public static final PrimSig SEQIDX = new PrimSig("seq/Int", SIGINT, true);
 
    /** The built-in "String" signature. */
-   public static final PrimSig STRING = new PrimSig("fun/String", UNIV, true);
+   public static final PrimSig STRING = new PrimSig("String", UNIV, true);
 
    /** The built-in "none" signature. */
    public static final PrimSig NONE = new PrimSig("none", null, false);
@@ -78,6 +78,11 @@ public abstract class Sig extends Expr {
 
    /** {@inheritDoc} */
    @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
+
+   /**
+    * Store the list of attributes.
+    */
+   public final ConstList<Attr> attributes;
 
    /** True if this sig is one of the built-in sig.
     * <p> Note: if builtin==true, then we ensure it is not abstract
@@ -158,11 +163,13 @@ public abstract class Sig extends Expr {
       this.isPrivate = null;
       this.isMeta = null;
       this.isEnum = null;
+      this.attributes = ConstList.make();
    }
 
    /** Constructs a new PrimSig or SubsetSig. */
    private Sig(Type type, String label, Attr... attributes) throws Err {
       super(AttrType.WHERE.find(attributes), type);
+      this.attributes = Util.asList(attributes);
       Expr oneof = ExprUnary.Op.ONEOF.make(null, this);
       ExprVar v = ExprVar.make(null, "this", oneof.type);
       this.decl = new Decl(null, null, null, Util.asList(v), oneof);
@@ -299,7 +306,7 @@ public abstract class Sig extends Expr {
          super(((parent!=null && parent.isEnum!=null) ? parent.type : null), label, Util.append(attributes, Attr.SUBSIG));
          if (parent==SIGINT) throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"Int\" signature");
          if (parent==SEQIDX) throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"seq/Int\" signature");
-         if (parent==STRING) throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"fun/String\" signature");
+         if (parent==STRING) throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"String\" signature");
          if (parent==NONE)   throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"none\" signature");
          if (parent==null) parent=UNIV; else if (parent!=UNIV) parent.children.add(this);
          this.parent = parent;
@@ -400,7 +407,7 @@ public abstract class Sig extends Expr {
                if (!Version.experimental) {
                   if (parent==SIGINT) throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"Int\" signature");
                   if (parent==SEQIDX) throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"seq/Int\" signature");
-                  if (parent==STRING) throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"fun/String\" signature");
+                  if (parent==STRING) throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"String\" signature");
                }
                if (parent==Sig.UNIV) {temp.clear(); temp.add(UNIV); break;}
                if (parent!=Sig.NONE && !temp.contains(parent)) temp.add(parent);

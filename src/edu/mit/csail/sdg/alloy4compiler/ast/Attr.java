@@ -100,34 +100,34 @@ public final class Attr {
    public static final Attr ABSTRACT = new Attr(AttrType.ABSTRACT, null);
 
    /** SOME; if a Sig is some, it has at least one atom. */
-   public static final Attr SOME = new Attr(AttrType.SOME,     null);
+   public static final Attr SOME = new Attr(AttrType.SOME, null);
 
    /** ONE; if a Sig is one, it has exactly one atom. */
-   public static final Attr ONE = new Attr(AttrType.ONE,      null);
+   public static final Attr ONE = new Attr(AttrType.ONE, null);
 
    /** LONE; if a Sig is lone, it has at most one atom. */
-   public static final Attr LONE = new Attr(AttrType.LONE,     null);
+   public static final Attr LONE = new Attr(AttrType.LONE, null);
 
    /** EXACT; if a SubsetSig is exact, it is equal to the union of its parents. */
-   public static final Attr EXACT = new Attr(AttrType.EXACT,    null);
+   public static final Attr EXACT = new Attr(AttrType.EXACT, null);
 
    /** SUBSIG; every PrimSig (including the builtin sigs) has the SUBSIG attribute set, and the SUBSET attribute unset. */
-   public static final Attr SUBSIG = new Attr(AttrType.SUBSIG,   null);
+   public static final Attr SUBSIG = new Attr(AttrType.SUBSIG, null);
 
    /** SUBSET; every SubsetSig has the SUBSET attribute set, and the SUBSIG attribute unset. */
-   public static final Attr SUBSET = new Attr(AttrType.SUBSET,   null);
+   public static final Attr SUBSET = new Attr(AttrType.SUBSET, null);
 
    /** META; if a Sig has the META attribute, it means it is a META atom corresponding to some real signature or field. */
-   public static final Attr META = new Attr(AttrType.META,     null);
+   public static final Attr META = new Attr(AttrType.META, null);
 
    /** PRIVATE; if a Sig has the PRIVATE attribute, it means its label is private within the same module. */
-   public static final Attr PRIVATE = new Attr(AttrType.PRIVATE,  null);
+   public static final Attr PRIVATE = new Attr(AttrType.PRIVATE, null);
 
    /** BUILTIN; every builtin Sig has the BUILTIN attribute, and every non-builtin Sig does not. */
-   public static final Attr BUILTIN = new Attr(AttrType.BUILTIN,  null);
+   public static final Attr BUILTIN = new Attr(AttrType.BUILTIN, null);
 
    /** ENUM; if a PrimSig has the ENUM attribute, it is toplevel and abstract and has only singleton children. */
-   public static final Attr ENUM = new Attr(AttrType.ENUM,     null);
+   public static final Attr ENUM = new Attr(AttrType.ENUM, null);
 
    /** Construct an attribute of the given type with the given position; if pos==null, it is treated as Pos.UNKNOWN. */
    private Attr(AttrType type, Pos pos) {

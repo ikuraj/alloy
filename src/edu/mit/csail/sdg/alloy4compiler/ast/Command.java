@@ -65,7 +65,7 @@ public final class Command extends Browsable {
     /** The maximum sequence length (0 or higher) (Or -1 if it was not specified). */
     public final int maxseq;
 
-    /** The number of fun/String atoms to allocate (0 or higher) (Or -1 if it was not specified). */
+    /** The number of String atoms to allocate (0 or higher) (Or -1 if it was not specified). */
     public final int maxstring;
 
     /** The expected answer (either 0 or 1) (Or -1 if there is no expected answer). */

@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.LinkedHashMap;
@@ -91,6 +93,15 @@ import static edu.mit.csail.sdg.alloy4.Util.asList;
 
 public final class Module extends Browsable {
 
+   private final LinkedHashMap<Sig,Sig> new2old;
+   private final LinkedHashMap<Sig,List<Decl>> old2fields;
+   private final LinkedHashMap<Sig,Expr> old2appendedfacts;
+   private final HashMap<Sig,Module> sig2module;
+   private final List<Module> allModules;
+   /** The list of sigs in this module whose scope shall be deemed "exact" */
+   private final Set<Sig> exactSigs;
+
+
     /** {@inheritDoc} */
     @Override public final Pos pos() { return modulePos; }
 
@@ -115,7 +126,7 @@ public final class Module extends Browsable {
         }
         if (sigs.size()>0) {
            x = new ArrayList<Browsable>(sigs.size());
-           for(Map.Entry<String,SigAST> e: sigs.entrySet()) x.add(e.getValue().realSig);
+           for(Map.Entry<String,Sig> e: sigs.entrySet()) x.add(e.getValue());
            ans.add(make("<b>"+x.size()+(x.size()>1?" sigs</b>":" sig</b>"), x));
         }
         if (funcs.size()>0) {
@@ -155,7 +166,7 @@ public final class Module extends Browsable {
        return i<0 ? string : string.substring(i+1);
     }
 
-    private static String base(SigAST sig) { return base(sig.fullname); }
+    private static String base(Sig sig) { return base(sig.label); }
 
     //============================================================================================================================//
 
@@ -169,7 +180,7 @@ public final class Module extends Browsable {
         final Module rootmodule;
 
         /** Nonnull if we are typechecking a field declaration or a sig appended facts. */
-        SigAST rootsig = null;
+        Sig rootsig = null;
 
         /** Nonnull if we are typechecking a field declaration. */
         private Decl rootfield = null;
@@ -502,58 +513,6 @@ public final class Module extends Browsable {
 
     //============================================================================================================================//
 
-    /** Mutable; this class represents an untypechecked Alloy signature; equals() uses object identity. */
-    static final class SigAST {
-        private boolean topo = false;           // This flag is set to "true" during resolving
-        private final Pos isPrivate;
-        private final Module realModule;        // This value is set to its Module during resolving
-        private Sig realSig = null;             // This value is set to its corresponding Sig during resolving
-        private final List<SigAST> realParents; // This value is set to its corresponding Sig during resolving
-        private final Pos pos;
-        private final String fullname;
-        private final Pos abs,one,subset;
-        private final ConstList<ExprVar> parents;
-        private final ConstList<Decl> fields;
-        private final Expr appendedFact; // never null
-        private final Attr attributes[];
-        private SigAST(String fullname, List<ExprVar> parents, List<Decl> fields, Expr appendedFacts, Module realModule, Sig realSig, Attr... attributes) {
-            this.pos          = Pos.UNKNOWN.merge(WHERE.find(attributes));
-            this.isPrivate    = PRIVATE .find(attributes);
-            this.abs          = ABSTRACT.find(attributes);
-            this.one          = ONE     .find(attributes);
-            this.subset       = SUBSET  .find(attributes);
-            this.attributes   = Util.append(attributes, null); // this makes a copy
-            this.fullname     = fullname;
-            this.parents      = ConstList.make(parents);
-            this.fields       = ConstList.make(fields);
-            this.appendedFact = appendedFacts;
-            this.realModule   = realModule;
-            this.realSig      = realSig;
-            this.realParents  = new ArrayList<SigAST>(this.parents.size());
-        }
-        private SigAST(String fullname, List<ExprVar> parents, Sig realSig) {
-            this(fullname, parents, null, null, null, realSig);
-        }
-        @Override public String toString() { return fullname; }
-    }
-
-    /** The builtin sig "univ" */
-    private static final SigAST UNIVast = new SigAST("univ", null, UNIV);
-
-    /** The builtin sig "Int" */
-    private static final SigAST SIGINTast = new SigAST("Int", Util.asList(ExprVar.make(null, "univ")), SIGINT);
-
-    /** The builtin sig "seq/Int" */
-    private static final SigAST SEQIDXast = new SigAST("seq/Int", Util.asList(ExprVar.make(null, "Int")), SEQIDX);
-
-    /** The builtin sig "String" */
-    private static final SigAST STRINGast = new SigAST("fun/String", Util.asList(ExprVar.make(null, "univ")), STRING);
-
-    /** The builtin sig "none" */
-    private static final SigAST NONEast = new SigAST("none", null, NONE);
-
-    //============================================================================================================================//
-
     /** This field is used during a depth-first search of the dag-of-module(s) to mark which modules have been visited. */
     private Object visitedBy = null;
 
@@ -584,17 +543,14 @@ public final class Module extends Browsable {
     /** Whether we have seen a name containing a dollar sign or not. */
     boolean seenDollar = false;
 
-    /** Each param is mapped to its corresponding SigAST (or null if we have not resolved it). */
-    private final Map<String,SigAST> params = new LinkedHashMap<String,SigAST>(); // Must be LinkedHashMap since the order matters
+    /** Each param is mapped to its corresponding Sig (or null if we have not resolved it). */
+    private final Map<String,Sig> params = new LinkedHashMap<String,Sig>(); // Must be LinkedHashMap since the order matters
 
     /** Each alias is mapped to its corresponding "open" statement. */
     private final Map<String,Open> opens = new LinkedHashMap<String,Open>();
 
     /** Each sig name is mapped to its corresponding SigAST. */
-    private final Map<String,SigAST> sigs = new LinkedHashMap<String,SigAST>();
-
-    /** The list of sigs in this module whose scope shall be deemed "exact" */
-    private final Set<SigAST> exactSigs = new LinkedHashSet<SigAST>();
+    private final Map<String,Sig> sigs = new LinkedHashMap<String,Sig>();
 
     /** The list of params in this module whose scope shall be deemed "exact" */
     private final List<String> exactParams = new ArrayList<String>();
@@ -638,8 +594,24 @@ public final class Module extends Browsable {
      * @param path - one of the path pointing to this module
      */
     Module(Module world, String filename, String path) throws Err {
-        if (world==null) { if (path.length()>0) throw new ErrorFatal("Root module misparsed by parser."); else world=this; }
-        this.world=world;
+        if (world==null) {
+           if (path.length()>0) throw new ErrorFatal("Root module misparsed by parser.");
+           this.world = this;
+           new2old = new LinkedHashMap<Sig, Sig>();
+           old2fields = new LinkedHashMap<Sig, List<Decl>>();
+           old2appendedfacts = new LinkedHashMap<Sig, Expr>();
+           sig2module = new HashMap<Sig, Module>();
+           allModules = new ArrayList<Module>();
+           exactSigs = new LinkedHashSet<Sig>();
+        } else {
+           this.world = world;
+           new2old = world.new2old;
+           old2fields = world.old2fields;
+           old2appendedfacts = world.old2appendedfacts;
+           sig2module = world.sig2module;
+           allModules = world.allModules;
+           exactSigs = world.exactSigs;
+        }
         this.path=path;
         this.paths=new ArrayList<String>(1);
         this.paths.add(path);
@@ -691,8 +663,8 @@ public final class Module extends Browsable {
         for(int i=0; i<objs.size(); i++) {
             msg.append("\n\n#").append(i+1).append(": ");
             Object x=objs.get(i);
-            if (x instanceof SigAST) {
-                SigAST y = (SigAST)x; msg.append("sig ").append(y.fullname).append("\n"+"at ").append(y.pos.toShortString());
+            if (x instanceof Sig) {
+                Sig y = (Sig)x; msg.append("sig ").append(y.label).append("\n"+"at ").append(y.pos.toShortString());
             }
             else if (x instanceof Func) {
                 Func y = (Func)x;
@@ -741,35 +713,32 @@ public final class Module extends Browsable {
         x.add(SEQIDX);
         x.add(STRING);
         x.add(NONE);
-        for(Module m:getAllReachableModules())
-          for(Map.Entry<String,SigAST> s: m.sigs.entrySet())
-            if (s.getValue().realSig!=null)
-               x.add(s.getValue().realSig);
+        for(Module m:getAllReachableModules()) x.addAll(m.sigs.values());
         return x.makeConst();
     }
 
-    /** Lookup non-fully-qualified SigAST/FunAST/Assertion from the current module; it skips PARAMs. */
+    /** Lookup non-fully-qualified Sig/Func/Assertion from the current module; it skips PARAMs. */
     private List<Object> getRawNQS (Module start, final int r, String name) {
-        // (r&1)!=0 => SigAST,   (r&2) != 0 => assertion,   (r&4)!=0 => Func
+        // (r&1)!=0 => Sig,   (r&2) != 0 => assertion,   (r&4)!=0 => Func
         List<Object> ans=new ArrayList<Object>();
         for(Module m:getAllNameableModules()) {
-            if ((r&1)!=0) { SigAST x=m.sigs.get(name); if (x!=null) if (m==start || x.isPrivate==null) ans.add(x); }
+            if ((r&1)!=0) { Sig x=m.sigs.get(name); if (x!=null) if (m==start || x.isPrivate==null) ans.add(x); }
             if ((r&2)!=0) { Expr x=m.asserts.get(name); if (x!=null) ans.add(x); }
             if ((r&4)!=0) { ArrayList<Func> x=m.funcs.get(name); if (x!=null) for(Func y:x) if (m==start || y.isPrivate==null) ans.add(y); }
         }
         return ans;
     }
 
-    /** Lookup a fully-qualified SigAST/FunAST/Assertion from the current module; it skips PARAMs. */
+    /** Lookup a fully-qualified Sig/Func/Assertion from the current module; it skips PARAMs. */
     private List<Object> getRawQS (final int r, String name) {
-        // (r&1)!=0 => SigAST,   (r&2) != 0 => assertion,   (r&4)!=0 => Func
+        // (r&1)!=0 => Sig,   (r&2) != 0 => assertion,   (r&4)!=0 => Func
         List<Object> ans=new ArrayList<Object>();
         Module u=this;
         if (name.startsWith("this/")) name=name.substring(5);
         for(int level=0; ;level++) {
             int i=name.indexOf('/');
             if (i<0) {
-                if ((r&1)!=0) { SigAST x=u.sigs.get(name); if (x!=null) if (level==0 || x.isPrivate==null) ans.add(x); }
+                if ((r&1)!=0) { Sig x=u.sigs.get(name); if (x!=null) if (level==0 || x.isPrivate==null) ans.add(x); }
                 if ((r&2)!=0) { Expr x=u.asserts.get(name); if (x!=null) ans.add(x); }
                 if ((r&4)!=0) { ArrayList<Func> x=u.funcs.get(name); if (x!=null) for(Func y:x) if (level==0 || y.isPrivate==null) ans.add(y); }
                 if (ans.size()==0) return u.getRawNQS(this,r,name); // If nothing at this module, then do a non-qualified search from this module
@@ -784,19 +753,19 @@ public final class Module extends Browsable {
         }
     }
 
-    /** Lookup a SigAST from the current module (and it will also search this.params) */
-    private SigAST getRawSIG (Pos pos, String name) throws Err {
+    /** Lookup a Sig from the current module (and it will also search this.params) */
+    private Sig getRawSIG (Pos pos, String name) throws Err {
         List<Object> s;
-        SigAST s2=null;
+        Sig s2=null;
         if (name.equals("sig$") || name.equals("field$")) if (world!=null) {
             s2 = world.sigs.get(name);
             if (s2!=null) return s2;
         }
-        if (name.equals("univ"))       return UNIVast;
-        if (name.equals("Int"))        return SIGINTast;
-        if (name.equals("seq/Int"))    return SEQIDXast;
-        if (name.equals("fun/String")) return STRINGast;
-        if (name.equals("none"))       return NONEast;
+        if (name.equals("univ"))       return UNIV;
+        if (name.equals("Int"))        return SIGINT;
+        if (name.equals("seq/Int"))    return SEQIDX;
+        if (name.equals("String"))     return STRING;
+        if (name.equals("none"))       return NONE;
         if (name.indexOf('/')<0) {
             s=getRawNQS(this, 1, name);
             s2=params.get(name);
@@ -805,7 +774,7 @@ public final class Module extends Browsable {
             s=getRawQS(1, name);
         }
         if (s2!=null && !s.contains(s2)) s.add(s2);
-        return (SigAST) (unique(pos, name, s));
+        return (Sig) (unique(pos, name, s));
     }
 
     /** Returns a short description for this module. */
@@ -834,15 +803,15 @@ public final class Module extends Browsable {
     void addModelName(Pos pos, String moduleName, List<ExprVar> list) throws Err {
         if (status>0) throw new ErrorSyntax(pos,
            "The \"module\" declaration must occur at the top,\n" + "and can occur at most once.");
-        this.moduleName=moduleName;
-        this.modulePos=pos;
+        this.moduleName = moduleName;
+        this.modulePos = pos;
         boolean nextIsExact = false;
         if (list!=null) for(ExprVar expr: list) {
             if (expr==null) { nextIsExact=true; continue; }
             String name = expr.label;
             dup(expr.span(), name, true);
             if (path.length()==0) {
-                SigAST newSig = addSig(name, null, null, null, null, WHERE.make(expr.span()));
+                Sig newSig = addSig(name, null, null, null, null, WHERE.make(expr.span()));
                 if (nextIsExact) exactSigs.add(newSig);
             } else {
                 params.put(name, null);
@@ -901,7 +870,7 @@ public final class Module extends Browsable {
         opens.put(as,x);
     }
 
-    /** Every param in every module will now point to a nonnull SigAST. */
+    /** Every param in every module will now point to a nonnull Sig. */
     private static void resolveParams(A4Reporter rep, List<Module> modules) throws Err {
       while(true) {
          boolean chg=false;
@@ -915,15 +884,15 @@ public final class Module extends Browsable {
                     "You supplied "+open.args.size()+" arguments to the open statement, but the imported module requires "
                     +sub.params.size()+" arguments.");
             int i=0;
-            for(Map.Entry<String,SigAST> p:sub.params.entrySet()) {
-               SigAST old=p.getValue();
+            for(Map.Entry<String,Sig> p:sub.params.entrySet()) {
+               Sig old=p.getValue();
                String kn=p.getKey(), vn=open.args.get(i);
                i++;
-               SigAST vv=mod.getRawSIG(open.pos, vn);
+               Sig vv=mod.getRawSIG(open.pos, vn);
                if (vv==null) {if (old==null) {missing=open; missingName=vn;} continue;}
                if (old==vv) continue;
                if (old!=null) throw new ErrorFatal(open.pos, "Internal error (module re-instantiated with different arguments)");
-               if (vv==Module.NONEast) throw new ErrorSyntax(open.pos, "You cannot use \"none\" as an instantiating argument.");
+               if (vv==NONE) throw new ErrorSyntax(open.pos, "You cannot use \"none\" as an instantiating argument.");
                chg=true;
                p.setValue(vv);
                rep.parse("RESOLVE: "+(sub.path.length()==0?"this/":sub.path)+"/"+kn+" := "+vv+"\n");
@@ -956,7 +925,7 @@ public final class Module extends Browsable {
                 a.paths.addAll(b.paths);
                 Collections.sort(a.paths, Util.slashComparator);
                 for(Module c:modules) {
-                   for(Map.Entry<String,SigAST> p:c.params.entrySet())
+                   for(Map.Entry<String,Sig> p:c.params.entrySet())
                       { if (isin(p.getValue(), b.sigs)) p.setValue(a.sigs.get(base(p.getValue()))); }
                    for(Map.Entry<String,Open> p:c.opens.entrySet())
                       { if (p.getValue().realModule==b) p.getValue().realModule=a; }
@@ -970,7 +939,8 @@ public final class Module extends Browsable {
     //============================================================================================================================//
 
     /** Add a sig declaration. */
-    SigAST addSig(String name, ExprVar par, List<ExprVar> parents, List<Decl> fields, Expr fact, Attr... attributes) throws Err {
+    Sig addSig(String name, ExprVar par, List<ExprVar> parents, List<Decl> fields, Expr fact, Attr... attributes) throws Err {
+        Sig obj;
         Pos pos = Pos.UNKNOWN.merge(WHERE.find(attributes));
         status = 3;
         dup(pos, name, true);
@@ -982,10 +952,19 @@ public final class Module extends Browsable {
             else { exact=!par.label.equals("in"); subset=par.span(); for(ExprVar p:parents) subset=p.span().merge(subset); }
         }
         attributes = Util.append(attributes, exact ? Attr.EXACT : null);
-        attributes = Util.append(attributes, SUBSIG.makenull(subsig));
-        attributes = Util.append(attributes, SUBSET.makenull(subset));
-        SigAST obj = new SigAST(full, parents, fields, fact, this, null, attributes);
+        if (subset!=null) {
+           attributes = Util.append(attributes, SUBSET.makenull(subset));
+           List<Sig> newParents = new ArrayList<Sig>(parents==null ? 0 : parents.size());
+           if (parents!=null) for(ExprVar p: parents) newParents.add(new PrimSig(p.label, WHERE.make(p.pos)));
+           obj = new SubsetSig(full, newParents, attributes);
+        } else {
+           attributes = Util.append(attributes, SUBSIG.makenull(subsig));
+           PrimSig newParent = (parents!=null && parents.size()>0) ? (new PrimSig(parents.get(0).label, WHERE.make(parents.get(0).pos))) : UNIV;
+           obj = new PrimSig(full, newParent, attributes);
+        }
         sigs.put(name, obj);
+        old2fields.put(obj, fields);
+        old2appendedfacts.put(obj, fact);
         return obj;
     }
 
@@ -1006,45 +985,46 @@ public final class Module extends Browsable {
         }
     }
 
-    /** The given SigAST will now point to a nonnull Sig. */
-    private static Sig resolveSig(List<SigAST> sorted, SigAST oldS) throws Err {
-        if (oldS.realSig != null) return oldS.realSig;
+    /** The given Sig will now point to a nonnull Sig. */
+    private static Sig resolveSig(Module res, Set<Object> topo, Sig oldS) throws Err {
+        if (res.new2old.containsKey(oldS)) return oldS;
+        Sig realSig;
         final Pos pos = oldS.pos;
-        final Module u = oldS.realModule;
+        final Module u = res.sig2module.get(oldS);
         final String name = base(oldS);
         final String fullname = u.paths.contains("") ? "this/"+name : (u.paths.get(0)+"/"+name);
-        if (oldS.topo) throw new ErrorType(pos, "Sig "+oldS+" is involved in a cyclic inheritance."); else oldS.topo=true;
-        if (oldS.subset!=null)  {
-            if (oldS.abs!=null) throw new ErrorSyntax(pos, "Subset signature \""+name+"\" cannot be abstract.");
+        if (!topo.add(oldS)) throw new ErrorType(pos, "Sig "+oldS+" is involved in a cyclic inheritance.");
+        if (oldS instanceof SubsetSig)  {
             List<Sig> parents = new ArrayList<Sig>();
-            for(ExprVar n: oldS.parents) {
-               SigAST parentAST = u.getRawSIG(n.span(), n.label);
-               if (parentAST==null) throw new ErrorSyntax(n.span(), "The sig \""+n.label+"\" cannot be found.");
-               oldS.realParents.add(parentAST);
-               parents.add(resolveSig(sorted, parentAST));
+            for(Sig n: ((SubsetSig)oldS).parents) {
+               Sig parentAST = u.getRawSIG(n.pos, n.label);
+               if (parentAST==null) throw new ErrorSyntax(n.pos, "The sig \""+n.label+"\" cannot be found.");
+               parents.add(resolveSig(res, topo, parentAST));
             }
-            oldS.realSig = new SubsetSig(fullname, parents, oldS.attributes);
+            realSig = new SubsetSig(fullname, parents, oldS.attributes.toArray(new Attr[0]));
         } else {
-            ExprVar sup = null;
-            if (oldS.parents.size()==1) {sup=oldS.parents.get(0); if (sup!=null && sup.label.length()==0) sup=null;}
-            Pos suppos = sup==null ? Pos.UNKNOWN : sup.span();
-            SigAST parentAST = sup==null ? UNIVast : u.getRawSIG(suppos, sup.label);
-            if (parentAST==null) throw new ErrorSyntax(suppos, "The sig \""+sup.label+"\" cannot be found.");
-            oldS.realParents.add(parentAST);
-            Sig parent = resolveSig(sorted, parentAST);
-            if (!(parent instanceof PrimSig)) throw new ErrorSyntax(suppos, "Cannot extend the subset signature \"" + parent
+            Sig sup = ((PrimSig)oldS).parent;
+            Sig parentAST = u.getRawSIG(sup.pos, sup.label);
+            if (parentAST==null) throw new ErrorSyntax(sup.pos, "The sig \""+sup.label+"\" cannot be found.");
+            Sig parent = resolveSig(res, topo, parentAST);
+            if (!(parent instanceof PrimSig)) throw new ErrorSyntax(sup.pos, "Cannot extend the subset signature \"" + parent
                + "\".\n" + "A signature can only extend a toplevel signature or a subsignature.");
             PrimSig p = (PrimSig)parent;
-            oldS.realSig = new PrimSig(fullname, p, oldS.attributes);
+            realSig = new PrimSig(fullname, p, oldS.attributes.toArray(new Attr[0]));
         }
-        sorted.add(oldS);
-        return oldS.realSig;
+        res.new2old.put(realSig, oldS);
+        res.sig2module.put(realSig, u);
+        for(Module m: res.allModules) {
+           for(Map.Entry<String,Sig> e: m.sigs.entrySet()) if (e.getValue()==oldS) e.setValue(realSig);
+           for(Map.Entry<String,Sig> e: m.params.entrySet()) if (e.getValue()==oldS) e.setValue(realSig);
+        }
+        if (res.exactSigs.remove(oldS)) res.exactSigs.add(realSig);
+        return realSig;
     }
 
     /** Returns an unmodifiable list of all signatures defined inside this module. */
     public SafeList<Sig> getAllSigs() {
-        SafeList<Sig> x = new SafeList<Sig>(sigs.size());
-        for(Map.Entry<String,SigAST> e:sigs.entrySet()) x.add(e.getValue().realSig);
+        SafeList<Sig> x = new SafeList<Sig>(sigs.values());
         return x.dup();
     }
 
@@ -1210,7 +1190,7 @@ public final class Module extends Browsable {
     }
 
    /** Each fact name now points to a typechecked Expr rather than an untypechecked Exp; we'll also add the sig appended facts. */
-   private JoinableList<Err> resolveFacts(A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
+   private JoinableList<Err> resolveFacts(Module res, A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
       Context cx = new Context(this, warns);
       for(int i=0; i<facts.size(); i++) {
          String name = facts.get(i).a;
@@ -1221,13 +1201,12 @@ public final class Module extends Browsable {
             rep.typecheck("Fact " + name + ": " + expr.type+"\n");
          } else errors=errors.join(expr.errors);
       }
-      for(Map.Entry<String,SigAST> e:sigs.entrySet()) {
-         Sig s = e.getValue().realSig;
-         Expr f = e.getValue().appendedFact;
-         if (f==null) continue;
+      for(Sig s: sigs.values()) {
+         Expr f = res.old2appendedfacts.get(res.new2old.get(s));
+         if (f == null) continue;
          if (f instanceof ExprConstant && ((ExprConstant)f).op==ExprConstant.Op.TRUE) continue;
          Expr formula;
-         cx.rootsig = e.getValue();
+         cx.rootsig = s;
          if (s.isOne==null) {
             cx.put("this", s.decl.get());
             formula = cx.check(f).resolve_as_formula(warns);
@@ -1305,21 +1284,20 @@ public final class Module extends Browsable {
         }
         if (e==null) e = ExprConstant.TRUE;
         TempList<CommandScope> sc=new TempList<CommandScope>(cmd.scope.size());
-        for(CommandScope et:cmd.scope) {
-            SigAST s = getRawSIG(et.sig.pos, et.sig.label);
+        for(CommandScope et: cmd.scope) {
+            Sig s = getRawSIG(et.sig.pos, et.sig.label);
             if (s==null) throw new ErrorSyntax(et.sig.pos, "The sig \""+et.sig.label+"\" cannot be found.");
-            sc.add(new CommandScope(null, s.realSig, et.isExact, et.startingScope, et.endingScope, et.increment));
+            sc.add(new CommandScope(null, s, et.isExact, et.startingScope, et.endingScope, et.increment));
         }
         return new Command(cmd.pos, cmd.label, cmd.check, cmd.overall, cmd.bitwidth, cmd.maxseq, cmd.expects, sc.makeConst(), exactSigs, globalFacts.and(e), parent);
     }
 
     /** Each command now points to a typechecked Expr. */
     private void resolveCommands(Expr globalFacts) throws Err {
-        TempList<Sig> exactSigs = new TempList<Sig>(this.exactSigs.size());
-        for(SigAST s: this.exactSigs) exactSigs.add(s.realSig);
+        ConstList<Sig> exactSigs = ConstList.make(world.exactSigs);
         for(int i=0; i<commands.size(); i++) {
             Command cmd = commands.get(i);
-            cmd = resolveCommand(cmd, exactSigs.makeConst(), globalFacts);
+            cmd = resolveCommand(cmd, exactSigs, globalFacts);
             commands.set(i, cmd);
         }
     }
@@ -1337,24 +1315,24 @@ public final class Module extends Browsable {
 
     //============================================================================================================================//
 
-    private static void resolveFieldDecl(final A4Reporter rep, final SigAST oldS, final List<ErrorWarning> warns, boolean defined) throws Err {
+    private static void resolveFieldDecl(Module res, final A4Reporter rep, final Sig s, final List<ErrorWarning> warns, boolean defined) throws Err {
         // When typechecking each field:
         // * it is allowed to refer to earlier fields in the same SIG or in any visible ancestor sig
         // * it is allowed to refer to visible sigs
         // * it is NOT allowed to refer to any predicate or function
         // For example, if A.als opens B.als, and B/SIGX extends A/SIGY,
         // then B/SIGX's fields cannot refer to A/SIGY, nor any fields in A/SIGY)
-        final Sig s = oldS.realSig;
-        final Module m = oldS.realModule;
+        final List<Decl> oldDecls = res.old2fields.get(res.new2old.get(s));
+        if (oldDecls==null) return;
+        final Module m = res.sig2module.get(s);
         final Context cx = new Context(m, warns);
-        final ExprHasName dup = Decl.findDuplicateName(oldS.fields);
+        final ExprHasName dup = Decl.findDuplicateName(oldDecls);
         if (dup!=null) throw new ErrorSyntax(dup.span(), "sig \""+s+"\" cannot have 2 fields named \""+dup.label+"\"");
-        for(int di=0; di<oldS.fields.size(); di++) {
-           final Decl d = oldS.fields.get(di);
+        for(final Decl d: oldDecls) {
            if (d.expr.mult()!=ExprUnary.Op.EXACTLYOF) {if (defined) continue;} else {if (!defined) continue;}
            // The name "this" does matter, since the parser and the typechecker both refer to it as "this"
            cx.rootfield = d;
-           cx.rootsig = oldS;
+           cx.rootsig = s;
            cx.put("this", s.decl.get());
            Expr bound = cx.check(d.expr).resolve_as_set(warns);
            cx.remove("this");
@@ -1373,8 +1351,8 @@ public final class Module extends Browsable {
         // In other words: if 2 fields have the same name, then their type's first column must not intersect.
         final Map<String,List<Field>> fieldname2fields=new LinkedHashMap<String,List<Field>>();
         for(Module m: modules) {
-          for(Map.Entry<String,SigAST> sig: m.sigs.entrySet()) {
-            for(Field field: sig.getValue().realSig.getFields()) {
+          for(Sig sig: m.sigs.values()) {
+            for(Field field: sig.getFields()) {
                List<Field> peers=fieldname2fields.get(field.label);
                if (peers==null) { peers=new ArrayList<Field>(); fieldname2fields.put(field.label, peers); }
                for(Field field2: peers)
@@ -1391,49 +1369,34 @@ public final class Module extends Browsable {
 
     //============================================================================================================================//
 
-    private static void resolveMeta(final Module root, final List<Module> modules, final List<SigAST> sorted) throws Err {
+    private static void resolveMeta(final Module root) throws Err {
         // Now, add the meta sigs and fields if needed
         Map<Sig,PrimSig> sig2meta = new LinkedHashMap<Sig,PrimSig>();
         Map<Field,PrimSig> field2meta = new LinkedHashMap<Field,PrimSig>();
         boolean hasMetaSig = false, hasMetaField = false;
-        ExprVar EXTENDS = ExprVar.make(null, "extends");
-        ExprVar THIS = ExprVar.make(null, "univ");
-        List<ExprVar> THESE = Arrays.asList(THIS);
-        SigAST metasig   = root.addSig("sig$", EXTENDS, THESE, null, null, Attr.ABSTRACT, Attr.META);
-        SigAST metafield = root.addSig("field$", EXTENDS, THESE, null, null, Attr.ABSTRACT, Attr.META);
-        metasig.topo = true;
-        metasig.realParents.add(UNIVast);
-        metasig.realSig = new PrimSig("this/sig$", UNIV, Attr.ABSTRACT, Attr.META);
-        metafield.topo = true;
-        metafield.realParents.add(UNIVast);
-        metafield.realSig = new PrimSig("this/field$", UNIV, Attr.ABSTRACT, Attr.META);
-        root.metaSig = (PrimSig)(metasig.realSig);      sorted.add(metasig);
-        root.metaField = (PrimSig)(metafield.realSig);  sorted.add(metafield);
-        for(Module m: modules) for(SigAST sig: new ArrayList<SigAST>(m.sigs.values())) if (m!=root || (sig!=metasig && sig!=metafield)) {
-            final Sig s = sig.realSig;
-            String slab = base(sig);
-            SigAST ast = m.addSig(slab+"$", EXTENDS, THESE, null, null, Attr.ONE, PRIVATE.makenull(s.isPrivate), Attr.META);
-            ast.topo = true;
-            ast.realParents.add(metasig);
-            ast.realSig = new PrimSig(m.paths.contains("") ? "this/"+slab+"$" : (m.paths.get(0)+"/"+slab+"$"), root.metaSig, ONE.makenull(ast.one), PRIVATE.makenull(ast.isPrivate), Attr.META);
-            sig2meta.put(s, (PrimSig)(ast.realSig));
-            ast.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "value", s);
-            sorted.add(ast);
-            hasMetaSig=true;
+        root.metaSig = new PrimSig("this/sig$", UNIV, Attr.ABSTRACT, Attr.META);
+        root.metaField = new PrimSig("this/field$", UNIV, Attr.ABSTRACT, Attr.META);
+        root.new2old.put(root.metaSig, root.metaSig);     root.sigs.put(base(root.metaSig), root.metaSig);
+        root.new2old.put(root.metaField, root.metaField); root.sigs.put(base(root.metaField), root.metaField);
+        for(Module m: root.allModules) for(Sig s: new ArrayList<Sig>(m.sigs.values())) if (m!=root || (s!=root.metaSig && s!=root.metaField)) {
+            PrimSig ka = new PrimSig(s.label+"$", root.metaSig, Attr.ONE, PRIVATE.makenull(s.isPrivate), Attr.META);
+            sig2meta.put(s, ka);
+            ka.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "value", s);
+            m.new2old.put(ka, ka);
+            m.sigs.put(base(ka), ka);
+            hasMetaSig = true;
             Expr allfields = ExprConstant.EMPTYNESS;
             for(Field field: s.getFields()) {
-                String slab2 = slab + "$" + field.label;
-                SigAST ast2 = m.addSig(slab2, EXTENDS, THESE, null, null, Attr.ONE, PRIVATE.makenull(field.isPrivate), Attr.META);
-                ast2.topo = true;
-                ast2.realParents.add(metafield);
-                ast2.realSig = new PrimSig(m.paths.contains("") ? "this/"+slab2 : (m.paths.get(0)+"/"+slab2), root.metaField, ONE.makenull(ast2.one), PRIVATE.makenull(ast2.isPrivate), Attr.META);
-                field2meta.put(field, (PrimSig)(ast2.realSig));
-                sorted.add(ast2);
+                Pos priv = field.isPrivate; if (priv==null) priv = s.isPrivate;
+                PrimSig kb = new PrimSig(s.label+"$"+field.label, root.metaField, Attr.ONE, PRIVATE.makenull(priv), Attr.META);
+                field2meta.put(field, kb);
+                m.new2old.put(kb, kb);
+                m.sigs.put(base(kb), kb);
                 hasMetaField = true;
-                ast2.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "value", field);
-                if (allfields==ExprConstant.EMPTYNESS) allfields = ast2.realSig; else allfields = allfields.plus(ast2.realSig);
+                kb.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "value", field);
+                if (allfields==ExprConstant.EMPTYNESS) allfields = kb; else allfields = allfields.plus(kb);
             }
-            ast.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "fields", allfields);
+            ka.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "fields", allfields);
         }
         for(Map.Entry<Sig,PrimSig> e: sig2meta.entrySet()) {
             Expr expr = null;
@@ -1465,44 +1428,44 @@ public final class Module extends Browsable {
 
     /** This method resolves the entire world; NOTE: if it throws an exception, it may leave the world in an inconsistent state! */
     static Module resolveAll(final A4Reporter rep, final Module root) throws Err {
-        List<Module> modules = root.getAllReachableModules().makeCopy();
-        resolveParams(rep, modules);
-        resolveModules(rep, modules);
         final List<ErrorWarning> warns = new ArrayList<ErrorWarning>();
+        for(Module m: root.getAllReachableModules()) root.allModules.add(m);
+        resolveParams(rep, root.allModules);
+        resolveModules(rep, root.allModules);
+        for(Module m: root.allModules) for(Sig s: m.sigs.values()) root.sig2module.put(s, m);
         // Resolves SigAST -> Sig, and topologically sort the sigs into the "sorted" array
-        List<SigAST> sorted = new ArrayList<SigAST>();
-        sorted.add(UNIVast);
-        sorted.add(SIGINTast);
-        sorted.add(SEQIDXast);
-        sorted.add(STRINGast);
-        sorted.add(NONEast);
-        for(Module m: modules) for(Map.Entry<String,SigAST> e: m.sigs.entrySet()) resolveSig(sorted, e.getValue());
+        root.new2old.put(UNIV,UNIV);
+        root.new2old.put(SIGINT,SIGINT);
+        root.new2old.put(SEQIDX,SEQIDX);
+        root.new2old.put(STRING,STRING);
+        root.new2old.put(NONE,NONE);
+        HashSet<Object> topo = new HashSet<Object>();
+        for(Module m: root.allModules) for(Sig s: m.sigs.values()) resolveSig(root, topo, s);
         // Add the non-defined fields to the sigs in topologically sorted order (since fields in subsigs are allowed to refer to parent's fields)
-        for(SigAST oldS: sorted) resolveFieldDecl(rep, oldS, warns, false);
+        for(Sig oldS: root.new2old.keySet()) resolveFieldDecl(root, rep, oldS, warns, false);
         // Typecheck the function declarations
         JoinableList<Err> errors = new JoinableList<Err>();
-        for(Module x: modules) errors = x.resolveFuncDecls(rep, errors, warns);
+        for(Module x: root.allModules) errors = x.resolveFuncDecls(rep, errors, warns);
         if (!errors.isEmpty()) throw errors.pick();
         // Typecheck the defined fields
-        for(SigAST oldS: sorted) resolveFieldDecl(rep, oldS, warns, true);
-        if (Version.experimental && root.seenDollar) resolveMeta(root, modules, sorted);
+        for(Sig oldS: root.new2old.keySet()) resolveFieldDecl(root, rep, oldS, warns, true);
+        if (Version.experimental && root.seenDollar) resolveMeta(root);
         // Reject name clash
-        rejectNameClash(modules);
+        rejectNameClash(root.allModules);
         // Typecheck the function bodies, assertions, and facts (which can refer to function declarations)
-        for(Module x:modules) {
+        for(Module x: root.allModules) {
            errors = x.resolveFuncBody(rep, errors, warns);
            errors = x.resolveAssertions(rep, errors, warns);
-           errors = x.resolveFacts(rep, errors, warns);
+           errors = x.resolveFacts(root, rep, errors, warns);
            // also, we can collect up all the exact sigs and add them to the root module's list of exact sigs
-           if (x!=root) for(SigAST s:x.exactSigs) root.exactSigs.add(s);
-           for(String n: x.exactParams) { SigAST sig=x.params.get(n); if (sig!=null) root.exactSigs.add(sig); }
+           for(String n: x.exactParams) { Sig sig = x.params.get(n); if (sig!=null) root.exactSigs.add(sig); }
         }
         if (!errors.isEmpty()) throw errors.pick();
         // Typecheck the run/check commands (which can refer to function bodies and assertions)
         root.resolveCommands(root.getAllReachableFacts());
         if (!errors.isEmpty()) throw errors.pick();
         for(ErrorWarning w:warns) rep.warning(w);
-        for(SigAST s: root.exactSigs) rep.debug("Forced to be exact: "+s+"\n");
+        for(Sig s: root.exactSigs) rep.debug("Forced to be exact: "+s+"\n");
         return root;
     }
 
@@ -1514,7 +1477,7 @@ public final class Module extends Browsable {
     }
 
     /** Resolve the name based on the current context and this module. */
-    private Expr populate(TempList<Expr> ch, TempList<String> re, Decl rootfield, SigAST rootsig, boolean rootfunparam, Func rootfunbody, Pos pos, String fullname, Expr THIS) {
+    private Expr populate(TempList<Expr> ch, TempList<String> re, Decl rootfield, Sig rootsig, boolean rootfunparam, Func rootfunbody, Pos pos, String fullname, Expr THIS) {
         // Return object can be Func(with > 0 arguments) or Expr
         final String name = (fullname.charAt(0)=='@') ? fullname.substring(1) : fullname;
         boolean fun = (rootsig!=null && (rootfield==null || rootfield.expr.mult()==ExprUnary.Op.EXACTLYOF))
@@ -1522,20 +1485,20 @@ public final class Module extends Browsable {
         if (name.equals("univ"))       return ExprUnary.Op.NOOP.make(pos, UNIV);
         if (name.equals("Int"))        return ExprUnary.Op.NOOP.make(pos, SIGINT);
         if (name.equals("seq/Int"))    return ExprUnary.Op.NOOP.make(pos, SEQIDX);
-        if (name.equals("fun/String")) return ExprUnary.Op.NOOP.make(pos, STRING);
+        if (name.equals("String"))     return ExprUnary.Op.NOOP.make(pos, STRING);
         if (name.equals("none"))       return ExprUnary.Op.NOOP.make(pos, NONE);
         if (name.equals("iden"))       return ExprConstant.Op.IDEN.make(pos, 0);
         if (name.equals("sig$") || name.equals("field$")) if (world!=null) {
-            SigAST s = world.sigs.get(name);
-            if (s!=null) return ExprUnary.Op.NOOP.make(pos, s.realSig);
+            Sig s = world.sigs.get(name);
+            if (s!=null) return ExprUnary.Op.NOOP.make(pos, s);
         }
         final List<Object> ans = name.indexOf('/')>=0 ? getRawQS(fun?5:1, name) : getRawNQS(this, fun?5:1, name);
-        final SigAST param = params.get(name); if (param!=null && !ans.contains(param)) ans.add(param);
+        final Sig param = params.get(name); if (param!=null && !ans.contains(param)) ans.add(param);
         for(Object x: ans) {
-            if (x instanceof SigAST) {
-                SigAST y=(SigAST)x;
-                ch.add(ExprUnary.Op.NOOP.make(pos, y.realSig, null, (resolution==1 && y.realModule!=this) ? 1000 : 0));
-                re.add("sig "+y.realSig.label);
+            if (x instanceof Sig) {
+                Sig y = (Sig)x;
+                ch.add(ExprUnary.Op.NOOP.make(pos, y, null, 0));
+                re.add("sig "+y.label);
             }
             else if (x instanceof Func) {
                 Func f = (Func)x;
@@ -1575,19 +1538,18 @@ public final class Module extends Browsable {
         // (2) But can refer to anything else visible.
         // All else: we can call, and can refer to anything visible.
         for(Module m: getAllNameableModules())
-          for(Map.Entry<String,SigAST> s:m.sigs.entrySet()) if (m==this || s.getValue().isPrivate==null)
-            for(Field f: s.getValue().realSig.getFields()) if (f.isMeta==null && (m==this || f.isPrivate==null) && f.label.equals(name))
+          for(Map.Entry<String,Sig> s:m.sigs.entrySet()) if (m==this || s.getValue().isPrivate==null)
+            for(Field f: s.getValue().getFields()) if (f.isMeta==null && (m==this || f.isPrivate==null) && f.label.equals(name))
               if (resolution==1) {
                  Expr x=null;
-                 int penalty = (s.getValue().realModule==this ? 0 : 1000); // penalty of 1000
                  if (rootsig==null)
-                    { x=ExprUnary.Op.NOOP.make(pos,f,null,penalty); }
-                 else if (rootsig.realSig.isSameOrDescendentOf(f.sig))
-                    { x=ExprUnary.Op.NOOP.make(pos,f,null,penalty); if (fullname.charAt(0)!='@') x=THIS.join(x); }
+                    { x=ExprUnary.Op.NOOP.make(pos, f, null, 0); }
+                 else if (rootsig.isSameOrDescendentOf(f.sig))
+                    { x=ExprUnary.Op.NOOP.make(pos, f, null, 0); if (fullname.charAt(0)!='@') x=THIS.join(x); }
                  else if (rootfield==null || rootfield.expr.mult()==ExprUnary.Op.EXACTLYOF)
-                    { x=ExprUnary.Op.NOOP.make(pos, f, null, 1+penalty); } // penalty of 1
+                    { x=ExprUnary.Op.NOOP.make(pos, f, null, 1); } // penalty of 1
                  if (x!=null) { ch.add(x); re.add("field "+f.sig.label+" <: "+f.label); }
-              } else if (rootfield==null || rootsig.realSig.isSameOrDescendentOf(f.sig)) {
+              } else if (rootfield==null || rootsig.isSameOrDescendentOf(f.sig)) {
                  Expr x0 = ExprUnary.Op.NOOP.make(pos, f, null, 0);
                  if (resolution==2 && THIS!=null && fullname.charAt(0)!='@' && f.type.firstColumnOverlaps(THIS.type)) {
                     ch.add(THIS.join(x0));

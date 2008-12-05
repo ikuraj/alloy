@@ -92,7 +92,7 @@ sig Hybrid extends Port{        -- Hybrid relates to any number of field-relatio
     hyb:    (Discrete -> Analog)
 }
 
-sig Boolean, Integer, Real, Character, String extends Type{}
+sig Boolean, Integer, Real, Character, Stringz extends Type{}
 
 
 // Standalone signatures for base entities
