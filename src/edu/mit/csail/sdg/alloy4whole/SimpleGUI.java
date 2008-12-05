@@ -981,7 +981,7 @@ public final class SimpleGUI implements ComponentListener {
             if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG)
                 WorkerEngine.runLocally(task, cb);
             else
-                WorkerEngine.run(task, newmem, newstack, Helper.alloyHome()+fs+"binary", cb);
+                WorkerEngine.run(task, newmem, newstack, Helper.alloyHome()+fs+"binary", "", cb);
             subMemoryNow = newmem;
             subStackNow = newstack;
         } catch(Throwable ex) {
@@ -1610,7 +1610,7 @@ public final class SimpleGUI implements ComponentListener {
             SimpleTask2 task = new SimpleTask2();
             task.filename = arg;
             try {
-                WorkerEngine.run(task, SubMemory.get(), SubStack.get(), Helper.alloyHome()+fs+"binary", cb);
+                WorkerEngine.run(task, SubMemory.get(), SubStack.get(), Helper.alloyHome()+fs+"binary", "", cb);
             } catch(Throwable ex) {
                 WorkerEngine.stop();
                 log.logBold("Fatal Error: Solver failed due to unknown reason.\n" +
@@ -1799,7 +1799,7 @@ public final class SimpleGUI implements ComponentListener {
                     });
                     return;
                 }
-                try { mem=toTry.remove(0); WorkerEngine.stop(); WorkerEngine.run(dummyTask, mem, 128, "", this); return; } catch(IOException ex) { fail(); }
+                try { mem=toTry.remove(0); WorkerEngine.stop(); WorkerEngine.run(dummyTask, mem, 128, "", "", this); return; } catch(IOException ex) { fail(); }
             }
             public synchronized void done() {
                 //System.out.println("Alloy4 can use "+mem+"M"); System.out.flush();
