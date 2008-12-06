@@ -40,9 +40,6 @@ public final class DotEdge {
     /** a user-provided annotation that will be associated with this edge (can be null) */
     public final Object uuid;
 
-    /** The unique id for this edge. */
-    private final int id;
-
     /** The label to show. */
     private final String label;
 
@@ -75,7 +72,6 @@ public final class DotEdge {
 
     /** Constructs an edge.
      * @param uuid - a user-provided annotation that will be associated with this edge (can be null)
-     * @param id - a unique id for this edge
      * @param from - the origin node
      * @param to - the destination node
      * @param label - the textual label of the edge.  Can contain newlines
@@ -85,11 +81,10 @@ public final class DotEdge {
      * @param weight - the weight of the edge (edges with higher weights will tend to be shorter and straighter)
      * @param constraint - whether this edge should constrain the graph layout or not
      */
-    public DotEdge(Object uuid, int id, DotNode from, DotNode to, String label,
+    public DotEdge(Object uuid, DotNode from, DotNode to, String label,
             DotStyle style, DotColor color, Color magicColor, DotDirection dir,
             int weight, boolean constraint, Object group) {
         this.uuid = uuid;
-        this.id = id;
         this.from = from;
         this.to = to;
         this.label = label;
@@ -114,10 +109,10 @@ public final class DotEdge {
     }
 
     /** Write this edge (using the given Edge palette) into a StringBuilder as if writing to a DOT file. */
-    void write(StringBuilder out, DotPalette pal) {
-        out.append("\"N" + from.getID() + "\"");
+    void write(DotGraph parent, StringBuilder out, DotPalette pal) {
+        out.append("\"N" + parent.node2id(from) + "\"");
         out.append(" -> ");
-        out.append("\"N" + to.getID() + "\"");
+        out.append("\"N" + parent.node2id(to) + "\"");
         out.append(" [");
         out.append("uuid = \"" + (uuid==null ? "" : esc(uuid.toString())) + "\"");
         out.append(", color = \"" + (color==DotColor.MAGIC ? "black" : color.getDotText(pal)) + "\"");
@@ -141,18 +136,4 @@ public final class DotEdge {
         }
         return out.toString();
     }
-
-    /** Returns a human-readable textual output for debugging purporses. */
-    @Override public String toString() {
-        return "Edge["+from+"->"+to+"]";
-    }
-
-    /** Two edges are equal if they have the same id. */
-    @Override public boolean equals(Object o) {
-        if (!(o instanceof DotEdge)) return false;
-        return id==(((DotEdge)o).id);
-    }
-
-    /** Computes a hash code based on the id. */
-    @Override public int hashCode() { return id; }
 }

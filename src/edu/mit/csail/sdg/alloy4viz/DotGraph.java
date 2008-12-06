@@ -55,14 +55,14 @@ public final class DotGraph {
     /** The palette for edges in the graph. */
     private final DotPalette edgePalette;
 
+    /** Maps each node to a unique integer ID. */
+    private final IdentityHashMap<DotNode,String> node2id = new IdentityHashMap<DotNode,String>();
+
     /** The set of nodes in the graph. */
     public final ConstSet<DotNode> nodes;
 
     /** The set of edges in the graph. */
     public final ConstSet<DotEdge> edges;
-
-    /** The set of set of nodes that should be aligned together. */
-    private final Set<Set<DotNode>> ranks;
 
     /** The set of additional attributes to be printed for each node. */
     private final Map<DotNode,Set<String>> attrs;
@@ -89,9 +89,6 @@ public final class DotGraph {
         this.fontSize = fontSize;
         this.nodePalette = nodePalette;
         this.edgePalette = edgePalette;
-        this.ranks = new LinkedHashSet<Set<DotNode>>();
-        for(Set<DotNode> set:ranks)
-            this.ranks.add(Collections.unmodifiableSet(new LinkedHashSet<DotNode>(set)));
         this.attrs = new LinkedHashMap<DotNode,Set<String>>();
         for(Map.Entry<DotNode,Set<String>> e:attrs.entrySet())
             this.attrs.put(e.getKey(), Collections.unmodifiableSet(new LinkedHashSet<String>(e.getValue())));
@@ -99,6 +96,13 @@ public final class DotGraph {
         this.edges = ConstSet.make(edges.keySet());
         this.relations = ConstMap.make(rels);
         this.magicColor = ConstMap.make(magicColor);
+    }
+
+    /** Return a unique numeric ID for a node. */
+    public String node2id(DotNode node) {
+       String ans = node2id.get(node);
+       if (ans == null) { ans = "" + node2id.size(); node2id.put(node, ans); }
+       return ans;
     }
 
     /** Generate the entire content of the DOT file. */
@@ -146,13 +150,8 @@ public final class DotGraph {
                     "]"
             );
         } else {
-            for (DotEdge edge:edges) edge.write(sb, edgePalette);
-            for (DotNode node:nodes) node.write(sb, attrs.get(node), nodePalette);
-            for (Set<DotNode> set:ranks) if (set.size()>0) {
-                sb.append("{ rank=same;");
-                for (DotNode node:set) sb.append(" \"N" + node.getID() + "\";");
-                sb.append(" }\n");
-            }
+            for (DotEdge edge:edges) edge.write(this, sb, edgePalette);
+            for (DotNode node:nodes) node.write(this, sb, attrs.get(node), nodePalette);
         }
         sb.append("}\n");
         return sb.toString();
@@ -162,22 +161,11 @@ public final class DotGraph {
      * If there's an error, it will throw an exception.
      */
     public Pair<String,JPanel> visualize() throws ErrorFatal {
-        final String result=write();
-        final VizGraph graph=write2();
+        final String result = write();
+        final VizGraph graph = write2();
         VizViewer gp = new VizViewer(graph);
         gp.setBorder(null);
         gp.alloySetAnnotation(result);
         return new Pair<String,JPanel>(result,gp);
     }
-
-    /** Two graphs are equal if their sets of nodes, edges, attributes, and rankings are equal. */
-    public boolean equals(Object other) {
-        if (!(other instanceof DotGraph)) return false;
-        if (other==this) return true;
-        DotGraph g = (DotGraph)other;
-        return nodes.equals(g.nodes) && edges.equals(g.edges) && attrs.equals(g.attrs) && ranks.equals(g.ranks);
-    }
-
-    /** Compute a hash code based on the nodes, edges, attributes, and ranks of this graph. */
-    public int hashCode() { return 3*nodes.hashCode() + 5*edges.hashCode() + 7*ranks.hashCode() + 11*attrs.hashCode(); }
 }

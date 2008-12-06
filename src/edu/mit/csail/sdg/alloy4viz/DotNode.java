@@ -40,9 +40,6 @@ public final class DotNode {
     /** a user-provided annotation that will be associated with this node (can be null) */
     public final Object uuid;
 
-    /** The unique id for this edge. */
-    private final int id;
-
     /** The label to show. */
     private final String label;
 
@@ -55,19 +52,15 @@ public final class DotNode {
     /** The line style. */
     private final DotStyle style;
 
-    /** Returns the unique id for this node. */
-    public int getID() { return id; }
-
     /** Constructs a node.
      * @param uuid - a user-provided annotation that will be associated with this node (can be null)
-     * @param id - the unique ID for this node
      * @param label - the label to show
      * @param shape - the shape
      * @param color - the color
      * @param style - the line style
      */
-    public DotNode(Object uuid, int id, String label, DotShape shape, DotColor color, DotStyle style) {
-        this.uuid = uuid; this.id = id; this.label = label; this.shape = shape; this.color = color; this.style = style;
+    public DotNode(Object uuid, String label, DotShape shape, DotColor color, DotStyle style) {
+        this.uuid = uuid; this.label = label; this.shape = shape; this.color = color; this.style = style;
     }
 
     /** Writes the node into a DotGraph object.
@@ -85,8 +78,8 @@ public final class DotNode {
      * @param attribs - a set of additional labels to append to the node (can be null if we don't have any to append)
      * @param pal - the color palette to use
      */
-    void write(StringBuilder out, Set<String> attribs, DotPalette pal) {
-        out.append("\"N" + id + "\"");
+    void write(DotGraph parent, StringBuilder out, Set<String> attribs, DotPalette pal) {
+        out.append("\"N" + parent.node2id(this) + "\"");
         out.append(" [");
         out.append("uuid=\"");
         if (uuid!=null) out.append(esc(uuid.toString()));
@@ -110,16 +103,4 @@ public final class DotNode {
         }
         return out.toString();
     }
-
-    /** Returns a human-readable textual output for debugging purposes. */
-    @Override public String toString() { return "Node"+id+"("+label+")"; }
-
-    /** Two nodes are equal if they have the same id. */
-    @Override public boolean equals(Object o) {
-        if (!(o instanceof DotNode)) return false;
-        return id==(((DotNode)o).id);
-    }
-
-    /** Computes a hashcode based on the id. */
-    @Override public int hashCode() { return id; }
 }

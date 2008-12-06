@@ -30,6 +30,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import javax.swing.JPanel;
+import edu.mit.csail.sdg.alloy4.ErrorFatal;
+import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4graph.DotColor;
 import edu.mit.csail.sdg.alloy4graph.DotDirection;
@@ -66,10 +69,10 @@ public final class StaticGraphMaker {
     private final Map<DotNode,Set<String>> attribs=new LinkedHashMap<DotNode,Set<String>>();
 
     /** This stores the resulting graph. */
-    private final DotGraph graph;
+    private final Pair<String,JPanel> graph;
 
     /** Produces a single Graph from the given Instance and View and choice of Projection */
-    public static DotGraph produceGraph(AlloyInstance instance, VizState view, AlloyProjection proj) {
+    public static Pair<String,JPanel> produceGraph(AlloyInstance instance, VizState view, AlloyProjection proj) throws ErrorFatal {
         view = new VizState(view);
         if (proj == null) proj = new AlloyProjection();
         StaticGraphMaker answer = new StaticGraphMaker(instance, view, proj);
@@ -115,7 +118,7 @@ public final class StaticGraphMaker {
     );
 
     /** The constructor takes an Instance and a View, then insert the generate graph(s) into a blank cartoon. */
-    private StaticGraphMaker (AlloyInstance originalInstance, VizState view, AlloyProjection proj) {
+    private StaticGraphMaker (AlloyInstance originalInstance, VizState view, AlloyProjection proj) throws ErrorFatal {
         final boolean hidePrivate = view.hidePrivate();
         final boolean hideMeta = view.hideMeta();
         Map<AlloyRelation,Color> magicColor = new TreeMap<AlloyRelation,Color>();
@@ -154,14 +157,14 @@ public final class StaticGraphMaker {
           if (!(hidePrivate && rel.isPrivate))
              if (view.attribute.resolve(rel))
                 edgesAsAttribute(rel);
-        graph = new DotGraph(view.getFontSize(), view.getNodePalette(), view.getEdgePalette(), rels, magicColor, nodes, edges, attribs);
+        graph = (new DotGraph(view.getFontSize(), view.getNodePalette(), view.getEdgePalette(), rels, magicColor, nodes, edges, attribs)).visualize();
     }
 
     /** Return the node for a specific AlloyAtom (create it if it doesn't exist yet).
      * @return null if the atom is explicitly marked as "Don't Show".
      */
     private DotNode createNode(final boolean hidePrivate, final boolean hideMeta, final AlloyAtom atom) {
-        DotNode node=atom2node.get(atom);
+        DotNode node = atom2node.get(atom);
         if (node!=null) return node;
         if ( (hidePrivate && atom.getType().isPrivate)
           || (hideMeta    && atom.getType().isMeta)
@@ -170,8 +173,8 @@ public final class StaticGraphMaker {
         DotColor color = view.nodeColor(atom, instance);
         DotStyle style = view.nodeStyle(atom, instance);
         DotShape shape = view.shape(atom, instance);
-        String label = atomname(atom,false);
-        node = new DotNode(atom, nodes.size(), label, shape, color, style);
+        String label = atomname(atom, false);
+        node = new DotNode(atom, label, shape, color, style);
         // Get the label based on the sets and relations
         String setsLabel="";
         boolean showLabelByDefault = view.showAsLabel.get(null);
@@ -221,8 +224,8 @@ public final class StaticGraphMaker {
             if (label.length()==0) { /* label=moreLabel.toString(); */ }
             else { label=label+(" ["+moreLabel+"]"); }
         }
-        DotDirection dir = bidirectional ? DotDirection.BOTH : (layoutBack ? DotDirection.BACK:DotDirection.FORWARD);
-        DotEdge e=new DotEdge(tuple, edges.size(), (layoutBack?end:start), (layoutBack?start:end), label,
+        DotDirection dir = bidirectional ? DotDirection.BOTH : (layoutBack ? DotDirection.BACK : DotDirection.FORWARD);
+        DotEdge e = new DotEdge(tuple, (layoutBack ? end : start), (layoutBack ? start : end), label,
                 view.edgeStyle.resolve(rel), view.edgeColor.resolve(rel), magicColor,
                 dir, view.weight.get(rel), view.constraint.resolve(rel), rel);
         edges.put(e, tuple);

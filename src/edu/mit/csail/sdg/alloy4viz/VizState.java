@@ -169,15 +169,14 @@ public final class VizState {
 
     /** Generate a VizGraphPanel for a given projection choice, using the current settings. */
     public Pair<String,JPanel> getGraph(AlloyProjection projectionChoice) {
-        Pair<String,JPanel> ans=cache.get(projectionChoice);
+        Pair<String,JPanel> ans = cache.get(projectionChoice);
         if (ans!=null) return ans;
         AlloyInstance inst = originalInstance;
-        DotGraph graph = StaticGraphMaker.produceGraph(inst, this, projectionChoice);
         try {
-            ans=graph.visualize();
+            ans = StaticGraphMaker.produceGraph(inst, this, projectionChoice);
             cache.put(projectionChoice,ans);
         } catch(Throwable ex) {
-            String msg = "An error has occurred: "+ex+"\n\nStackTrace:\n"+MailBug.dump(ex)+"\nRaw Dot:\n\n"+graph.write();
+            String msg = "An error has occurred: " + ex + "\n\nStackTrace:\n" + MailBug.dump(ex) + "\n";
             JScrollPane scroll = OurUtil.scrollpane(OurUtil.textarea(msg, 0, 0, false, false));
             ans=new Pair<String,JPanel>("",new JPanel());
             ans.b.setLayout(new BorderLayout());
