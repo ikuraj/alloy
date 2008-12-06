@@ -85,7 +85,7 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
     private Color color = BLACK;
 
     /** The line-style of the edge; default is SOLID; never null. */
-    private VizStyle style = VizStyle.SOLID;
+    private DotStyle style = DotStyle.SOLID;
 
     /** The edge weight; always between 1 and 10000 inclusively. */
     private int weight = 1;
@@ -100,7 +100,7 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
     public int weight() { return weight; }
 
     /** Returns the line style; never null. */
-    public VizStyle style() { return style; }
+    public DotStyle style() { return style; }
 
     /** Returns the line color; never null. */
     public Color color() { return color; }
@@ -130,14 +130,20 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
     }
 
     /** Sets the line style. */
-    public VizEdge set(VizStyle style) {
+    public VizEdge set(DotStyle style) {
         if (style!=null) this.style=style;
         return this;
     }
 
     /** Sets the line color. */
+    public VizEdge set(DotColor color) {
+        if (color!=null) this.color = color.getColor(graph().edgePalette);
+        return this;
+    }
+
+    /** Sets the line color. */
     public VizEdge set(Color color) {
-        if (color!=null) this.color=color;
+        if (color!=null) this.color = color;
         return this;
     }
 
@@ -147,7 +153,7 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
     }
 
     /** Construct an edge from "from" to "to" with the given arrow head settings, then add the edge to the graph. */
-    public VizEdge(VizNode from, VizNode to, Object uuid, String label, boolean drawArrowHeadOnFrom, boolean drawArrowHeadOnTo, VizStyle style, Color color, Object group) {
+    public VizEdge(VizNode from, VizNode to, Object uuid, String label, boolean drawArrowHeadOnFrom, boolean drawArrowHeadOnTo, DotStyle style, Color color, Object group) {
        super(from, to); // The parent's constructor will add the edge A->B to the graph
        if (group instanceof VizNode) throw new IllegalArgumentException("group cannot be a VizNode");
        if (group instanceof VizEdge) throw new IllegalArgumentException("group cannot be a VizEdge");
@@ -218,7 +224,7 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
     /** Given that this edge is already well-laidout, this method moves the label hoping to avoid/minimize overlap. */
     void repositionLabel(AvailableSpace sp) {
         if (label.length()==0 || a()==b()) return;
-        final int gap = style==VizStyle.BOLD ? 4 : 2; // If the line is bold, we need to shift the label to the right a little bit
+        final int gap = style==DotStyle.BOLD ? 4 : 2; // If the line is bold, we need to shift the label to the right a little bit
         boolean failed = false;
         VizCurve p = path;
         for(VizNode a=a(); a.shape()==null;) { VizEdge e=a.inEdges().get(0); a=e.a(); p=e.path().join(p); }
@@ -245,7 +251,7 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
     public void draw(Artist gr, double scale, VizEdge highEdge, Object highGroup) {
        final int top = a().graph.getTop(), left = a().graph.getLeft();
        gr.translate(-left, -top);
-       if (highEdge==this) { gr.setColor(color); gr.set(VizStyle.BOLD, scale); }
+       if (highEdge==this) { gr.setColor(color); gr.set(DotStyle.BOLD, scale); }
           else if ((highEdge==null && highGroup==null) || highGroup==group) { gr.setColor(color); gr.set(style, scale); }
           else { gr.setColor(Color.LIGHT_GRAY); gr.set(style, scale); }
        if (a()==b()) {
@@ -262,7 +268,7 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
           }
           gr.drawSmoothly(p);
        }
-       gr.set(VizStyle.SOLID, scale);
+       gr.set(DotStyle.SOLID, scale);
        gr.translate(left, top);
        if (highEdge==null && highGroup==null && label.length()>0) drawLabel(gr, color, null);
        drawArrowhead(gr, scale, highEdge, highGroup);
@@ -311,8 +317,8 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
        final double tipLength = ad * 0.6D;
        final int top = a().graph.getTop(), left = a().graph.getLeft();
        // Check to see if this edge is highlighted or not
-       double fan = (style==VizStyle.BOLD ? bigFan : smallFan);
-       if (highEdge==this) { fan=bigFan; gr.setColor(color); gr.set(VizStyle.BOLD, scale); }
+       double fan = (style==DotStyle.BOLD ? bigFan : smallFan);
+       if (highEdge==this) { fan=bigFan; gr.setColor(color); gr.set(DotStyle.BOLD, scale); }
           else if ((highEdge==null && highGroup==null) || highGroup==group) { gr.setColor(color); gr.set(style, scale); }
           else { gr.setColor(Color.LIGHT_GRAY); gr.set(style, scale); }
        for(VizEdge e=this; ;e=e.b().outEdges().get(0)) {

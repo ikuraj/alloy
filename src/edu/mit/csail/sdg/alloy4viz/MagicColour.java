@@ -25,6 +25,30 @@ package edu.mit.csail.sdg.alloy4viz;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4.ConstList.TempList;
+import edu.mit.csail.sdg.alloy4graph.DotColor;
+import edu.mit.csail.sdg.alloy4graph.DotPalette;
+import edu.mit.csail.sdg.alloy4graph.DotShape;
+import static edu.mit.csail.sdg.alloy4graph.DotShape.BOX;
+import static edu.mit.csail.sdg.alloy4graph.DotShape.DIAMOND;
+import static edu.mit.csail.sdg.alloy4graph.DotShape.TRAPEZOID;
+import static edu.mit.csail.sdg.alloy4graph.DotShape.HOUSE;
+import static edu.mit.csail.sdg.alloy4graph.DotShape.ELLIPSE;
+import static edu.mit.csail.sdg.alloy4graph.DotShape.EGG;
+import static edu.mit.csail.sdg.alloy4graph.DotShape.HEXAGON;
+import static edu.mit.csail.sdg.alloy4graph.DotShape.OCTAGON;
+import static edu.mit.csail.sdg.alloy4graph.DotShape.INV_HOUSE;
+import static edu.mit.csail.sdg.alloy4graph.DotShape.INV_TRAPEZOID;
+import static edu.mit.csail.sdg.alloy4graph.DotShape.INV_TRIANGLE;
+import static edu.mit.csail.sdg.alloy4graph.DotShape.DOUBLE_OCTAGON;
+import static edu.mit.csail.sdg.alloy4graph.DotShape.TRIPLE_OCTAGON;
+import static edu.mit.csail.sdg.alloy4graph.DotShape.M_CIRCLE;
+import static edu.mit.csail.sdg.alloy4graph.DotShape.M_DIAMOND;
+import static edu.mit.csail.sdg.alloy4graph.DotShape.M_SQUARE;
+import static edu.mit.csail.sdg.alloy4graph.DotShape.PARALLELOGRAM;
+import edu.mit.csail.sdg.alloy4graph.DotStyle;
 
 /** This class implements the automatic visualization inference.
  *
@@ -93,6 +117,20 @@ final class MagicColour {
       }
    }
 
+   /** The list of shape families. */
+   private static final List<ConstList<DotShape>> families;
+   static {
+      TempList<ConstList<DotShape>> list = new TempList<ConstList<DotShape>>();
+      list.add(Util.asList(BOX, TRAPEZOID, HOUSE));
+      list.add(Util.asList(ELLIPSE, EGG));
+      list.add(Util.asList(HEXAGON, OCTAGON, DOUBLE_OCTAGON, TRIPLE_OCTAGON));
+      list.add(Util.asList(INV_TRIANGLE, INV_HOUSE, INV_TRAPEZOID));
+      list.add(Util.asList(M_DIAMOND, M_SQUARE, M_CIRCLE));
+      list.add(Util.asList(PARALLELOGRAM, DIAMOND));
+      families = list.makeConst();
+   }
+
+
    /** SYNTACTIC/VISUAL: Determine shapes for nodes.
     *
     * <ul>
@@ -121,7 +159,7 @@ final class MagicColour {
          // match it to a shape family
          // 1. look for exact match
          boolean foundExactMatch = false;
-         for (final List<DotShape> shapeFamily : DotShape.families) {
+         for (final List<DotShape> shapeFamily: families) {
             if (size == shapeFamily.size() && !usedShapeFamilies.contains(shapeFamily)) {
                // found a match!
                usedShapeFamilies.add(shapeFamily);
@@ -134,7 +172,7 @@ final class MagicColour {
          // 2. look for approximate match
          List<DotShape> approxShapeFamily = null;
          int approxShapeFamilyDistance = Integer.MAX_VALUE;
-         for (final List<DotShape> shapeFamily : DotShape.families) {
+         for (final List<DotShape> shapeFamily: families) {
             if (size <= shapeFamily.size() && !usedShapeFamilies.contains(shapeFamily)) {
                // found a potential match
                final int distance = shapeFamily.size() - size;

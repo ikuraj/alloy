@@ -23,8 +23,12 @@
 package edu.mit.csail.sdg.alloy4viz;
 
 import java.awt.Color;
+import edu.mit.csail.sdg.alloy4graph.DotColor;
+import edu.mit.csail.sdg.alloy4graph.DotDirection;
+import edu.mit.csail.sdg.alloy4graph.DotPalette;
 import edu.mit.csail.sdg.alloy4graph.VizEdge;
 import edu.mit.csail.sdg.alloy4graph.VizNode;
+import edu.mit.csail.sdg.alloy4graph.DotStyle;
 
 /** Immutable; this represents an edge to be written out to the DOT file.
  *
@@ -99,13 +103,13 @@ public final class DotEdge {
     }
 
     /** Write this edge (using the given Edge palette) into a DotGraph object. */
-    void write2(VizNode from, VizNode to, DotPalette pal) {
+    void write2(VizNode from, VizNode to) {
         VizEdge e;
         if (dir==DotDirection.FORWARD) e=new VizEdge(from,to,uuid,label,group).set(false,true);
            else if (dir==DotDirection.BACK) e=new VizEdge(from,to,uuid,label,group).set(true,false);
            else e=new VizEdge(from,to,uuid,label,group).set(true,true);
-        if (color==DotColor.MAGIC && magicColor!=null) e.set(magicColor); else e.set(DotColor.name2color(color.getDotText(pal)));
-        e.set(style.vizStyle);
+        if (color==DotColor.MAGIC && magicColor!=null) e.set(magicColor); else e.set(color);
+        e.set(style);
         if (constraint) e.set(weight<1 ? 1 : (weight>100 ? 10000 : 100*weight)); else e.set(1);
     }
 
@@ -116,8 +120,8 @@ public final class DotEdge {
         out.append("\"N" + to.getID() + "\"");
         out.append(" [");
         out.append("uuid = \"" + (uuid==null ? "" : esc(uuid.toString())) + "\"");
-        out.append(", color = \"" + color.getDotText(pal) + "\"");
-        out.append(", fontcolor = \"" + color.getDotText(pal) + "\"");
+        out.append(", color = \"" + (color==DotColor.MAGIC ? "black" : color.getDotText(pal)) + "\"");
+        out.append(", fontcolor = \"" + (color==DotColor.MAGIC ? "black" : color.getDotText(pal)) + "\"");
         out.append(", style = \"" + style.getDotText(pal) + "\"");
         out.append(", label = \"" + esc(label) + "\"");
         out.append(", dir = \"" + dir.getDotText(pal) + "\"");

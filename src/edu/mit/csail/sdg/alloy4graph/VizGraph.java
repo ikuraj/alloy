@@ -80,6 +80,12 @@ public final strictfp class VizGraph extends DiGraph {
     /** The total height of the graph; this value is computed by layout(). */
     private int totalHeight=0;
 
+    /** The color palette for nodes. */
+    final DotPalette nodePalette;
+
+    /** The color palette for edges. */
+    final DotPalette edgePalette;
+
     /** The height of each layer. */
     int[] layerPH=null;
 
@@ -112,7 +118,11 @@ public final strictfp class VizGraph extends DiGraph {
     public double getDefaultScale() { return defaultScale; }
 
     /** Constructs an empty VizGraph object. */
-    public VizGraph(double defaultScale) { this.defaultScale = defaultScale; }
+    public VizGraph(DotPalette nodePalette, DotPalette edgePalette, double defaultScale) {
+       this.nodePalette = nodePalette;
+       this.edgePalette = edgePalette;
+       this.defaultScale = defaultScale;
+    }
 
     //============================================================================================================================//
 
@@ -225,7 +235,7 @@ public final strictfp class VizGraph extends DiGraph {
           VizNode a=e.a(), b=e.b();
           while(a.layer() - b.layer() > 1) {
              VizNode tmp = a;
-             a = new VizNode(a.graph, e.uuid).set((VizShape)null);
+             a = new VizNode(a.graph, e.uuid).set((DotShape)null);
              a.setLayer(tmp.layer()-1);
              // now we have three nodes in the vertical order of "tmp", "a", then "b"
              e.changeB(a);                                                                   // let old edge go from "tmp" to "a"

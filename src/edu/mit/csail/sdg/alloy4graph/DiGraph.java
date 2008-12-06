@@ -133,6 +133,9 @@ public class DiGraph {
         /** {@inheritDoc} */
         @Override public final boolean equals(Object other) { return super.equals(other); }
 
+        /** Returns the graph that this edge is in. */
+        final VizGraph graph() { return a.graph; }
+
         /** Returns the "from" node. */
         public final VizNode a() { return (VizNode)a; }
 

@@ -34,6 +34,7 @@ import edu.mit.csail.sdg.alloy4.ConstMap;
 import edu.mit.csail.sdg.alloy4.ConstSet;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.Pair;
+import edu.mit.csail.sdg.alloy4graph.DotPalette;
 import edu.mit.csail.sdg.alloy4graph.VizGraph;
 import edu.mit.csail.sdg.alloy4graph.VizNode;
 import edu.mit.csail.sdg.alloy4graph.VizViewer;
@@ -102,19 +103,19 @@ public final class DotGraph {
 
     /** Generate the entire content of the DOT file. */
     public VizGraph write2() {
-        VizGraph graph=new VizGraph(fontSize / 12.0D);
+        VizGraph graph = new VizGraph(nodePalette, edgePalette, fontSize / 12.0D);
         if (nodes.size()==0) {
             new VizNode(graph, null, "Due to your theme settings, every atom is hidden.", "Please click Theme and adjust your settings.");
         } else {
             IdentityHashMap<DotNode,VizNode> map=new IdentityHashMap<DotNode,VizNode>();
             for (DotNode node:nodes) {
-                VizNode n=node.write2(graph, attrs.get(node), nodePalette);
+                VizNode n=node.write2(graph, attrs.get(node));
                 map.put(node, n);
             }
             for (DotEdge edge:edges) {
                 VizNode a = map.get(edge.from);
                 VizNode b = map.get(edge.to);
-                if (a!=null && b!=null) edge.write2(a,b,edgePalette);
+                if (a!=null && b!=null) edge.write2(a, b);
             }
         }
         for(Map.Entry<AlloyRelation,Integer> e:relations.entrySet()) {

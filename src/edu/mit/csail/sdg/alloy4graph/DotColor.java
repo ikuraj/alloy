@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package edu.mit.csail.sdg.alloy4viz;
+package edu.mit.csail.sdg.alloy4graph;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -69,11 +69,30 @@ public enum DotColor {
    /** This maps each dot color name into the corresponding Java Color object. */
    private static final Map<String,Color> name2color = new HashMap<String,Color>();
 
-   /** Convert the Dot color name into its corresponding Java Color object. */
-   public static Color name2color(String name) {
+   /** Returns the list of values that the user is allowed to select from. */
+   public static Object[] valuesWithout(DotColor exclude) {
+      Object[] ans = new Object[values().length - 1];
+      int i = 0;
+      for(DotColor d: values()) if (d != exclude) ans[i++] = d;
+      return ans;
+   }
+
+   /** Returns the Icon that will be displayed in the GUI to represent this value, when used with the given palette. */
+   public Icon getIcon(DotPalette pal) {
+      int i = 0;
+      for(Object choice: DotPalette.values()) {
+         if (i >= icons.size()) break;
+         if (pal == choice) return icons.get(i);
+         i++;
+      }
+      return icons.get(0);
+   }
+
+   /** Convert this color into its corresponding Java Color object. */
+   public Color getColor(DotPalette pal) {
+      String name = getDotText(pal);
       Color ans = name2color.get(name);
       if (ans!=null) return ans;
-      else if (name.equals("magic"))           ans = Color.WHITE;
       else if (name.equals("palevioletred"))   ans = new Color(222,113,148);
       else if (name.equals("red"))             ans = new Color(255,0,0);
       else if (name.equals("salmon"))          ans = new Color(255,130,115);
@@ -96,26 +115,6 @@ public enum DotColor {
       return ans;
    }
 
-
-   /** Returns the list of values that the user is allowed to select from. */
-   public static Object[] valuesWithout(DotColor exclude) {
-      Object[] ans = new Object[values().length - 1];
-      int i = 0;
-      for(DotColor d: values()) if (d != exclude) ans[i++] = d;
-      return ans;
-   }
-
-   /** Returns the Icon that will be displayed in the GUI to represent this value, when used with the given palette. */
-   public Icon getIcon(DotPalette pal) {
-      int i = 0;
-      for(Object choice: DotPalette.values()) {
-         if (i >= icons.size()) break;
-         if (pal == choice) return icons.get(i);
-         i++;
-      }
-      return icons.get(0);
-   }
-
    /** Returns the String that should be written into the dot file for this value, when used with the given palette. */
    public String getDotText(DotPalette pal) {
       int i = 0;
@@ -135,7 +134,7 @@ public enum DotColor {
       return (this==BLACK || (pal==DotPalette.STANDARD && (this==RED || this==BLUE))) ? "white" : "black";
    }
 
-   /** This method is used in parsing the XML value into a valid DotShape; returns null if there is no match. */
+   /** This method is used in parsing the XML value into a valid color; returns null if there is no match. */
    public static DotColor parse(String x) {
       if (x != null) for(DotColor d: values()) if (d.toString().equals(x)) return d;
       return null;

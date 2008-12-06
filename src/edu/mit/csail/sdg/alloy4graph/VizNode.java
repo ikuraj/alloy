@@ -27,10 +27,9 @@ import java.awt.Polygon;
 import java.awt.Shape;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
-import static java.awt.Color.BLACK;
-import static java.awt.Color.WHITE;
 import java.util.ArrayList;
 import java.util.List;
+import static java.awt.Color.BLACK;
 import static java.lang.StrictMath.sqrt;
 import static java.lang.StrictMath.round;
 import static edu.mit.csail.sdg.alloy4graph.Artist.getBounds;
@@ -100,17 +99,17 @@ public final strictfp class VizNode extends DiGraph.DiNode {
     /** The node color; never null.
      * <p> When this value changes, we automatically invalidate the previously computed bounds information.
      */
-    private Color color = WHITE;
+    private Color color = Color.WHITE;
 
     /** The line style; never null.
      * <p> When this value changes, we automatically invalidate the previously computed bounds information.
      */
-    private VizStyle style = VizStyle.SOLID;
+    private DotStyle style = DotStyle.SOLID;
 
     /** The node shape; if null, then the node is a dummy node.
      * <p> When this value changes, we automatically invalidate the previously computed bounds information.
      */
-    private VizShape shape = VizShape.BOX;
+    private DotShape shape = DotShape.BOX;
 
     /** Returns the X coordinate of the center of the node. */
     public int x() { return centerX; }
@@ -125,7 +124,7 @@ public final strictfp class VizNode extends DiGraph.DiNode {
     public void setY(int y) { centerY=y; }
 
     /** Returns the node shape (or null if the node is a dummy node). */
-    public VizShape shape() { return shape; }
+    public DotShape shape() { return shape; }
 
     /** Add the given label to the start of the labels, then invalidate the computed bounds. */
     public VizNode addBefore(String label) {
@@ -146,19 +145,19 @@ public final strictfp class VizNode extends DiGraph.DiNode {
     }
 
     /** Changes the node color, then invalidate the computed bounds. */
-    public VizNode set(Color color) {
-        if (color!=null && this.color!=color) { this.color=color; updown=(-1); }
+    public VizNode set(DotColor color) {
+        if (color!=null) { this.color=color.getColor(graph.nodePalette); updown=(-1); }
         return this;
     }
 
     /** Changes the node shape (where null means change the node into a dummy node), then invalidate the computed bounds. */
-    public VizNode set(VizShape shape) {
+    public VizNode set(DotShape shape) {
         if (this.shape!=shape) { this.shape=shape; updown=(-1); }
         return this;
     }
 
     /** Changes the line style, then invalidate the computed bounds. */
-    public VizNode set(VizStyle style) {
+    public VizNode set(DotStyle style) {
         if (style!=null && this.style!=style) { this.style=style; updown=(-1); }
         return this;
     }
@@ -279,7 +278,7 @@ public final strictfp class VizNode extends DiGraph.DiNode {
              int dx = (int) (height/sqrt3); dx=dx+1; if (dx<6) dx=6;
              int dy = (int) (hw*sqrt3);     dy=dy+1; if (dy<6) dy=6; dy=(dy/2)*2;
              side += dx; updown += dy/2;
-             if (shape==VizShape.TRIANGLE) {
+             if (shape==DotShape.TRIANGLE) {
                 yShift = dy/2;
                 poly.addPoint(0, -updown); poly.addPoint(hw+dx, updown); poly.addPoint(-hw-dx, updown);
              } else {
@@ -307,7 +306,7 @@ public final strictfp class VizNode extends DiGraph.DiNode {
              break;
           case M_DIAMOND:
           case DIAMOND:
-             if (shape==VizShape.M_DIAMOND) {
+             if (shape==DotShape.M_DIAMOND) {
                 if (hw<10) { hw=10; side=10; width=20; }
                 if (hh<10) { hh=10; updown=10; height=20; }
              }
@@ -329,7 +328,7 @@ public final strictfp class VizNode extends DiGraph.DiNode {
              updown += dy;
              poly.addPoint(-hw, -hh); poly.addPoint(-hw+dx, -hh-dy); poly.addPoint(hw-dx, -hh-dy); poly.addPoint(hw, -hh);
              poly.addPoint(hw, hh); poly.addPoint(hw-dx, hh+dy); poly.addPoint(-hw+dx, hh+dy); poly.addPoint(-hw, hh);
-             if (shape==VizShape.OCTAGON) break;
+             if (shape==DotShape.OCTAGON) break;
              double c=sqrt(dx*dx+dy*dy), a=(dx*dy)/c, k=((a+5)*dy)/dx, r=sqrt((a+5)*(a+5)+k*k)-dy;
              double dx1=((r-5)*dx)/dy, dy1=-(((dx+5D)*dy)/dx-dy-r);
              int x1=(int)(round(dx1)), y1=(int)(round(dy1));
@@ -338,7 +337,7 @@ public final strictfp class VizNode extends DiGraph.DiNode {
              poly.addPoint(-hw-5, -hh-y1); poly.addPoint(-hw+dx-x1, -hh-dy-5); poly.addPoint(hw-dx+x1, -hh-dy-5);
              poly.addPoint(hw+5, -hh-y1); poly.addPoint(hw+5, hh+y1); poly.addPoint(hw-dx+x1, hh+dy+5);
              poly.addPoint(-hw+dx-x1, hh+dy+5); poly.addPoint(-hw-5, hh+y1);
-             if (shape==VizShape.DOUBLE_OCTAGON) break;
+             if (shape==DotShape.DOUBLE_OCTAGON) break;
              updown+=5; side+=5;
              poly3=poly; poly=new Polygon(); x1=(int)(round(dx1*2)); y1=(int)(round(dy1*2));
              poly.addPoint(-hw-10, -hh-y1); poly.addPoint(-hw+dx-x1, -hh-dy-10); poly.addPoint(hw-dx+x1, -hh-dy-10);
@@ -350,7 +349,7 @@ public final strictfp class VizNode extends DiGraph.DiNode {
           case CIRCLE:
           case DOUBLE_CIRCLE: {
              int radius = ((int) (sqrt( hw*((double)hw) + ((double)hh)*hh ))) + 2;
-             if (shape==VizShape.DOUBLE_CIRCLE) radius=radius+5;
+             if (shape==DotShape.DOUBLE_CIRCLE) radius=radius+5;
              int L = ((int) (radius / cos18))+2, a = (int) (L * sin36), b = (int) (L * cos36), c = (int) (radius * tan18);
              poly.addPoint(-L,0); poly.addPoint(-b,a); poly.addPoint(-c,L); poly.addPoint(c,L); poly.addPoint(b,a);
              poly.addPoint(L,0); poly.addPoint(b,-a); poly.addPoint(c,-L); poly.addPoint(-c,-L); poly.addPoint(-b,-a);
@@ -362,7 +361,7 @@ public final strictfp class VizNode extends DiGraph.DiNode {
              int pad = ad/2;
              side+=pad;
              updown+=pad;
-             int d = (shape==VizShape.ELLIPSE) ? 0 : (ad/2);
+             int d = (shape==DotShape.ELLIPSE) ? 0 : (ad/2);
              GeneralPath path=new GeneralPath();
              path.moveTo(-side,d);
              path.quadTo(-side,-updown,0,-updown); path.quadTo(side,-updown,side,d);
@@ -371,11 +370,11 @@ public final strictfp class VizNode extends DiGraph.DiNode {
              this.poly=path;
           }
           default: { // BOX
-             if (shape!=VizShape.BOX) { int d=ad/2; hw=hw+d; side=hw; hh=hh+d; updown=hh; }
+             if (shape!=DotShape.BOX) { int d=ad/2; hw=hw+d; side=hw; hh=hh+d; updown=hh; }
              poly.addPoint(-hw,-hh); poly.addPoint(hw,-hh); poly.addPoint(hw,hh); poly.addPoint(-hw,hh);
           }
        }
-       if (shape!=VizShape.EGG && shape!=VizShape.ELLIPSE) this.poly=poly;
+       if (shape!=DotShape.EGG && shape!=DotShape.ELLIPSE) this.poly=poly;
        for(int i=0; i<selfEdges().size(); i++) {
            if (i==0) { reserved=side+selfLoopA; continue; }
            String label = selfEdges().get(i-1).label();
@@ -399,37 +398,37 @@ public final strictfp class VizNode extends DiGraph.DiNode {
        gr.translate(centerX-left, centerY-top);
        gr.setFont(fontBold);
        if (highlight) gr.setColor(COLOR_CHOSENNODE); else gr.setColor(color);
-       if (shape==VizShape.CIRCLE || shape==VizShape.M_CIRCLE || shape==VizShape.DOUBLE_CIRCLE) {
+       if (shape==DotShape.CIRCLE || shape==DotShape.M_CIRCLE || shape==DotShape.DOUBLE_CIRCLE) {
           int hw=width/2, hh=height/2;
           int radius = ((int) (sqrt( hw*((double)hw) + ((double)hh)*hh ))) + 2;
-          if (shape==VizShape.DOUBLE_CIRCLE) radius=radius+5;
+          if (shape==DotShape.DOUBLE_CIRCLE) radius=radius+5;
           gr.fillCircle(radius);
           gr.setColor(BLACK);
           gr.drawCircle(radius);
-          if (style==VizStyle.DOTTED || style==VizStyle.DASHED) gr.set(VizStyle.SOLID, scale);
-          if (shape==VizShape.M_CIRCLE && 10*radius>=25 && radius>5) {
+          if (style==DotStyle.DOTTED || style==DotStyle.DASHED) gr.set(DotStyle.SOLID, scale);
+          if (shape==DotShape.M_CIRCLE && 10*radius>=25 && radius>5) {
              int d = (int) sqrt(10*radius - 25.0D);
              if (d>0) { gr.drawLine(-d,-radius+5,d,-radius+5); gr.drawLine(-d,radius-5,d,radius-5); }
           }
-          if (shape==VizShape.DOUBLE_CIRCLE) gr.drawCircle(radius-5);
+          if (shape==DotShape.DOUBLE_CIRCLE) gr.drawCircle(radius-5);
        } else {
           gr.draw(poly,true);
           gr.setColor(BLACK);
           gr.draw(poly,false);
           if (poly2!=null) gr.draw(poly2,false);
           if (poly3!=null) gr.draw(poly3,false);
-          if (style==VizStyle.DOTTED || style==VizStyle.DASHED) gr.set(VizStyle.SOLID, scale);
-          if (shape==VizShape.M_DIAMOND) {
+          if (style==DotStyle.DOTTED || style==DotStyle.DASHED) gr.set(DotStyle.SOLID, scale);
+          if (shape==DotShape.M_DIAMOND) {
              gr.drawLine(-side+8, -8, -side+8, 8); gr.drawLine(-8, -side+8, 8, -side+8);
              gr.drawLine(side-8, -8, side-8, 8); gr.drawLine(-8, side-8, 8, side-8);
           }
-          if (shape==VizShape.M_SQUARE) {
+          if (shape==DotShape.M_SQUARE) {
              gr.drawLine(-side, -side+8, -side+8, -side); gr.drawLine(side, -side+8, side-8, -side);
              gr.drawLine(-side, side-8, -side+8, side); gr.drawLine(side, side-8, side-8, side);
           }
        }
-       gr.set(VizStyle.SOLID, scale);
-       int clr = (color.getRGB() & 0xFFFFFF);
+       gr.set(DotStyle.SOLID, scale);
+       int clr = color.getRGB() & 0xFFFFFF;
        gr.setColor((clr==0x000000 || clr==0xff0000 || clr==0x0000ff) ? Color.WHITE : Color.BLACK);
        if (labels!=null && labels.size()>0) {
           int x=(-width/2), y=yShift+(-labels.size()*ad/2);

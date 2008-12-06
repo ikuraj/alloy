@@ -31,6 +31,11 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4graph.DotColor;
+import edu.mit.csail.sdg.alloy4graph.DotDirection;
+import edu.mit.csail.sdg.alloy4graph.DotPalette;
+import edu.mit.csail.sdg.alloy4graph.DotShape;
+import edu.mit.csail.sdg.alloy4graph.DotStyle;
 
 /** This utility class generates a graph for a particular index of the projection.
  *
@@ -129,7 +134,7 @@ public final class StaticGraphMaker {
         int ci=0;
         for (AlloyRelation rel: model.getRelations()) {
             DotColor c = view.edgeColor.resolve(rel);
-            Color cc = (c==DotColor.MAGIC) ? colors.get(ci) : DotColor.name2color(c.getDotText(view.getEdgePalette()));
+            Color cc = (c==DotColor.MAGIC) ? colors.get(ci) : c.getColor(view.getEdgePalette());
             int count = ((hidePrivate && rel.isPrivate) || !view.edgeVisible.resolve(rel)) ? 0 : edgesAsArcs(hidePrivate, hideMeta, rel, colors.get(ci));
             rels.put(rel, count);
             magicColor.put(rel, cc);

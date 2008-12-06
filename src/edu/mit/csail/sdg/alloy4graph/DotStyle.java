@@ -22,12 +22,15 @@
 
 package edu.mit.csail.sdg.alloy4graph;
 
+import javax.swing.Icon;
+import edu.mit.csail.sdg.alloy4.OurUtil;
+
 /** Immutable; enumerates the possible line styles (SOLID, DASHED, DOTTED...)
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
-public enum VizStyle {
+public enum DotStyle {
 
     /** Solid line. */
     SOLID("Solid", "solid"),
@@ -41,12 +44,37 @@ public enum VizStyle {
     /** Bold line. */
     BOLD("Bold", "bold");
 
-    /** The brief description of this line style. */
-    private final String longName;
+    /** The description of this line style. */
+    private final String name;
 
-    /** Constructs a VizStyle with the given long name and short name. */
-    private VizStyle(String longName, String shortName) { this.longName=longName; }
+    /** The icon for this line style. */
+    private final Icon icon;
 
-    /** Returns a brief description of this line style. */
-    @Override public String toString() { return longName; }
+    /** The corresponding DOT attribute. */
+    private final String dotName;
+
+    /** Constructs a DotStyle object. */
+    private DotStyle(String name, String dotName) {
+       this.name = name;
+       this.icon = OurUtil.loadIcon("icons/StyleIcons/" + dotName + ".gif");
+       this.dotName = dotName;
+    }
+
+    /** Returns the String that will be displayed in the GUI to represent this value. */
+    public String getDisplayedText() { return name; }
+
+    /** Returns the String that should be written into the dot file for this value, when used with the given palette. */
+    public String getDotText(DotPalette pal) { return dotName; }
+
+    /** Returns the Icon that will be displayed in the GUI to represent this value, when used with the given palette. */
+    public Icon getIcon(DotPalette pal) { return icon; }
+
+    /** This method is used in parsing the XML value into a valid style; returns null if there is no match. */
+    public static DotStyle parse(String x) {
+        if (x != null) for(DotStyle d: values()) if (d.name.equals(x)) return d;
+        return null;
+    }
+
+    /** This value is used in writing XML. */
+    @Override public String toString() { return name; }
 }

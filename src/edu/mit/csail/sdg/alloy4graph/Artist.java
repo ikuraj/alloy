@@ -117,7 +117,7 @@ public final strictfp class Artist {
      * <p> NOTE: as a special guarantee, if gr2d==null, then this method returns immediately without doing anything.
      * <p> NOTE: just like the typical AWT and Swing methods, this method can be called only by the AWT event dispatching thread.
      */
-    public void set(VizStyle style, double scale) {
+    public void set(DotStyle style, double scale) {
         if (gr!=null) {
            BasicStroke bs;
            switch(style) {

@@ -23,8 +23,12 @@
 package edu.mit.csail.sdg.alloy4viz;
 
 import java.util.Set;
+import edu.mit.csail.sdg.alloy4graph.DotColor;
+import edu.mit.csail.sdg.alloy4graph.DotPalette;
 import edu.mit.csail.sdg.alloy4graph.VizGraph;
 import edu.mit.csail.sdg.alloy4graph.VizNode;
+import edu.mit.csail.sdg.alloy4graph.DotShape;
+import edu.mit.csail.sdg.alloy4graph.DotStyle;
 
 /** Immutable; this represents a node to be written out to the DOT file.
  *
@@ -69,13 +73,11 @@ public final class DotNode {
     /** Writes the node into a DotGraph object.
      * @param dotgraph - the graph
      * @param attribs - a set of additional labels to append to the node (can be null if we don't have any to append)
-     * @param pal - the color palette to use
      */
-    VizNode write2(VizGraph dotgraph, Set<String> attribs, DotPalette pal) {
-        VizNode n = new VizNode(dotgraph, uuid, label);
-        if (attribs!=null) for (String a:attribs) if (a.length()>0) n.addAfter(a);
-        n.set(DotColor.name2color(color.getDotText(pal))).set(shape.vizShape).set(style.vizStyle);
-        return n;
+    VizNode write2(VizGraph dotgraph, Set<String> attribs) {
+       VizNode n = new VizNode(dotgraph, uuid, label);
+       if (attribs!=null) for (String a:attribs) if (a.length()>0) n.addAfter(a);
+       return n.set(color).set(shape).set(style);
     }
 
     /** Writes the node into a StringBuilder as we would writing to a Dot file
