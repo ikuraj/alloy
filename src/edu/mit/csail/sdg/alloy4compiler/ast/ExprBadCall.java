@@ -91,7 +91,7 @@ public final class ExprBadCall extends Expr {
         long weight = extraPenalty;
         boolean ambiguous = false;
         JoinableList<Err> errors = emptyListOfErrors;
-        for(Expr x:args) {
+        for(Expr x: args) {
             weight = weight + x.weight;
             ambiguous = ambiguous || x.ambiguous;
             errors = errors.join(x.errors);
@@ -105,7 +105,9 @@ public final class ExprBadCall extends Expr {
                 sb.append("  ").append(v.label).append(": ").append(v.type).append('\n');
             }
             sb.append(args.size()==0 || fun.count()==0 ? "so the arguments cannot be empty.\n" : "so the arguments cannot be\n");
-            for(Expr v:args.subList(0, fun.count())) {
+            int n = fun.count();
+            for(Expr v: args) {
+                if (n==0) break; else n--;
                 sb.append("  ");
                 v.toString(sb, -1);
                 sb.append(" (type = ").append(v.type).append(")\n");

@@ -22,7 +22,7 @@
 
 package edu.mit.csail.sdg.alloy4;
 
-import java.util.Collection;
+import java.util.AbstractSet;
 import java.util.Collections;
 import java.util.Set;
 import java.util.HashSet;
@@ -30,15 +30,15 @@ import java.util.LinkedHashSet;
 import java.util.Iterator;
 import java.io.Serializable;
 
-/** This implements an unmodifiable set (where comparison is based on hashCode() and equals())
+/** This implements an unmodifiable set (where comparison is based on hashCode() and equals()); null values are allowed.
  *
  * @param <K> - the type of element
  */
 
-public final class ConstSet<K> implements Serializable, Set<K> {
+public final class ConstSet<K> extends AbstractSet<K> implements Serializable {
 
    /** This ensures the class can be serialized reliably. */
-   private static final long serialVersionUID = 1L;
+   private static final long serialVersionUID = 0;
 
    /** The underlying Collections.unmodifiableSet set. */
    private final Set<K> set;
@@ -46,70 +46,31 @@ public final class ConstSet<K> implements Serializable, Set<K> {
    /** This caches a readonly empty Set. */
    private static final ConstSet<Object> emptyset = new ConstSet<Object>(new HashSet<Object>(1));
 
-   /** Construct an unmodifiable map with the given set as the backing store. */
+   /** Constructs an unmodifiable map with the given set as the backing store. */
    private ConstSet(Set<? extends K> set) {
       this.set = Collections.unmodifiableSet(set);
    }
 
-   /** Return an unmodifiable empty set. */
+   /** Returns an unmodifiable empty set. */
    @SuppressWarnings("unchecked")
    public static<K> ConstSet<K> make() {
       return (ConstSet<K>) emptyset;
    }
 
-   /** Return an unmodifiable set with the same elements as the given set.
+   /** Returns an unmodifiable set with the same elements and traversal order as the given set.
     * (If set==null, we'll return an unmodifiable empty set)
     */
    public static<K> ConstSet<K> make(Set<K> set) {
       if (set instanceof ConstSet) return (ConstSet<K>)set;
-      if (set==null || set.isEmpty()) return make(); else return new ConstSet<K>(new LinkedHashSet<K>(set));
+      if (set == null || set.isEmpty()) return make(); else return new ConstSet<K>(new LinkedHashSet<K>(set));
    }
 
-   /** {@inheritDoc} */
-   @Override public boolean equals(Object that) { return this==that || set.equals(that); }
+   /** Returns a read-only iterator over this set. */
+   @Override public Iterator<K> iterator() { return set.iterator(); }
 
    /** {@inheritDoc} */
-   @Override public int hashCode() { return set.hashCode(); }
+   @Override public int size() { return set.size(); }
 
    /** {@inheritDoc} */
-   @Override public String toString() { return set.toString(); }
-
-   /** {@inheritDoc} */
-   public boolean contains(Object element) { return set.contains(element); }
-
-   /** {@inheritDoc} */
-   public Iterator<K> iterator() { return set.iterator(); }
-
-   /** {@inheritDoc} */
-   public Object[] toArray() { return set.toArray(); }
-
-   /** {@inheritDoc} */
-   public <T> T[] toArray(T[] array) { return set.toArray(array); }
-
-   /** {@inheritDoc} */
-   public boolean containsAll(Collection<?> collection) { return set.containsAll(collection); }
-
-   /** {@inheritDoc} */
-   public int size() { return set.size(); }
-
-   /** {@inheritDoc} */
-   public boolean isEmpty() { return set.isEmpty(); }
-
-   /** This set is readonly, so this method always throws UnsupportedOperationException. */
-   public boolean add(K element) { throw new UnsupportedOperationException(); }
-
-   /** This set is readonly, so this method always throws UnsupportedOperationException. */
-   public boolean addAll(Collection<? extends K> collection) { throw new UnsupportedOperationException(); }
-
-   /** This set is readonly, so this method always throws UnsupportedOperationException. */
-   public boolean remove(Object element) { throw new UnsupportedOperationException(); }
-
-   /** This set is readonly, so this method always throws UnsupportedOperationException. */
-   public boolean removeAll(Collection<?> collection) { throw new UnsupportedOperationException(); }
-
-   /** This set is readonly, so this method always throws UnsupportedOperationException. */
-   public boolean retainAll(Collection<?> collection) { throw new UnsupportedOperationException(); }
-
-   /** This set is readonly, so this method always throws UnsupportedOperationException. */
-   public void clear() { throw new UnsupportedOperationException(); }
+   @Override public boolean contains(Object element) { return set.contains(element); }  // overridden for performance
 }

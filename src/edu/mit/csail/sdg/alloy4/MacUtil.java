@@ -28,7 +28,7 @@ import com.apple.eawt.ApplicationAdapter;
 import com.apple.eawt.ApplicationListener;
 import com.apple.eawt.ApplicationEvent;
 
-/** This class provides useful methods that may be called only on Mac OS X.
+/** This class provides better integration on Mac OS X.
  *
  * <p> You must not call any methods here if you're not on a Mac,
  * since that triggers the loading of com.apple.eawt.* which are not available on other platforms.

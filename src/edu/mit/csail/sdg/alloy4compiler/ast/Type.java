@@ -278,7 +278,7 @@ public final class Type implements Iterable<Type.ProductType> {
             ProductType y=entries.get(i);
             if (y.types.length != arity) continue;
             if (x.isSubtypeOf(y)) return arities;
-            if (y.isSubtypeOf(x)) {n--; entries.set(i, entries.get(n)); entries.remove(n);}
+            if (y.isSubtypeOf(x)) { n--; entries.set(i, entries.get(n)).remove(n); }
         }
         if (arity>30) arities = arities | 1; else arities = arities | (1 << arity);
         entries.add(x);

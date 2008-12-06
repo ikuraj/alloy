@@ -22,6 +22,7 @@
 
 package edu.mit.csail.sdg.alloy4;
 
+import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -30,84 +31,60 @@ import java.util.LinkedHashMap;
 import java.util.Set;
 import java.io.Serializable;
 
-/** This implements an unmodifiable map (where comparison is based on hashCode() and equals())
+/** This implements an unmodifiable map (where comparison is based on hashCode() and equals()); null keys and values are allowed.
  *
  * @param <K> - the type of key
  * @param <V> - the type of value
  */
 
-public final class ConstMap<K,V> implements Serializable, Map<K,V> {
+public final class ConstMap<K,V> extends AbstractMap<K,V> implements Serializable {
 
    /** This ensures the class can be serialized reliably. */
-   private static final long serialVersionUID = 1L;
+   private static final long serialVersionUID = 0;
 
    /** The underlying Collections.unmodifiableMap map. */
    private final Map<K,V> map;
 
-   /** This caches a readonly empty map. */
+   /** This caches a read-only empty map. */
    private static final ConstMap<Object,Object> emptymap = new ConstMap<Object,Object>(new HashMap<Object,Object>(1));
 
-   /** Construct an unmodifiable map with the given map as the backing store. */
+   /** Constructs an unmodifiable map with the given map as the backing store. */
    private ConstMap(Map<? extends K,? extends V> map) {
       this.map = Collections.unmodifiableMap(map);
    }
 
-   /** Return an unmodifiable empty map. */
+   /** Returns an unmodifiable empty map. */
    @SuppressWarnings("unchecked")
    public static<K,V> ConstMap<K,V> make() {
       return (ConstMap<K,V>) emptymap;
    }
 
-   /** Return an unmodifiable map with the same entries as the given map.
+   /** Returns an unmodifiable map with the same entries and traversal order as the given map.
     * (If map==null, we'll return an unmodifiable empty map)
     */
    public static<K,V> ConstMap<K,V> make(Map<K,V> map) {
       if (map instanceof ConstMap) return (ConstMap<K,V>)map;
-      if (map==null || map.isEmpty()) return make(); else return new ConstMap<K,V>(new LinkedHashMap<K,V>(map));
+      if (map == null || map.isEmpty()) return make(); else return new ConstMap<K,V>(new LinkedHashMap<K,V>(map));
    }
 
-   /** {@inheritDoc} */
-   @Override public boolean equals(Object that) { return this==that || map.equals(that); }
+   /** Returns a unmodifiable view of the mappings in this map. */
+   @Override public Set<Map.Entry<K,V>> entrySet()      { return map.entrySet(); }
+
+   /** Returns a unmodifiable view of the keys in this map. */
+   @Override public Set<K> keySet()                     { return map.keySet(); }  // overridden for performance
+
+   /** Returns a unmodifiable view of the values in this map. */
+   @Override public Collection<V> values()              { return map.values(); }  // overridden for performance
 
    /** {@inheritDoc} */
-   @Override public int hashCode() { return map.hashCode(); }
+   @Override public int size()                          { return map.size(); }  // overridden for performance
 
    /** {@inheritDoc} */
-   @Override public String toString() { return map.toString(); }
+   @Override public boolean containsKey(Object key)     { return map.containsKey(key); }  // overridden for performance
 
    /** {@inheritDoc} */
-   public int size() { return map.size(); }
+   @Override public boolean containsValue(Object value) { return map.containsValue(value); }  // overridden for performance
 
    /** {@inheritDoc} */
-   public boolean isEmpty() { return map.isEmpty(); }
-
-   /** {@inheritDoc} */
-   public Set<Map.Entry<K,V>> entrySet() { return map.entrySet(); }
-
-   /** {@inheritDoc} */
-   public Set<K> keySet() { return map.keySet(); }
-
-   /** {@inheritDoc} */
-   public Collection<V> values() { return map.values(); }
-
-   /** {@inheritDoc} */
-   public boolean containsKey(Object key) { return map.containsKey(key); }
-
-   /** {@inheritDoc} */
-   public boolean containsValue(Object value) { return map.containsValue(value); }
-
-   /** {@inheritDoc} */
-   public V get(Object key) { return map.get(key); }
-
-   /** This map is readonly, so this method always throws UnsupportedOperationException. */
-   public V remove(Object key) { throw new UnsupportedOperationException(); }
-
-   /** This map is readonly, so this method always throws UnsupportedOperationException. */
-   public V put(K key, V value) { throw new UnsupportedOperationException(); }
-
-   /** This map is readonly, so this method always throws UnsupportedOperationException. */
-   public void putAll(Map<? extends K, ? extends V> t) { throw new UnsupportedOperationException(); }
-
-   /** This map is readonly, so this method always throws UnsupportedOperationException. */
-   public void clear() { throw new UnsupportedOperationException(); }
+   @Override public V get(Object key)                   { return map.get(key); }  // overridden for performance
 }

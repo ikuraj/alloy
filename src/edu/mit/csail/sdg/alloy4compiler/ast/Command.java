@@ -164,9 +164,7 @@ public final class Command extends Browsable {
     public Command change(Sig sig, boolean isExact, int startingScope, int endingScope, int increment) throws ErrorSyntax {
         for(int i=0; i<scope.size(); i++) if (scope.get(i).sig == sig) {
             CommandScope sc = new CommandScope(scope.get(i).pos, sig, isExact, startingScope, endingScope, increment);
-            TempList<CommandScope> newlist = new TempList<CommandScope>(scope);
-            newlist.set(i, sc);
-            return change(newlist.makeConst());
+            return change(new TempList<CommandScope>(scope).set(i, sc).makeConst());
         }
         CommandScope sc = new CommandScope(Pos.UNKNOWN, sig, isExact, startingScope, endingScope, increment);
         return change(Util.append(scope, sc));
