@@ -478,9 +478,9 @@ public final strictfp class VizGraph extends DiGraph {
         }
         totalHeight=bottom-top;
         int widestLegend=0, legendHeight=30;
-        for(Map.Entry<Comparable<?>,Pair<String,Color>> e: legends.entrySet()) {
-            if (e.getValue().b==null) continue; // that means this legend is not visible
-            int widthOfLegend = (int) getBounds(true, e.getValue().a).getWidth();
+        for(Pair<String,Color> e: legends.values()) {
+            if (e.b==null) continue; // that means this legend is not visible
+            int widthOfLegend = (int) getBounds(true, e.a).getWidth();
             if (widestLegend < widthOfLegend) widestLegend = widthOfLegend;
             legendHeight += ad;
         }

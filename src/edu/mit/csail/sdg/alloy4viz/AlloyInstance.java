@@ -144,8 +144,7 @@ public final class AlloyInstance {
         // Next, construct type2atoms
         {
         Map<AlloyType,List<AlloyAtom>> t2a = new LinkedHashMap<AlloyType,List<AlloyAtom>>();
-        for(Map.Entry<AlloyAtom,List<AlloySet>> e:this.atom2sets.entrySet()) {
-            AlloyAtom a=e.getKey();
+        for(AlloyAtom a: this.atom2sets.keySet()) {
             for(AlloyType t=a.getType(); t!=null; t=model.getSuperType(t)) {
                 List<AlloyAtom> atoms=t2a.get(t);
                 if (atoms==null) { atoms=new ArrayList<AlloyAtom>(); t2a.put(t,atoms); }
