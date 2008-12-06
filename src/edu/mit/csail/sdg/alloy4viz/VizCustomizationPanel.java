@@ -353,22 +353,22 @@ public final class VizCustomizationPanel extends JPanel {
         final AlloyModel model=vizState.getCurrentModel();
         final AlloyNodeElement elt2;
         if (elt instanceof AlloyType) elt2=model.getSuperType((AlloyType)elt); else if (elt instanceof AlloySet) elt2=((AlloySet)elt).getType(); else elt2=null;
-        JComboBox color = new OurCombobox(true, DotColor.values(DotColor.MAGIC), 100, 35, vizState.nodeColor.get(elt)) {
+        JComboBox color = new OurCombobox(true, DotColor.valuesWithout(DotColor.MAGIC), 100, 35, vizState.nodeColor.get(elt)) {
             private static final long serialVersionUID = 1L;
-            @Override public String do_getText(Object value) { if (value==null) return "Inherit"; else return ((DotAttribute)value).getDisplayedText(); }
-            @Override public Icon   do_getIcon(Object value) { if (value==null) value=vizState.nodeColor.resolve(elt2); return value==null ? null : ((DotAttribute)value).getIcon(vizState.getNodePalette()); }
+            @Override public String do_getText(Object value) { if (value==null) return "Inherit"; else return ((DotColor)value).getDisplayedText(); }
+            @Override public Icon   do_getIcon(Object value) { if (value==null) value=vizState.nodeColor.resolve(elt2); return value==null ? null : ((DotColor)value).getIcon(vizState.getNodePalette()); }
             @Override public void   do_changed(Object value) { vizState.nodeColor.put(elt, (DotColor)value); }
         };
         JComboBox shape = new OurCombobox(true, DotShape.values(), 125, 35, vizState.shape.get(elt)) {
             private static final long serialVersionUID = 1L;
-            @Override public String do_getText(Object value) { if (value==null) return "Inherit"; else return ((DotAttribute)value).getDisplayedText(); }
-            @Override public Icon   do_getIcon(Object value) { if (value==null) value=vizState.shape.resolve(elt2); return value==null ? null : ((DotAttribute)value).getIcon(vizState.getNodePalette()); }
+            @Override public String do_getText(Object value) { if (value==null) return "Inherit"; else return ((DotShape)value).getDisplayedText(); }
+            @Override public Icon   do_getIcon(Object value) { if (value==null) value=vizState.shape.resolve(elt2); return value==null ? null : ((DotShape)value).getIcon(vizState.getNodePalette()); }
             @Override public void   do_changed(Object value) { vizState.shape.put(elt, (DotShape)value); }
         };
         JComboBox style = new OurCombobox(true, DotStyle.values(), 95, 35, vizState.nodeStyle.get(elt)) {
             private static final long serialVersionUID = 1L;
-            @Override public String do_getText(Object value) { if (value==null) return "Inherit"; else return ((DotAttribute)value).getDisplayedText(); }
-            @Override public Icon   do_getIcon(Object value) { if (value==null) value=vizState.nodeStyle.resolve(elt2); return value==null ? null : ((DotAttribute)value).getIcon(vizState.getNodePalette()); }
+            @Override public String do_getText(Object value) { if (value==null) return "Inherit"; else return ((DotStyle)value).getDisplayedText(); }
+            @Override public Icon   do_getIcon(Object value) { if (value==null) value=vizState.nodeStyle.resolve(elt2); return value==null ? null : ((DotStyle)value).getIcon(vizState.getNodePalette()); }
             @Override public void   do_changed(Object value) { vizState.nodeStyle.put(elt, (DotStyle)value); }
         };
         //
@@ -448,16 +448,16 @@ public final class VizCustomizationPanel extends JPanel {
         weightPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
         weightPanel.setAlignmentY(0.5f);
         weightPanel.setToolTipText("A higher weight will cause the edge to be shorter and straighter.");
-        OurCombobox color = new OurCombobox(true, DotColor.values(DotColor.WHITE), 110, 35, vizState.edgeColor.get(rel)) {
+        OurCombobox color = new OurCombobox(true, DotColor.valuesWithout(DotColor.WHITE), 110, 35, vizState.edgeColor.get(rel)) {
             private static final long serialVersionUID = 1L;
-            @Override public String do_getText(Object value) { return value==null ? "Inherit" : ((DotAttribute)value).getDisplayedText(); }
-            @Override public Icon   do_getIcon(Object value) { if (value==null) value=vizState.edgeColor.get(null); return value==null ? null : ((DotAttribute)value).getIcon(vizState.getEdgePalette()); }
+            @Override public String do_getText(Object value) { return value==null ? "Inherit" : ((DotColor)value).getDisplayedText(); }
+            @Override public Icon   do_getIcon(Object value) { if (value==null) value=vizState.edgeColor.get(null); return value==null ? null : ((DotColor)value).getIcon(vizState.getEdgePalette()); }
             @Override public void   do_changed(Object value) { vizState.edgeColor.put(rel, (DotColor)value); }
         };
         OurCombobox style = new OurCombobox(true, DotStyle.values(), 105, 35, vizState.edgeStyle.get(rel)) {
             private static final long serialVersionUID = 1L;
-            @Override public String do_getText(Object value) { return value==null ? "Inherit" : ((DotAttribute)value).getDisplayedText(); }
-            @Override public Icon   do_getIcon(Object value) { if (value==null) value=vizState.edgeStyle.get(null); return value==null ? null : ((DotAttribute)value).getIcon(vizState.getEdgePalette()); }
+            @Override public String do_getText(Object value) { return value==null ? "Inherit" : ((DotStyle)value).getDisplayedText(); }
+            @Override public Icon   do_getIcon(Object value) { if (value==null) value=vizState.edgeStyle.get(null); return value==null ? null : ((DotStyle)value).getIcon(vizState.getEdgePalette()); }
             @Override public void   do_changed(Object value) { vizState.edgeStyle.put(rel, (DotStyle)value); }
         };
         JPanel visible    = vizState.edgeVisible.pick(rel, "Show as arcs",      "Show relation as arcs");
@@ -476,25 +476,25 @@ public final class VizCustomizationPanel extends JPanel {
 
     /** Generates the "general graph settings" widgets, and add them to "parent". */
     private void createGeneralWidget(JPanel parent) {
-        final List<Object> fontSizes = Util.asList((Object)9,10,11,12,14,16,18,20,22,24,26,28,32,36,40,44,48,54,60,66,72);
+        final List<Integer> fontSizes = Util.asList(9,10,11,12,14,16,18,20,22,24,26,28,32,36,40,44,48,54,60,66,72);
         JLabel nLabel = OurUtil.label("Node Color Palette:");
         JLabel eLabel = OurUtil.label("Edge Color Palette:");
         JLabel aLabel = OurUtil.label("Use original atom names:");
         JLabel pLabel = OurUtil.label("Hide private sigs/relations:");
         JLabel mLabel = OurUtil.label("Hide meta sigs/relations:");
         JLabel fLabel = OurUtil.label("Font Size:");
-        JComboBox fontSize = new OurCombobox(false, fontSizes, 60, 32, vizState.getFontSize()) {
+        JComboBox fontSize = new OurCombobox(false, fontSizes.toArray(), 60, 32, vizState.getFontSize()) {
             private static final long serialVersionUID = 1L;
             @Override public void do_changed(Object value) { if (fontSizes.contains(value)) vizState.setFontSize((Integer)value); }
         };
         JComboBox nodepal = new OurCombobox(false, DotPalette.values(), 100, 32, vizState.getNodePalette()) {
             private static final long serialVersionUID = 1L;
-            @Override public String do_getText(Object value) { return ((DotAttribute)value).getDisplayedText(); }
+            @Override public String do_getText(Object value) { return ((DotPalette)value).getDisplayedText(); }
             @Override public void   do_changed(Object value) { vizState.setNodePalette((DotPalette)value); }
         };
         JComboBox edgepal = new OurCombobox(false, DotPalette.values(), 100, 32, vizState.getEdgePalette()) {
             private static final long serialVersionUID = 1L;
-            @Override public String do_getText(Object value) { return ((DotAttribute)value).getDisplayedText(); }
+            @Override public String do_getText(Object value) { return ((DotPalette)value).getDisplayedText(); }
             @Override public void   do_changed(Object value) { vizState.setEdgePalette((DotPalette)value); }
         };
         JPanel name = new OurCheckbox("", "Whether the visualizer should use the original atom names as-is.", vizState.useOriginalName() ? OurCheckbox.ON : OurCheckbox.OFF) {
@@ -521,22 +521,22 @@ public final class VizCustomizationPanel extends JPanel {
 
     /** Generates the "default type and set settings" widgets, and add them to "parent". */
     private void createDefaultNodeWidget(JPanel parent) {
-        JComboBox color = new OurCombobox(false, DotColor.values(DotColor.MAGIC), 110, 35, vizState.nodeColor.get(null)) {
+        JComboBox color = new OurCombobox(false, DotColor.valuesWithout(DotColor.MAGIC), 110, 35, vizState.nodeColor.get(null)) {
             private static final long serialVersionUID = 1L;
-            @Override public String do_getText(Object value) { return ((DotAttribute)value).getDisplayedText(); }
-            @Override public Icon   do_getIcon(Object value) { return ((DotAttribute)value).getIcon(vizState.getNodePalette()); }
+            @Override public String do_getText(Object value) { return ((DotColor)value).getDisplayedText(); }
+            @Override public Icon   do_getIcon(Object value) { return ((DotColor)value).getIcon(vizState.getNodePalette()); }
             @Override public void   do_changed(Object value) { vizState.nodeColor.put(null, (DotColor)value); }
         };
         JComboBox shape = new OurCombobox(false, DotShape.values(), 135, 35, vizState.shape.get(null)) {
             private static final long serialVersionUID = 1L;
-            @Override public String do_getText(Object value) { return ((DotAttribute)value).getDisplayedText(); }
-            @Override public Icon   do_getIcon(Object value) { return ((DotAttribute)value).getIcon(vizState.getNodePalette()); }
+            @Override public String do_getText(Object value) { return ((DotShape)value).getDisplayedText(); }
+            @Override public Icon   do_getIcon(Object value) { return ((DotShape)value).getIcon(vizState.getNodePalette()); }
             @Override public void   do_changed(Object value) { vizState.shape.put(null, (DotShape)value); }
         };
         JComboBox style = new OurCombobox(false, DotStyle.values(), 110, 35, vizState.nodeStyle.get(null)) {
             private static final long serialVersionUID = 1L;
-            @Override public String do_getText(Object value) { return ((DotAttribute)value).getDisplayedText(); }
-            @Override public Icon   do_getIcon(Object value) { return ((DotAttribute)value).getIcon(vizState.getNodePalette()); }
+            @Override public String do_getText(Object value) { return ((DotStyle)value).getDisplayedText(); }
+            @Override public Icon   do_getIcon(Object value) { return ((DotStyle)value).getIcon(vizState.getNodePalette()); }
             @Override public void   do_changed(Object value) { vizState.nodeStyle.put(null, (DotStyle)value); }
         };
         JPanel vis  = vizState.nodeVisible    .pick("Show",                        "Show members of type as nodes");
@@ -554,16 +554,16 @@ public final class VizCustomizationPanel extends JPanel {
 
     /** Generates the "default relation settings" widgets, and add them to "parent". */
     private void createDefaultEdgeWidget(JPanel parent) {
-        JComboBox colorComboE = new OurCombobox(false, DotColor.values(DotColor.WHITE), 110, 35, vizState.edgeColor.get(null)) {
+        JComboBox colorComboE = new OurCombobox(false, DotColor.valuesWithout(DotColor.WHITE), 110, 35, vizState.edgeColor.get(null)) {
             private static final long serialVersionUID = 1L;
-            @Override public String do_getText(Object value) { return ((DotAttribute)value).getDisplayedText(); }
-            @Override public Icon   do_getIcon(Object value) { return ((DotAttribute)value).getIcon(vizState.getEdgePalette()); }
+            @Override public String do_getText(Object value) { return ((DotColor)value).getDisplayedText(); }
+            @Override public Icon   do_getIcon(Object value) { return ((DotColor)value).getIcon(vizState.getEdgePalette()); }
             @Override public void   do_changed(Object value) { vizState.edgeColor.put(null, (DotColor)value); }
         };
         JComboBox outlineComboE = new OurCombobox(false, DotStyle.values(), 110, 35, vizState.edgeStyle.get(null)) {
             private static final long serialVersionUID = 1L;
-            @Override public String do_getText(Object value) { return ((DotAttribute)value).getDisplayedText(); }
-            @Override public Icon   do_getIcon(Object value) { return ((DotAttribute)value).getIcon(vizState.getEdgePalette()); }
+            @Override public String do_getText(Object value) { return ((DotStyle)value).getDisplayedText(); }
+            @Override public Icon   do_getIcon(Object value) { return ((DotStyle)value).getIcon(vizState.getEdgePalette()); }
             @Override public void   do_changed(Object value) { vizState.edgeStyle.put(null, (DotStyle)value); }
         };
         JPanel dispCBE       = vizState.edgeVisible.pick("Show as arcs",       "Show relations as arcs");

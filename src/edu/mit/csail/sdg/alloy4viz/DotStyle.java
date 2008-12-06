@@ -22,9 +22,7 @@
 
 package edu.mit.csail.sdg.alloy4viz;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.ArrayList;
+import javax.swing.Icon;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4graph.VizStyle;
 
@@ -33,49 +31,48 @@ import edu.mit.csail.sdg.alloy4graph.VizStyle;
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
-public final class DotStyle extends DotAttribute {
+public enum DotStyle {
 
-    /** The list of values that the user can select from a combobox. */
-    private static final List<Object> values;
+   SOLID("Solid", "solid", "icons/StyleIcons/solid.gif", VizStyle.SOLID),
+   DASHED("Dashed", "dashed", "icons/StyleIcons/dashed.gif", VizStyle.DASHED),
+   DOTTED("Dotted", "dotted", "icons/StyleIcons/dotted.gif", VizStyle.DOTTED),
+   BOLD("Bold", "bold", "icons/StyleIcons/bold.gif", VizStyle.BOLD);
 
-    public static final DotStyle SOLID = new DotStyle("Solid", "solid", "icons/StyleIcons/solid.gif", VizStyle.SOLID);
-    public static final DotStyle DASHED = new DotStyle("Dashed", "dashed", "icons/StyleIcons/dashed.gif", VizStyle.DASHED);
-    public static final DotStyle DOTTED = new DotStyle("Dotted", "dotted", "icons/StyleIcons/dotted.gif", VizStyle.DOTTED);
-    public static final DotStyle BOLD = new DotStyle("Bold", "bold", "icons/StyleIcons/bold.gif", VizStyle.BOLD);
+   /** The text to display. */
+   private final String displayText;
 
-    static {
-        List<Object> list = new ArrayList<Object>();
-        list.add(SOLID);
-        list.add(DASHED);
-        list.add(DOTTED);
-        list.add(BOLD);
-        values=Collections.unmodifiableList(list);
+   /** The text to output to dot. */
+   private final String dotText;
+
+   /** The icon to display. */
+   private final Icon icon;
+
+   /** The visual style corresponding to this DotStyle. */
+   public final VizStyle vizStyle;
+
+   /** Construct a new DotStyle. */
+    private DotStyle(String displayText, String dotText, String icon, VizStyle vizStyle) {
+       this.displayText = displayText;
+       this.dotText = dotText;
+       this.icon = OurUtil.loadIcon(icon);
+       this.vizStyle = vizStyle;
     }
-
-    /** Construct a new DotStyle.
-     * @param displayedText - the label to show when the user selects a style from a combobox
-     * @param dotText - the actual attribute that we will write into the DOT file
-     * @param icon - the icon to use for this
-     */
-    private DotStyle(String displayedText, String dotText, String icon, VizStyle vizStyle) {
-        super(displayedText, dotText, OurUtil.loadIcon(icon));
-        this.vizStyle=vizStyle;
-    }
-
-    public final VizStyle vizStyle;
-
-    /** Returns the default value. */
-    public static DotStyle getDefault() { return SOLID; }
-
-    /** Returns the list of values that the user is allowed to select from. */
-    public static List<Object> values() { return values; }
 
     /** This method is used in parsing the XML value into a valid DotStyle; returns null if there is no match. */
-    public static DotStyle valueOf(String x) {
-        if (x!=null) for(Object d:values) if (d.toString().equals(x)) return (DotStyle)d;
+    public static DotStyle parse(String x) {
+        if (x != null) for(DotStyle d: values()) if (d.toString().equals(x)) return d;
         return null;
     }
 
+    /** Returns the String that will be displayed in the GUI to represent this value. */
+    public String getDisplayedText() { return displayText; }
+
+    /** Returns the String that should be written into the dot file for this value, when used with the given palette. */
+    public String getDotText(DotPalette pal) { return dotText; }
+
+    /** Returns the Icon that will be displayed in the GUI to represent this value, when used with the given palette. */
+    public Icon getIcon(DotPalette pal) { return icon; }
+
     /** This value is used in writing XML. */
-    @Override public String toString() { return getDisplayedText(); }
+    @Override public String toString() { return displayText; }
 }

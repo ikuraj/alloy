@@ -60,7 +60,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 
 /** Mutable; represents an instance. */
 
-public final class SimContext extends VisitReturn<Object> {
+public final class SimInstance extends VisitReturn<Object> {
 
     /** This maps the current local variables (LET, QUANT, Function Param) to the actual SimTupleset/Integer/Boolean */
     private Env<ExprVar,Object> env = new Env<ExprVar,Object>();
@@ -136,7 +136,7 @@ public final class SimContext extends VisitReturn<Object> {
         }
     }
 
-    /** Temporary buffer used by the parser; access to this buffer must be synchronized on SimContext's class. */
+    /** Temporary buffer used by the parser; access to this buffer must be synchronized on SimInstance's class. */
     private static byte[] readcache = null;
 
     /** Helper method that read a non-negative integer followed by a line break. */
@@ -153,7 +153,7 @@ public final class SimContext extends VisitReturn<Object> {
     }
 
     /** Helper method that read "key =" then return the key part (with leading and trailing spaces removed).
-     * This method can only be called after you've synchronized on SimContext's class.
+     * This method can only be called after you've synchronized on SimInstance's class.
      */
     private static String readkey(BufferedInputStream bis) throws IOException {
         int n = 0;
@@ -177,7 +177,7 @@ public final class SimContext extends VisitReturn<Object> {
     }
 
     /** Construct a new simulation context by reading the given file. */
-    public static synchronized SimContext read(String filename, List<Sig> sigs, List<ExprVar> vars) throws Err, IOException {
+    public static synchronized SimInstance read(String filename, List<Sig> sigs, List<ExprVar> vars) throws Err, IOException {
         FileInputStream fis = null;
         BufferedInputStream bis = null;
         try {
@@ -189,8 +189,8 @@ public final class SimContext extends VisitReturn<Object> {
             // read bitwidth
             if (!readkey(bis).equals("bitwidth")) throw new IOException("Expecting bitwidth = ...");
             int bitwidth = readNonNegativeIntThenLinebreak(bis);
-            // construct the SimContext object with no atoms and no relations
-            SimContext ans = new SimContext(bitwidth, maxseq);
+            // construct the SimInstance object with no atoms and no relations
+            SimInstance ans = new SimInstance(bitwidth, maxseq);
             // parse all the relations
             Map<String,SimTupleset> sfs = new HashMap<String,SimTupleset>();
             while(true) {
@@ -198,7 +198,7 @@ public final class SimContext extends VisitReturn<Object> {
                 if (key.length() == 0) break; // we don't expect any more data after this
                 sfs.put(key, SimTupleset.read(bis));
             }
-            // now for each user-supplied sig, if we saw its value earlier, then assign its value in the new SimContext's sfs map
+            // now for each user-supplied sig, if we saw its value earlier, then assign its value in the new SimInstance's sfs map
             if (sigs!=null) for(final Sig s: sigs) if (!s.builtin) {
                 SimTupleset ts = sfs.get("sig " + s.label);
                 if (ts!=null) ans.sfs.put(s, ts);
@@ -207,7 +207,7 @@ public final class SimContext extends VisitReturn<Object> {
                     if (ts!=null) ans.sfs.put(f, ts);
                 }
             }
-            // now for each user-supplied var, if we saw its value earlier, then assign its value in the new SimContext's sfs map
+            // now for each user-supplied var, if we saw its value earlier, then assign its value in the new SimInstance's sfs map
             if (vars!=null) for(ExprVar v: vars) {
                 SimTupleset ts = sfs.get("var " + v.label);
                 if (ts!=null) ans.sfs.put(v, ts);
@@ -228,7 +228,7 @@ public final class SimContext extends VisitReturn<Object> {
     }
 
     /** Construct a new simulation context with the given bitwidth and the given maximum sequence length. */
-    public SimContext(int bitwidth, int maxseq) throws Err {
+    public SimInstance(int bitwidth, int maxseq) throws Err {
         if (bitwidth<1 || bitwidth>32) throw new ErrorType("Bitwidth must be between 1 and 32.");
         this.bitwidth = bitwidth;
         this.maxseq = maxseq;
@@ -240,7 +240,7 @@ public final class SimContext extends VisitReturn<Object> {
     }
 
     /** Construct a deep copy. */
-    public SimContext(SimContext old) throws Err {
+    public SimInstance(SimInstance old) throws Err {
         bitwidth = old.bitwidth;
         maxseq = old.maxseq;
         min = old.min;

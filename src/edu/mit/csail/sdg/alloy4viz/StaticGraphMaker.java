@@ -149,7 +149,7 @@ public final class StaticGraphMaker {
           if (!(hidePrivate && rel.isPrivate))
              if (view.attribute.resolve(rel))
                 edgesAsAttribute(rel);
-        graph=new DotGraph(view.getFontSize(), view.getOrientation(), view.getNodePalette(), view.getEdgePalette(), rels, magicColor, nodes, edges, attribs);
+        graph = new DotGraph(view.getFontSize(), view.getNodePalette(), view.getEdgePalette(), rels, magicColor, nodes, edges, attribs);
     }
 
     /** Return the node for a specific AlloyAtom (create it if it doesn't exist yet).

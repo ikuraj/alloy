@@ -25,7 +25,6 @@ package edu.mit.csail.sdg.alloy4;
 import java.io.Serializable;
 import java.util.AbstractList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -94,7 +93,7 @@ public final class ConstList<T> extends AbstractList<T> implements Serializable 
       public TempList<T> set(int index, T elem)              { if (clist!=null) throw new UnsupportedOperationException(); else { list.set(index, elem); return this; } }
 
       /** Turns this TempList unmodifiable, then construct a ConstList backed by this TempList. */
-      public ConstList<T> makeConst()                        { if (clist!=null) return clist; else if (list.isEmpty()) return clist = make(); else return clist = new ConstList<T>(true, list); }
+      public ConstList<T> makeConst()                        { if (clist!=null) return clist; else if (list.isEmpty()) return clist = make(); else return clist = new ConstList<T>(list); }
    }
 
    /** This ensures the class can be serialized reliably. */
@@ -104,11 +103,11 @@ public final class ConstList<T> extends AbstractList<T> implements Serializable 
    private final List<T> list;
 
    /** This caches an unmodifiable empty list. */
-   private static final ConstList<Object> emptylist = new ConstList<Object>(true, new ArrayList<Object>(0));
+   private static final ConstList<Object> emptylist = new ConstList<Object>(new ArrayList<Object>(0));
 
-   /** Construct a ConstList with the given list as its backing store; if makeReadOnly==false, then the incoming list is already unmodifiable. */
-   private ConstList(boolean makeReadOnly, List<T> list) {
-      this.list = makeReadOnly ? Collections.unmodifiableList(list) : list;
+   /** Construct a ConstList with the given list as its backing store. */
+   private ConstList(List<T> list) {
+      this.list = list;
    }
 
    /** Return an unmodifiable empty list. */
@@ -124,7 +123,7 @@ public final class ConstList<T> extends AbstractList<T> implements Serializable 
       if (n <= 0) return make();
       ArrayList<T> ans = new ArrayList<T>(n);
       while(n > 0) { ans.add(elem); n--; }
-      return new ConstList<T>(true, ans);
+      return new ConstList<T>(ans);
    }
 
    /** Return an unmodifiable list with the same elements as the given collection.
@@ -135,14 +134,14 @@ public final class ConstList<T> extends AbstractList<T> implements Serializable 
       if (collection instanceof ConstList) return (ConstList<T>) collection;
       if (collection instanceof Collection) {
          Collection<T> col = (Collection<T>)collection;
-         if (col.isEmpty()) return make(); else return new ConstList<T>(true, new ArrayList<T>(col));
+         if (col.isEmpty()) return make(); else return new ConstList<T>(new ArrayList<T>(col));
       }
       ArrayList<T> ans = null;
       for(T x: collection) {
          if (ans == null) ans = new ArrayList<T>();
          ans.add(x);
       }
-      if (ans==null) return make(); else return new ConstList<T>(true, ans);
+      if (ans==null) return make(); else return new ConstList<T>(ans);
    }
 
    /** {@inheritDoc} */

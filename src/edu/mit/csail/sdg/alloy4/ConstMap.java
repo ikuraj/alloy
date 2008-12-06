@@ -46,7 +46,7 @@ public final class ConstMap<K,V> extends AbstractMap<K,V> implements Serializabl
    private final Map<K,V> map;
 
    /** This caches a read-only empty map. */
-   private static final ConstMap<Object,Object> emptymap = new ConstMap<Object,Object>(new HashMap<Object,Object>(1));
+   private static final ConstMap<Object,Object> emptymap = new ConstMap<Object,Object>(new HashMap<Object,Object>(0));
 
    /** Constructs an unmodifiable map with the given map as the backing store. */
    private ConstMap(Map<? extends K,? extends V> map) {

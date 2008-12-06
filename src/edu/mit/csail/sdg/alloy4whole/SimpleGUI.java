@@ -113,7 +113,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.parser.DebugTree;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
-import edu.mit.csail.sdg.alloy4compiler.sim.SimContext;
+import edu.mit.csail.sdg.alloy4compiler.sim.SimInstance;
 import edu.mit.csail.sdg.alloy4compiler.sim.SimTuple;
 import edu.mit.csail.sdg.alloy4compiler.sim.SimTupleset;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
@@ -272,7 +272,7 @@ public final class SimpleGUI implements ComponentListener {
         private Verbosity(String id, String label) { this.id=id; this.label=label; }
         /** Given an id, return the enum value corresponding to it (if there's no match, then return DEFAULT). */
         private static Verbosity parse(String id) {
-            for(Verbosity vb:values()) if (vb.id.equals(id)) return vb;
+            for(Verbosity vb: values()) if (vb.id.equals(id)) return vb;
             return DEFAULT;
         }
         /** Returns the human-readable label for this enum value. */
@@ -1171,7 +1171,7 @@ public final class SimpleGUI implements ComponentListener {
             //
             final Verbosity vnow = Verbosity.get();
             final JMenu verb = new JMenu("Message Verbosity: "+vnow);
-            for(Verbosity vb:Verbosity.values()) { OurUtil.makeMenuItem(verb, ""+vb, doOptVerbosity(vb), vb==vnow?iconYes:iconNo); }
+            for(Verbosity vb: Verbosity.values()) { OurUtil.makeMenuItem(verb, ""+vb, doOptVerbosity(vb), vb==vnow?iconYes:iconNo); }
             optmenu.add(verb);
             //
             OurUtil.makeMenuItem(optmenu, "Syntax Highlighting: "+(SyntaxDisabled.get()?"No":"Yes"), doOptSyntaxHighlighting());
@@ -1646,9 +1646,9 @@ public final class SimpleGUI implements ComponentListener {
         return SimTupleset.make(list);
     }
 
-    /** Converts an A4Solution into a SimContext object. */
-    private static SimContext convert(A4Solution ans) throws Err {
-        SimContext ct = new SimContext(ans.getBitwidth(), ans.getMaxSeq());
+    /** Converts an A4Solution into a SimInstance object. */
+    private static SimInstance convert(A4Solution ans) throws Err {
+       SimInstance ct = new SimInstance(ans.getBitwidth(), ans.getMaxSeq());
         for(Sig s: ans.getAllReachableSigs()) {
             if (!s.builtin) ct.init(s, convert(ans.eval(s)));
             for(Field f: s.getFields())  if (!f.defined)  ct.init(f, convert(ans.eval(f)));

@@ -223,7 +223,7 @@ public final class VizGUI implements ComponentListener {
         private VisualizerMode(String id) { this.id=id; }
         /** Given an id, return the enum value corresponding to it (if there's no match, then return Viz). */
         private static VisualizerMode parse(String id) {
-            for(VisualizerMode vm:values()) if (vm.id.equals(id)) return vm;
+            for(VisualizerMode vm: values()) if (vm.id.equals(id)) return vm;
             return Viz;
         }
         /** Saves this value into the Java preference object. */

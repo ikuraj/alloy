@@ -47,24 +47,23 @@ public final class VizState {
     /** Construct a new VizState (with default theme settings) for the given instance; if world!=null, it is the root of the AST.
      */
     public VizState(AlloyInstance originalInstance) {
-        this.originalInstance=originalInstance;
-        this.currentModel=originalInstance.model;
+        this.originalInstance = originalInstance;
+        this.currentModel = originalInstance.model;
         resetTheme();
         loadInstance(originalInstance);
     }
 
     /** Make a copy of an existing VizState object. */
     public VizState(VizState old) {
-        originalInstance=old.originalInstance;
-        currentModel=old.currentModel;
-        projectedTypes=new TreeSet<AlloyType>(old.projectedTypes);
-        useOriginalNames=old.useOriginalNames;
-        hidePrivate=old.hidePrivate;
-        hideMeta=old.hideMeta;
-        fontSize=old.fontSize;
-        orientation=old.orientation;
-        nodePalette=old.nodePalette;
-        edgePalette=old.edgePalette;
+        originalInstance = old.originalInstance;
+        currentModel = old.currentModel;
+        projectedTypes = new TreeSet<AlloyType>(old.projectedTypes);
+        useOriginalNames = old.useOriginalNames;
+        hidePrivate = old.hidePrivate;
+        hideMeta = old.hideMeta;
+        fontSize = old.fontSize;
+        nodePalette = old.nodePalette;
+        edgePalette = old.edgePalette;
         nodeColor.putAll(old.nodeColor);
         nodeStyle.putAll(old.nodeStyle);
         nodeVisible.putAll(old.nodeVisible);
@@ -82,7 +81,7 @@ public final class VizState {
         edgeColor.putAll(old.edgeColor);
         edgeStyle.putAll(old.edgeStyle);
         edgeVisible.putAll(old.edgeVisible);
-        changedSinceLastSave=false;
+        changedSinceLastSave = false;
     }
 
     /** Clears the current theme. */
@@ -93,25 +92,24 @@ public final class VizState {
         hidePrivate = true;
         hideMeta    = true;
         fontSize    = 12;
-        orientation = DotOrientation.getDefault();
-        nodePalette = DotPalette.getDefault();
-        edgePalette = DotPalette.getDefault();
+        nodePalette = DotPalette.CLASSIC;
+        edgePalette = DotPalette.CLASSIC;
         nodeColor.clear();       nodeColor.put(null, DotColor.WHITE);
-        nodeStyle.clear();       nodeStyle.put(null, DotStyle.getDefault());
+        nodeStyle.clear();       nodeStyle.put(null, DotStyle.SOLID);
         nodeVisible.clear();     nodeVisible.put(null, true);
         label.clear();           label.put(null, "");
         number.clear();          number.put(null, true);
         hideUnconnected.clear(); hideUnconnected.put(null, false);
         showAsAttr.clear();      showAsAttr.put(null, false);
         showAsLabel.clear();     showAsLabel.put(null, true);
-        shape.clear();           shape.put(null, DotShape.getDefault());
+        shape.clear();           shape.put(null, DotShape.ELLIPSE);
         weight.clear();          weight.put(null, 0);
         attribute.clear();       attribute.put(null, false);
         mergeArrows.clear();     mergeArrows.put(null, true);
         constraint.clear();      constraint.put(null, true);
         layoutBack.clear();      layoutBack.put(null, false);
         edgeColor.clear();       edgeColor.put(null, DotColor.MAGIC);
-        edgeStyle.clear();       edgeStyle.put(null, DotStyle.getDefault());
+        edgeStyle.clear();       edgeStyle.put(null, DotStyle.SOLID);
         edgeVisible.clear();     edgeVisible.put(null, true);
         // Provide some nice defaults for "Int" and "seq/Int" type
         AlloyType sigint=AlloyType.INT;
@@ -329,21 +327,8 @@ public final class VizState {
 
     /*============================================================================================*/
 
-    /** The graph orientation. */
-    private DotOrientation orientation = DotOrientation.getDefault();
-
-    /** Gets the graph orientation. */
-    public DotOrientation getOrientation() { return orientation; }
-
-    /** Sets the graph orientation. */
-    public void setOrientation(DotOrientation x) {
-        if (orientation!=x && x!=null) {change(); orientation=x;}
-    }
-
-    /*============================================================================================*/
-
     /** The default node palette. */
-    private DotPalette nodePalette = DotPalette.getDefault();
+    private DotPalette nodePalette;
 
     /** Gets the default node palette. */
     public DotPalette getNodePalette() { return nodePalette; }
@@ -356,7 +341,7 @@ public final class VizState {
     /*============================================================================================*/
 
     /** The default edge palette. */
-    private DotPalette edgePalette = DotPalette.getDefault();
+    private DotPalette edgePalette;
 
     /** Gets the default edge palette. */
     public DotPalette getEdgePalette() { return edgePalette; }

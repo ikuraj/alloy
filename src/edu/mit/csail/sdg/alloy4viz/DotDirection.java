@@ -27,14 +27,18 @@ package edu.mit.csail.sdg.alloy4viz;
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
-public final class DotDirection extends DotAttribute{
+public enum DotDirection {
 
-    /** Constructs a new DotDirection object.
-     * @param dotText - the text to write into the .dot file
-     */
-    private DotDirection(String dotText) { super(dotText, dotText, null); }
+   /** Going forward. */   FORWARD("forward"),
+   /** Going backward. */  BACK("back"),
+   /** Going both ways. */ BOTH("both");
 
-    /** Going forward. */     public static final DotDirection FORWARD = new DotDirection("forward");
-    /** Going backwards. */   public static final DotDirection BACK = new DotDirection("back");
-    /** Going both ways. */   public static final DotDirection BOTH = new DotDirection("both");
+   /** The text to display. */
+   private final String displayText;
+
+   /** Constructs a new DotDirection object. */
+   private DotDirection(String text) { this.displayText = text; }
+
+   /** Returns the String that should be written into the dot file for this value, when used with the given palette. */
+   public String getDotText(DotPalette pal) { return displayText; }
 }

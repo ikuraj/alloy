@@ -22,48 +22,34 @@
 
 package edu.mit.csail.sdg.alloy4viz;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 /** Immutable; this defines the set of color palettes that the user can choose from.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
-public final class DotPalette extends DotAttribute {
+public enum DotPalette {
 
-    /** The list of values that the user can select from a combobox.
-     * If you change the order, you must also change the ordering of the colors in DotColor class.
-     */
-    private static final List<Object> values;
+    // Note: if you change the order, you must also change the ordering of the colors in DotColor class.
+    /** Classic palette. */    CLASSIC("Classic"),
+    /** Standard palette. */   STANDARD("Standard"),
+    /** Martha palette. */     MARTHA("Martha"),
+    /** Neon palette. */       NEON("Neon");
 
-    /** Classic palette. */    public static final DotPalette CLASSIC  = new DotPalette("Classic");
-    /** Standard palette. */   public static final DotPalette STANDARD = new DotPalette("Standard");
-    /** Martha palette. */     public static final DotPalette MARTHA   = new DotPalette("Martha");
-    /** Neon palette. */       public static final DotPalette NEON     = new DotPalette("Neon");
-
-    static {
-        List<Object> list=new ArrayList<Object>();
-        list.add(CLASSIC); list.add(STANDARD); list.add(MARTHA); list.add(NEON);
-        values=Collections.unmodifiableList(list);
-    }
+    /** The text to display. */
+    private final String displayText;
 
     /** Constructs a DotPalette object with the given label. */
-    private DotPalette(String displayedText) { super(displayedText,"",null); }
-
-    /** Returns the default value. */
-    public static DotPalette getDefault() { return CLASSIC; }
-
-    /** Returns the list of values that the user is allowed to select from. */
-    public static List<Object> values() { return values; }
+    private DotPalette(String displayText) { this.displayText = displayText; }
 
     /** This method is used in parsing the XML value into a valid DotPalette; returns null if there is no match. */
-    public static DotPalette valueOf(String x) {
-        if (x!=null) for(Object d:values) if (d.toString().equals(x)) return (DotPalette)d;
+    public static DotPalette parse(String x) {
+        if (x != null) for(DotPalette d: values()) if (d.toString().equals(x)) return d;
         return null;
     }
 
+    /** Returns the String that will be displayed in the GUI to represent this value. */
+    public String getDisplayedText() { return displayText; }
+
     /** This value is used in writing XML. */
-    @Override public String toString() { return getDisplayedText(); }
+    @Override public String toString() { return displayText; }
 }

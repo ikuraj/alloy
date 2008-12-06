@@ -262,10 +262,10 @@ public final class StaticInstanceReader {
             AlloyAtom intAtom = sig2atom.get(Sig.SIGINT);
             AlloyAtom seqAtom = sig2atom.get(Sig.SEQIDX);
             AlloyAtom strAtom = sig2atom.get(Sig.STRING);
-            for(Set<AlloyTuple> t:rels.values()) for(AlloyTuple at:t) if (at.getAtoms().contains(univAtom)) { univAtom=null; break; }
-            for(Set<AlloyTuple> t:rels.values()) for(AlloyTuple at:t) if (at.getAtoms().contains(intAtom)) { intAtom=null; break; }
-            for(Set<AlloyTuple> t:rels.values()) for(AlloyTuple at:t) if (at.getAtoms().contains(seqAtom)) { seqAtom=null; break; }
-            for(Set<AlloyTuple> t:rels.values()) for(AlloyTuple at:t) if (at.getAtoms().contains(strAtom)) { strAtom=null; break; }
+            for(Set<AlloyTuple> t: rels.values()) for(AlloyTuple at: t) if (at.getAtoms().contains(univAtom)) { univAtom=null; break; }
+            for(Set<AlloyTuple> t: rels.values()) for(AlloyTuple at: t) if (at.getAtoms().contains(intAtom)) { intAtom=null; break; }
+            for(Set<AlloyTuple> t: rels.values()) for(AlloyTuple at: t) if (at.getAtoms().contains(seqAtom)) { seqAtom=null; break; }
+            for(Set<AlloyTuple> t: rels.values()) for(AlloyTuple at: t) if (at.getAtoms().contains(strAtom)) { strAtom=null; break; }
             if (univAtom!=null) {
                 for(Iterator<AlloyTuple> it=exts.iterator(); it.hasNext();) {
                     AlloyTuple at=it.next();

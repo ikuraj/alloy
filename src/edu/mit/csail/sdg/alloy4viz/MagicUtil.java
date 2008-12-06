@@ -38,7 +38,6 @@ final class MagicUtil {
      */
     private MagicUtil() {}
 
-
     static void trimLabelBeforeLastSlash(final VizState vizState, final AlloyElement x) {
         vizState.label.put(x, trimBeforeLastSlash(vizState.label.get(x)));
     }
@@ -68,10 +67,7 @@ final class MagicUtil {
         AlloyType parent = model.getSuperType(t);
         while (parent != null) {
             final Boolean pV = vizState.nodeVisible.get(parent);
-            if (pV != null) {
-                // found a real setting
-                break;
-            }
+            if (pV != null) break; // found a real setting
             parent = model.getSuperType(parent);
         }
         if (parent == null) {

@@ -95,7 +95,6 @@ public final class StaticThemeReaderWriter {
         if (has(x,"hidePrivate")) now.hidePrivate(getbool(x,"hidePrivate"));
         if (has(x,"hideMeta")) now.hideMeta(getbool(x,"hideMeta"));
         if (has(x,"fontsize")) now.setFontSize(getint(x,"fontsize"));
-        if (has(x,"orientation")) now.setOrientation(parseDotOrientation(x));
         if (has(x,"nodetheme")) now.setNodePalette(parseDotPalette(x,"nodetheme"));
         if (has(x,"edgetheme")) now.setEdgePalette(parseDotPalette(x,"edgetheme"));
         for(XMLNode xml:x) {
@@ -124,7 +123,6 @@ public final class StaticThemeReaderWriter {
         if (view==null) return;
         VizState defaultView=new VizState(view.getOriginalInstance());
         out.write("<view");
-        writeDotOrientation(out, view.getOrientation(), defaultView.getOrientation());
         writeDotPalette(out, "nodetheme", view.getNodePalette(), defaultView.getNodePalette());
         writeDotPalette(out, "edgetheme", view.getEdgePalette(), defaultView.getEdgePalette());
         if (view.useOriginalName()!=defaultView.useOriginalName()) {
@@ -392,7 +390,7 @@ public final class StaticThemeReaderWriter {
 
     /** Returns null if the attribute doesn't exist, or is malformed. */
     private static DotPalette parseDotPalette(XMLNode x, String key) {
-        return DotPalette.valueOf(x.getAttribute(key));
+        return DotPalette.parse(x.getAttribute(key));
     }
 
     /** Writes nothing if value==defaultValue. */
@@ -403,19 +401,7 @@ public final class StaticThemeReaderWriter {
     /*============================================================================================*/
 
     /** Returns null if the attribute doesn't exist, or is malformed. */
-    private static DotOrientation parseDotOrientation(XMLNode x) {
-        return DotOrientation.valueOf(x.getAttribute("orientation"));
-    }
-
-    /** Writes nothing if value==defaultValue. */
-    private static void writeDotOrientation(PrintWriter out, DotOrientation value, DotOrientation defaultValue) throws IOException {
-        if (value!=defaultValue) Util.encodeXMLs(out," orientation=\"",value==null?"inherit":value.toString(), "\"");
-    }
-
-    /*============================================================================================*/
-
-    /** Returns null if the attribute doesn't exist, or is malformed. */
-    private static DotColor parseDotColor(XMLNode x) { return DotColor.valueOf(x.getAttribute("color")); }
+    private static DotColor parseDotColor(XMLNode x) { return DotColor.parse(x.getAttribute("color")); }
 
     /** Writes nothing if value==defaultValue. */
     private static void writeDotColor(PrintWriter out, DotColor value, DotColor defaultValue) throws IOException {
@@ -425,7 +411,7 @@ public final class StaticThemeReaderWriter {
     /*============================================================================================*/
 
     /** Returns null if the attribute doesn't exist, or is malformed. */
-    private static DotShape parseDotShape(XMLNode x) { return DotShape.valueOf(x.getAttribute("shape")); }
+    private static DotShape parseDotShape(XMLNode x) { return DotShape.parse(x.getAttribute("shape")); }
 
     /** Writes nothing if value==defaultValue. */
     private static void writeDotShape(PrintWriter out, DotShape value, DotShape defaultValue) throws IOException {
@@ -435,7 +421,7 @@ public final class StaticThemeReaderWriter {
     /*============================================================================================*/
 
     /** Returns null if the attribute doesn't exist, or is malformed. */
-    private static DotStyle parseDotStyle(XMLNode x) { return DotStyle.valueOf(x.getAttribute("style")); }
+    private static DotStyle parseDotStyle(XMLNode x) { return DotStyle.parse(x.getAttribute("style")); }
 
     /** Writes nothing if value==defaultValue. */
     private static void writeDotStyle(PrintWriter out, DotStyle value, DotStyle defaultValue) throws IOException {

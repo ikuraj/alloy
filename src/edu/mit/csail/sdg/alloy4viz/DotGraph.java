@@ -48,9 +48,6 @@ public final class DotGraph {
     /** The font size. */
     private final int fontSize;
 
-    /** The graph orientation. */
-    private final DotOrientation orientation;
-
     /** The palette for nodes in the graph. */
     private final DotPalette nodePalette;
 
@@ -75,35 +72,20 @@ public final class DotGraph {
     /** The list of relations (and the inferred color to use for it) in this graph. */
     public final ConstMap<AlloyRelation,Color> magicColor;
 
-    /** Creates an empty Graph. */
-    public DotGraph() {
-        orientation = DotOrientation.getDefault();
-        nodePalette = edgePalette = DotPalette.getDefault();
-        fontSize = 12;
-        nodes = ConstSet.make();
-        edges = ConstSet.make();
-        ranks = new LinkedHashSet<Set<DotNode>>();
-        attrs = new LinkedHashMap<DotNode,Set<String>>();
-        relations = ConstMap.make();
-        magicColor = ConstMap.make();
-    }
-
     /** Creates a new Graph object with specified nodes, edges, attributes, and ranking.
      * @param fontSize - the graph's font size
-     * @param orientation - the graph orientation
      * @param nodePalette - the palette for nodes in the graph
      * @param edgePalette - the palette for edges in the graph
      * @param nodes - the map containing all nodes in this graph (and the AlloyAtom each node corresponds to)
      * @param edges - the map containing all edges in this graph (and the AlloyTuple each edge corresponds to)
      * @param attrs - this maps nodes to a set of additional attributes to be printed
      */
-    public DotGraph(int fontSize, DotOrientation orientation, DotPalette nodePalette, DotPalette edgePalette,
+    public DotGraph(int fontSize, DotPalette nodePalette, DotPalette edgePalette,
             Map<AlloyRelation,Integer> rels,
             Map<AlloyRelation,Color> magicColor,
             Map<DotNode,AlloyAtom> nodes, Map<DotEdge,AlloyTuple> edges,
             Map<DotNode,Set<String>> attrs) {
         this.fontSize = fontSize;
-        this.orientation = orientation;
         this.nodePalette = nodePalette;
         this.edgePalette = edgePalette;
         this.ranks = new LinkedHashSet<Set<DotNode>>();
@@ -120,7 +102,6 @@ public final class DotGraph {
 
     /** Generate the entire content of the DOT file. */
     public VizGraph write2() {
-        // rankdir = orientation.getDotText(null)
         VizGraph graph=new VizGraph(fontSize / 12.0D);
         if (nodes.size()==0) {
             new VizNode(graph, null, "Due to your theme settings, every atom is hidden.", "Please click Theme and adjust your settings.");
@@ -135,7 +116,6 @@ public final class DotGraph {
                 VizNode b = map.get(edge.to);
                 if (a!=null && b!=null) edge.write2(a,b,edgePalette);
             }
-            // for (Set<DotNode> set:ranks) if (set.size()>0) { add the constraints that they should be on same rank }
         }
         for(Map.Entry<AlloyRelation,Integer> e:relations.entrySet()) {
             Color c = magicColor.get(e.getKey());
@@ -154,7 +134,7 @@ public final class DotGraph {
         sb.append("graph [fontsize=" + fontSize + "]\n");
         sb.append("node [fontsize=" + fontSize + "]\n");
         sb.append("edge [fontsize=" + fontSize + "]\n");
-        sb.append("rankdir=" + orientation.getDotText(null) + ";\n");
+        sb.append("rankdir=TB;\n");
         if (nodes.size()==0) {
             sb.append("A [" +
                     " color=\"white\"" +
