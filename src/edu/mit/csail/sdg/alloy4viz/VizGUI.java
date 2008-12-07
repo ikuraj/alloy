@@ -30,6 +30,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
@@ -56,6 +58,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.JToolBar;
+import javax.swing.JTree;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
 import edu.mit.csail.sdg.alloy4.Computer;
 import edu.mit.csail.sdg.alloy4.OurBorder;
@@ -527,11 +530,24 @@ public final class VizGUI implements ComponentListener {
       // Now, generate the graph or tree or textarea that we want to display on the right
       if (frame!=null) frame.setTitle(makeVizTitle());
       switch (currentMode) {
-         case Tree: content=StaticTreeMaker.makeTree(myState.getOriginalInstance(), makeVizTitle(), myState, fontSize); break;
-         case XML: content=getTextComponent(xmlFileName); break;
-         default:
+         case Tree: {
+            final JTree t = new VizJTree(myState.getOriginalInstance(), makeVizTitle(), myState, fontSize);
+            final JScrollPane scroll = OurUtil.scrollpane(t, Color.BLACK, Color.WHITE, new OurBorder(true, false, true, false));
+            scroll.addFocusListener(new FocusListener() {
+               public final void focusGained(FocusEvent e) { t.requestFocusInWindow(); }
+               public final void focusLost(FocusEvent e) { }
+            });
+            content = scroll;
+            break;
+         }
+         case XML: {
+            content=getTextComponent(xmlFileName);
+            break;
+         }
+         default: {
             if (myGraphPanel==null) myGraphPanel=new VizGraphPanel(myState, currentMode == VisualizerMode.DOT);
             else {myGraphPanel.seeDot(currentMode==VisualizerMode.DOT); myGraphPanel.remakeAll();}
+         }
          content=myGraphPanel;
       }
       // Now that we've re-constructed "content", let's set its font size
