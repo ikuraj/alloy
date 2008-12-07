@@ -68,7 +68,7 @@ import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4.Util.IntPref;
 import edu.mit.csail.sdg.alloy4.Util.StringPref;
-import edu.mit.csail.sdg.alloy4graph.VizViewer;
+import edu.mit.csail.sdg.alloy4graph.GraphViewer;
 
 /** GUI main window for the visualizer.
  *
@@ -621,8 +621,8 @@ public final class VizGUI implements ComponentListener {
         return ans;
     }
 
-    /** Returns the VizViewer that contains the graph; can be null if the graph hasn't been loaded yet. */
-    public VizViewer getViewer() {
+    /** Returns the GraphViewer that contains the graph; can be null if the graph hasn't been loaded yet. */
+    public GraphViewer getViewer() {
         if (null == myGraphPanel) return null;
         return myGraphPanel.alloyGetViewer();
     }

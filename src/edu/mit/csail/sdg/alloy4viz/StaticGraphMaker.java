@@ -38,10 +38,10 @@ import edu.mit.csail.sdg.alloy4graph.DotDirection;
 import edu.mit.csail.sdg.alloy4graph.DotPalette;
 import edu.mit.csail.sdg.alloy4graph.DotShape;
 import edu.mit.csail.sdg.alloy4graph.DotStyle;
-import edu.mit.csail.sdg.alloy4graph.VizEdge;
-import edu.mit.csail.sdg.alloy4graph.VizGraph;
-import edu.mit.csail.sdg.alloy4graph.VizNode;
-import edu.mit.csail.sdg.alloy4graph.VizViewer;
+import edu.mit.csail.sdg.alloy4graph.GraphEdge;
+import edu.mit.csail.sdg.alloy4graph.Graph;
+import edu.mit.csail.sdg.alloy4graph.GraphNode;
+import edu.mit.csail.sdg.alloy4graph.GraphViewer;
 
 /** This utility class generates a graph for a particular index of the projection.
  *
@@ -60,28 +60,28 @@ public final class StaticGraphMaker {
     private final AlloyModel model;
 
     /** The map that contains all edges and what the AlloyTuple that each edge corresponds to. */
-    private final Map<VizEdge,AlloyTuple> edges = new LinkedHashMap<VizEdge,AlloyTuple>();
+    private final Map<GraphEdge,AlloyTuple> edges = new LinkedHashMap<GraphEdge,AlloyTuple>();
 
     /** The map that contains all nodes and what the AlloyAtom that each node corresponds to. */
-    private final Map<VizNode,AlloyAtom> nodes = new LinkedHashMap<VizNode,AlloyAtom>();
+    private final Map<GraphNode,AlloyAtom> nodes = new LinkedHashMap<GraphNode,AlloyAtom>();
 
     /** This maps each atom to the node representing it; if an atom doesn't have a node, it won't be in the map. */
-    private final Map<AlloyAtom,VizNode> atom2node = new LinkedHashMap<AlloyAtom,VizNode>();
+    private final Map<AlloyAtom,GraphNode> atom2node = new LinkedHashMap<AlloyAtom,GraphNode>();
 
     /** This stores a set of additional labels we want to add to an existing node. */
-    private final Map<VizNode,Set<String>> attribs = new LinkedHashMap<VizNode,Set<String>>();
+    private final Map<GraphNode,Set<String>> attribs = new LinkedHashMap<GraphNode,Set<String>>();
 
     /** The resulting graph. */
-    private final VizGraph graph;
+    private final Graph graph;
 
     /** Produces a single Graph from the given Instance and View and choice of Projection */
     public static JPanel produceGraph(AlloyInstance instance, VizState view, AlloyProjection proj) throws ErrorFatal {
         view = new VizState(view);
         if (proj == null) proj = new AlloyProjection();
-        VizGraph graph = new VizGraph(view.getFontSize() / 12.0D);
+        Graph graph = new Graph(view.getFontSize() / 12.0D);
         new StaticGraphMaker(graph, instance, view, proj);
-        if (graph.nodes.size()==0) new VizNode(graph, graph, "Due to your theme settings, every atom is hidden.", "Please click Theme and adjust your settings.");
-        return new VizViewer(graph);
+        if (graph.nodes.size()==0) new GraphNode(graph, graph, "Due to your theme settings, every atom is hidden.", "Please click Theme and adjust your settings.");
+        return new GraphViewer(graph);
     }
 
     /** The list of colors, in order, to assign each legend. */
@@ -123,7 +123,7 @@ public final class StaticGraphMaker {
     );
 
     /** The constructor takes an Instance and a View, then insert the generate graph(s) into a blank cartoon. */
-    private StaticGraphMaker (VizGraph graph, AlloyInstance originalInstance, VizState view, AlloyProjection proj) throws ErrorFatal {
+    private StaticGraphMaker (Graph graph, AlloyInstance originalInstance, VizState view, AlloyProjection proj) throws ErrorFatal {
         final boolean hidePrivate = view.hidePrivate();
         final boolean hideMeta = view.hideMeta();
         final Map<AlloyRelation,Color> magicColor = new TreeMap<AlloyRelation,Color>();
@@ -163,7 +163,7 @@ public final class StaticGraphMaker {
           if (!(hidePrivate && rel.isPrivate))
              if (view.attribute.resolve(rel))
                 edgesAsAttribute(rel);
-        for(Map.Entry<VizNode,Set<String>> e: attribs.entrySet()) {
+        for(Map.Entry<GraphNode,Set<String>> e: attribs.entrySet()) {
            Set<String> set = e.getValue();
            if (set!=null) for(String s: set) if (s.length() > 0) e.getKey().addLabel(s);
         }
@@ -178,8 +178,8 @@ public final class StaticGraphMaker {
     /** Return the node for a specific AlloyAtom (create it if it doesn't exist yet).
      * @return null if the atom is explicitly marked as "Don't Show".
      */
-    private VizNode createNode(final boolean hidePrivate, final boolean hideMeta, final AlloyAtom atom) {
-       VizNode node = atom2node.get(atom);
+    private GraphNode createNode(final boolean hidePrivate, final boolean hideMeta, final AlloyAtom atom) {
+       GraphNode node = atom2node.get(atom);
         if (node!=null) return node;
         if ( (hidePrivate && atom.getType().isPrivate)
           || (hideMeta    && atom.getType().isMeta)
@@ -189,7 +189,7 @@ public final class StaticGraphMaker {
         DotStyle style = view.nodeStyle(atom, instance);
         DotShape shape = view.shape(atom, instance);
         String label = atomname(atom, false);
-        node = new VizNode(graph, atom, label).set(shape).set(color.getColor(view.getNodePalette())).set(style);
+        node = new GraphNode(graph, atom, label).set(shape).set(color.getColor(view.getNodePalette())).set(style);
         // Get the label based on the sets and relations
         String setsLabel="";
         boolean showLabelByDefault = view.showAsLabel.get(null);
@@ -224,8 +224,8 @@ public final class StaticGraphMaker {
         if ((hidePrivate && tuple.getEnd().getType().isPrivate)
           ||(hideMeta    && tuple.getEnd().getType().isMeta)
           || !view.nodeVisible(tuple.getEnd(), instance)) return false;
-        VizNode start = createNode(hidePrivate, hideMeta, tuple.getStart());
-        VizNode end = createNode(hidePrivate, hideMeta, tuple.getEnd());
+        GraphNode start = createNode(hidePrivate, hideMeta, tuple.getStart());
+        GraphNode end = createNode(hidePrivate, hideMeta, tuple.getEnd());
         if (start==null || end==null) return false;
         boolean layoutBack = view.layoutBack.resolve(rel);
         String label = view.label.get(rel);
@@ -243,7 +243,7 @@ public final class StaticGraphMaker {
         DotStyle style = view.edgeStyle.resolve(rel);
         DotColor color = view.edgeColor.resolve(rel);
         int weight = view.weight.get(rel);
-        VizEdge e = new VizEdge((layoutBack ? end : start), (layoutBack ? start : end), tuple, label, rel);
+        GraphEdge e = new GraphEdge((layoutBack ? end : start), (layoutBack ? start : end), tuple, label, rel);
         if (color == DotColor.MAGIC && magicColor != null) e.set(magicColor); else e.set(color.getColor(view.getEdgePalette()));
         e.set(style);
         e.set(dir!=DotDirection.FORWARD, dir!=DotDirection.BACK);
@@ -294,9 +294,9 @@ public final class StaticGraphMaker {
         //   and SET2's "show in relational attribute" is on,
         //   then the A node would have a line that says "F: B (SET1, SET2)->C, D->E"
         //
-        Map<VizNode,String> map = new LinkedHashMap<VizNode,String>();
+        Map<GraphNode,String> map = new LinkedHashMap<GraphNode,String>();
         for (AlloyTuple tuple: instance.relation2tuples(rel)) {
-           VizNode start=atom2node.get(tuple.getStart());
+           GraphNode start=atom2node.get(tuple.getStart());
             if (start==null) continue; // null means the node won't be shown, so we can't show any attributes
             String attr="";
             List<AlloyAtom> atoms=tuple.getAtoms();
@@ -309,8 +309,8 @@ public final class StaticGraphMaker {
             if (oldattr!=null && oldattr.length()>0) attr=oldattr+", "+attr;
             if (attr.length()>0) map.put(start,attr);
         }
-        for (Map.Entry<VizNode,String> e: map.entrySet()) {
-            VizNode node = e.getKey();
+        for (Map.Entry<GraphNode,String> e: map.entrySet()) {
+            GraphNode node = e.getKey();
             Set<String> list = attribs.get(node);
             if (list==null) attribs.put(node, list=new TreeSet<String>());
             String attr = e.getValue();

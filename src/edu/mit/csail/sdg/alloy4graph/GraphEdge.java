@@ -32,17 +32,17 @@ import static java.lang.StrictMath.cos;
 import static java.lang.StrictMath.atan2;
 import static java.lang.StrictMath.toRadians;
 import static edu.mit.csail.sdg.alloy4graph.Artist.getBounds;
-import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopA;
-import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopGL;
-import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopGR;
-import static edu.mit.csail.sdg.alloy4graph.VizGraph.esc;
+import static edu.mit.csail.sdg.alloy4graph.Graph.selfLoopA;
+import static edu.mit.csail.sdg.alloy4graph.Graph.selfLoopGL;
+import static edu.mit.csail.sdg.alloy4graph.Graph.selfLoopGR;
+import static edu.mit.csail.sdg.alloy4graph.Graph.esc;
 
 /** Mutable; represents a graphical edge.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
-public final strictfp class VizEdge {
+public final strictfp class GraphEdge {
 
    // =============================== adjustable options ===========================================================================
 
@@ -65,11 +65,11 @@ public final strictfp class VizEdge {
    /** a user-provided annotation that will be associated with this edge (all edges with same group will be highlighted together) */
    public final Object group;
 
-   /** The "from" node;  must stay in sync with VizNode.ins and VizNode.outs and VizNode.selfs */
-   private VizNode a;
+   /** The "from" node;  must stay in sync with GraphNode.ins and GraphNode.outs and GraphNode.selfs */
+   private GraphNode a;
 
-   /** The "to" node;  must stay in sync with VizNode.ins and VizNode.outs and VizNode.selfs */
-   private VizNode b;
+   /** The "to" node;  must stay in sync with GraphNode.ins and GraphNode.outs and GraphNode.selfs */
+   private GraphNode b;
 
    /** The label (can be "");  NOTE: label will be drawn only if the start node is not a dummy node. */
    private final String label;
@@ -93,14 +93,14 @@ public final strictfp class VizEdge {
    private final AvailableSpace.Box labelbox;
 
    /** The actual path corresponding to this edge; initially null until it's computed. */
-   private VizCurve path = null;
+   private Curve path = null;
 
    // =========================================================================s====================================================
 
    /** Construct an edge from "from" to "to" with the given arrow head settings, then add the edge to the graph. */
-   VizEdge(VizNode from, VizNode to, Object uuid, String label, boolean drawArrowHeadOnFrom, boolean drawArrowHeadOnTo, DotStyle style, Color color, Object group) {
-      if (group instanceof VizNode) throw new IllegalArgumentException("group cannot be a VizNode");
-      if (group instanceof VizEdge) throw new IllegalArgumentException("group cannot be a VizEdge");
+   GraphEdge(GraphNode from, GraphNode to, Object uuid, String label, boolean drawArrowHeadOnFrom, boolean drawArrowHeadOnTo, DotStyle style, Color color, Object group) {
+      if (group instanceof GraphNode) throw new IllegalArgumentException("group cannot be a GraphNode");
+      if (group instanceof GraphEdge) throw new IllegalArgumentException("group cannot be a GraphEdge");
       if (group == null) { group = new Object(); }
       a = from;
       b = to;
@@ -123,15 +123,15 @@ public final strictfp class VizEdge {
    }
 
    /** Construct an edge from "from" to "to", then add the edge to the graph. */
-   public VizEdge(VizNode from, VizNode to, Object uuid, String label, Object group) {
+   public GraphEdge(GraphNode from, GraphNode to, Object uuid, String label, Object group) {
       this(from, to, uuid, label, false, true, null, null, group);
    }
 
    /** Returns the "from" node. */
-   public VizNode a() { return a; }
+   public GraphNode a() { return a; }
 
    /** Returns the "to" node. */
-   public VizNode b() { return b; }
+   public GraphNode b() { return b; }
 
    /** Swaps the "from" node and "to" node. */
    void reverse() {
@@ -140,11 +140,11 @@ public final strictfp class VizEdge {
       b.ins.remove(this);
       a.ins.add(this);
       b.outs.add(this);
-      VizNode x=a; a=b; b=x;
+      GraphNode x=a; a=b; b=x;
    }
 
    /** Changes the "to" node to the given node. */
-   void change(VizNode newTo) {
+   void change(GraphNode newTo) {
       if (b.graph != newTo.graph) throw new IllegalArgumentException("You cannot draw an edge between two different graphs.");
       if (a==b) a.selfs.remove(this); else { a.outs.remove(this); b.ins.remove(this); }
       b = newTo;
@@ -182,7 +182,7 @@ public final strictfp class VizEdge {
    public String label() { return label; }
 
    /** Sets the edge weight between 1 and 10000. */
-   public VizEdge set(int weightBetween1And10000) {
+   public GraphEdge set(int weightBetween1And10000) {
       if (weightBetween1And10000 < 1) weightBetween1And10000 = 1;
       if (weightBetween1And10000 > 10000) weightBetween1And10000 = 10000;
       weight = weightBetween1And10000;
@@ -190,26 +190,26 @@ public final strictfp class VizEdge {
    }
 
    /** Sets whether we will draw an arrow head on the "from" node, and whether we will draw an arrow head on the "to" node. */
-   public VizEdge set(boolean from, boolean to) {
+   public GraphEdge set(boolean from, boolean to) {
       this.ahead = from;
       this.bhead = to;
       return this;
    }
 
    /** Sets the line style. */
-   public VizEdge set(DotStyle style) {
+   public GraphEdge set(DotStyle style) {
       if (style != null) this.style = style;
       return this;
    }
 
    /** Sets the line color. */
-   public VizEdge set(Color color) {
+   public GraphEdge set(Color color) {
       if (color != null) this.color = color;
       return this;
    }
 
    /** Returns the current path; if the path was not yet assigned, it returns a straight line from "from" node to "to" node. */
-   VizCurve path() {
+   Curve path() {
       if (path==null) resetPath();
       return path;
    }
@@ -222,10 +222,10 @@ public final strictfp class VizEdge {
          for(int n = a.selfs.size(), i = 0; i < n; i++) {
             if (i==0) w = a.getWidth()/2 + selfLoopA;
                  else w = w + getBounds(false, a.selfs.get(i-1).label()).getWidth() + selfLoopGL + selfLoopGR;
-            VizEdge e = a.selfs.get(i);
+            GraphEdge e = a.selfs.get(i);
             if (e!=this) continue;
             double h=a.getHeight()/2D*0.7D, k=0.55238D, wa=(a.getWidth()/2.0D), wb=w-wa;
-            e.path = new VizCurve(ax, ay);
+            e.path = new Curve(ax, ay);
             e.path.cubicTo(ax, ay-k*h, ax+wa-k*wa, ay-h, ax+wa, ay-h);
             e.path.cubicTo(ax+wa+k*wb, ay-h, ax+wa+wb, ay-k*h, ax+wa+wb, ay);
             e.path.cubicTo(ax+wa+wb, ay+k*h, ax+wa+k*wb, ay+h, ax+wa, ay+h);
@@ -236,9 +236,9 @@ public final strictfp class VizEdge {
          }
       } else {
          int i=0, n=0;
-         for(VizEdge e: a.outs) { if (e==this) i=n++; else if (e.b==b) n++; }
+         for(GraphEdge e: a.outs) { if (e==this) i=n++; else if (e.b==b) n++; }
          double cx=b.x(), cy=b.y(), bx=(ax+cx)/2, by=(ay+cy)/2;
-         path = new VizCurve(ax, ay);
+         path = new Curve(ax, ay);
          if (n>1 && (n&1)==1) {
             if (i<n/2) bx = bx - (n/2-i)*10; else if (i>n/2) bx = bx + (i-n/2)*10;
             path.lineTo(bx, by).lineTo(cx, cy);
@@ -253,12 +253,12 @@ public final strictfp class VizEdge {
 
    /** Given that this edge is already well-laid-out, this method moves the label hoping to avoid/minimize overlap. */
    void repositionLabel(AvailableSpace sp) {
-      if (label.length()==0 || a==b) return; // labels on self-edges are already re-positioned by VizEdge.resetPath()
+      if (label.length()==0 || a==b) return; // labels on self-edges are already re-positioned by GraphEdge.resetPath()
       final int gap = style==DotStyle.BOLD ? 4 : 2; // If the line is bold, we need to shift the label to the right a little bit
       boolean failed = false;
-      VizCurve p = path;
-      for(VizNode a = this.a; a.shape()==null;) { VizEdge e = a.ins.get(0);  a = e.a; p = e.path().join(p); }
-      for(VizNode b = this.b; b.shape()==null;) { VizEdge e = b.outs.get(0); b = e.b; p = p.join(e.path()); }
+      Curve p = path;
+      for(GraphNode a = this.a; a.shape()==null;) { GraphEdge e = a.ins.get(0);  a = e.a; p = e.path().join(p); }
+      for(GraphNode b = this.b; b.shape()==null;) { GraphEdge e = b.outs.get(0); b = e.b; p = p.join(e.path()); }
       for(double t=0.5D; ; t=t+0.05D) {
          if (t>=1D) { failed=true; t=0.7D; }
          double x1 = p.getX(t), y = p.getY(t), x2 = p.getXatY(y+labelbox.h, t, 1D, x1);
@@ -273,7 +273,7 @@ public final strictfp class VizEdge {
 
    /** Positions the arrow heads of the given edge properly. */
    void layout_arrowHead() {
-      VizCurve c=path();
+      Curve c=path();
       if (ahead() && a.shape()!=null) {
          double in=0D, out=1D;
          while(StrictMath.abs(out-in)>0.0001D) {
@@ -293,7 +293,7 @@ public final strictfp class VizEdge {
    }
 
    /** Assuming this edge's coordinates have been properly assigned, and given the current zoom scale, draw the edge. */
-   void draw(Artist gr, double scale, VizEdge highEdge, Object highGroup) {
+   void draw(Artist gr, double scale, GraphEdge highEdge, Object highGroup) {
       final int top = a.graph.getTop(), left = a.graph.getLeft();
       gr.translate(-left, -top);
       if (highEdge==this) { gr.setColor(color); gr.set(DotStyle.BOLD, scale); }
@@ -303,8 +303,8 @@ public final strictfp class VizEdge {
          gr.draw(path);
       } else {
          // Concatenate this path and its connected segments into a single VizPath object, then draw it
-         VizCurve p=null;
-         VizEdge e=this;
+         Curve p=null;
+         GraphEdge e=this;
          while(e.a.shape() == null) e = e.a.ins.get(0); // Let e be the first segment of this chain of connected segments
          while(true) {
             p = (p==null) ? e.path : p.join(e.path);
@@ -337,7 +337,7 @@ public final strictfp class VizEdge {
    }
 
    /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the arrow heads. */
-   private void drawArrowhead(Artist gr, double scale, VizEdge highEdge, Object highGroup) {
+   private void drawArrowhead(Artist gr, double scale, GraphEdge highEdge, Object highGroup) {
       final double tipLength = ad * 0.6D;
       final int top = a.graph.getTop(), left = a.graph.getLeft();
       // Check to see if this edge is highlighted or not
@@ -345,9 +345,9 @@ public final strictfp class VizEdge {
       if (highEdge==this) { fan=bigFan; gr.setColor(color); gr.set(DotStyle.BOLD, scale); }
       else if ((highEdge==null && highGroup==null) || highGroup==group) { gr.setColor(color); gr.set(style, scale); }
       else { gr.setColor(Color.LIGHT_GRAY); gr.set(style, scale); }
-      for(VizEdge e = this ; ; e = e.b.outs.get(0)) {
+      for(GraphEdge e = this ; ; e = e.b.outs.get(0)) {
          if ((e.ahead && e.a.shape()!=null) || (e.bhead && e.b.shape()!=null)) {
-            VizCurve cv=e.path();
+            Curve cv=e.path();
             if (e.ahead && e.a.shape()!=null) {
                CubicCurve2D.Double bez = cv.list.get(0);
                double ax = bez.x1, ay = bez.y1, bx = bez.ctrlx1, by = bez.ctrly1;
@@ -375,7 +375,7 @@ public final strictfp class VizEdge {
 
    /** Returns a DOT representation of this edge (or "" if the start node is a dummy node) */
    @Override public String toString() {
-      VizNode a = this.a, b = this.b;
+      GraphNode a = this.a, b = this.b;
       if (a.shape() == null) return ""; // This means this edge is virtual
       while(b.shape() == null) { b = b.outs.get(0).b; }
       String color = Integer.toHexString(this.color.getRGB() & 0xFFFFFF);  while(color.length() < 6) { color = "0" + color; }

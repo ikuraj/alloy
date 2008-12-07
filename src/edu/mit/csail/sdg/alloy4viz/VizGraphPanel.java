@@ -53,7 +53,7 @@ import edu.mit.csail.sdg.alloy4.OurBorder;
 import edu.mit.csail.sdg.alloy4.OurCombobox;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Util;
-import edu.mit.csail.sdg.alloy4graph.VizViewer;
+import edu.mit.csail.sdg.alloy4graph.GraphViewer;
 
 /** GUI panel that houses the actual graph, as well as any projection comboboxes.
  *
@@ -71,8 +71,8 @@ public final class VizGraphPanel extends JPanel {
     /** Whether the user wants to see the DOT source code or not. */
     private boolean seeDot=false;
 
-    /** The current VizViewer (or null if we are not looking at a VizViewer) */
-    private VizViewer viewer=null;
+    /** The current GraphViewer (or null if we are not looking at a GraphViewer) */
+    private GraphViewer viewer=null;
 
     /** The scrollpane containing the upperhalf of the panel (showing the graph) */
     private final JScrollPane diagramScrollPanel;
@@ -240,12 +240,12 @@ public final class VizGraphPanel extends JPanel {
         }
         currentProjection = new AlloyProjection(map);
         JPanel graph = vizState.getGraph(currentProjection);
-        if (seeDot && (graph instanceof VizViewer)) {
+        if (seeDot && (graph instanceof GraphViewer)) {
             viewer = null;
             JTextArea txt = OurUtil.textarea(graph.toString(), 10, 10, false, true, getFont());
             diagramScrollPanel.setViewportView(txt);
         } else {
-            if (graph instanceof VizViewer) viewer=(VizViewer)graph; else viewer=null;
+            if (graph instanceof GraphViewer) viewer=(GraphViewer)graph; else viewer=null;
             graphPanel.removeAll();
             graphPanel.add(graph);
             diagramScrollPanel.setViewportView(graphPanel);
@@ -266,8 +266,8 @@ public final class VizGraphPanel extends JPanel {
         remakeAll();
     }
 
-    /** Retrieves the actual VizViewer object that contains the graph (or null if the graph hasn't loaded yet) */
-    public VizViewer alloyGetViewer() { return viewer; }
+    /** Retrieves the actual GraphViewer object that contains the graph (or null if the graph hasn't loaded yet) */
+    public GraphViewer alloyGetViewer() { return viewer; }
 
     /** We override the paint method to auto-resize the divider. */
     @Override public void paint(Graphics g) {

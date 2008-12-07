@@ -34,17 +34,17 @@ import java.util.List;
 import static java.lang.StrictMath.sqrt;
 import static java.lang.StrictMath.round;
 import static edu.mit.csail.sdg.alloy4graph.Artist.getBounds;
-import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopA;
-import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopGL;
-import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopGR;
-import static edu.mit.csail.sdg.alloy4graph.VizGraph.esc;
+import static edu.mit.csail.sdg.alloy4graph.Graph.selfLoopA;
+import static edu.mit.csail.sdg.alloy4graph.Graph.selfLoopGL;
+import static edu.mit.csail.sdg.alloy4graph.Graph.selfLoopGR;
+import static edu.mit.csail.sdg.alloy4graph.Graph.esc;
 
 /** Mutable; represents a graphical node.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
-public final strictfp class VizNode {
+public final strictfp class GraphNode {
 
    // =============================== adjustable options ==================================================
 
@@ -91,27 +91,27 @@ public final strictfp class VizNode {
    /** The Y coordinate of the center of the node;  modified by tweak(), layout_computeX(), layout(), and relayout_edges() */
    private int centerY = 0;
 
-   /** The graph that this node belongs to;  must stay in sync with VizGraph.nodelist and VizGraph.layerlist */
-   final VizGraph graph;
+   /** The graph that this node belongs to;  must stay in sync with Graph.nodelist and Graph.layerlist */
+   final Graph graph;
 
-   /** The layer that this node is in;  must stay in sync with VizGraph.layerlist */
+   /** The layer that this node is in;  must stay in sync with Graph.layerlist */
    private int layer = 0;
 
-   /** The current position of this node in the graph's node list;  must stay in sync with VizGraph.nodelist */
+   /** The current position of this node in the graph's node list;  must stay in sync with Graph.nodelist */
    int pos;
 
-   /** The "in" edges not including "self" edges;  must stay in sync with VizEdge.a and VizEdge.b */
-   final LinkedList<VizEdge> ins = new LinkedList<VizEdge>();
+   /** The "in" edges not including "self" edges;  must stay in sync with GraphEdge.a and GraphEdge.b */
+   final LinkedList<GraphEdge> ins = new LinkedList<GraphEdge>();
 
-   /** The "out" edges not including "self" edges;  must stay in sync with VizEdge.a and VizEdge.b */
-   final LinkedList<VizEdge> outs = new LinkedList<VizEdge>();
+   /** The "out" edges not including "self" edges;  must stay in sync with GraphEdge.a and GraphEdge.b */
+   final LinkedList<GraphEdge> outs = new LinkedList<GraphEdge>();
 
    // =============================== these fields affect the computed bounds ===================================================
 
-   /** The "self" edges;  must stay in sync with VizEdge.a and VizEdge.b
+   /** The "self" edges;  must stay in sync with GraphEdge.a and GraphEdge.b
     * <p> When this value changes, we should invalidate the previously computed bounds information.
     */
-   final LinkedList<VizEdge> selfs = new LinkedList<VizEdge>();
+   final LinkedList<GraphEdge> selfs = new LinkedList<GraphEdge>();
 
    /** The font boldness.
     * <p> When this value changes, we should invalidate the previously computed bounds information.
@@ -176,12 +176,12 @@ public final strictfp class VizNode {
    //===================================================================================================
 
    /** Create a new node with the given list of labels, then add it to the given graph. */
-   public VizNode(VizGraph graph, Object uuid, String... labels) {
+   public GraphNode(Graph graph, Object uuid, String... labels) {
       this.uuid = uuid;
       this.graph = graph;
       this.pos = graph.nodelist.size();
       graph.nodelist.add(this);
-      if (graph.layerlist.size()==0) graph.layerlist.add(new ArrayList<VizNode>());
+      if (graph.layerlist.size()==0) graph.layerlist.add(new ArrayList<GraphNode>());
       graph.layerlist.get(0).add(this);
       if (labels!=null && labels.length>0) {
          this.labels = new ArrayList<String>(labels.length);
@@ -198,18 +198,18 @@ public final strictfp class VizNode {
       if (layer == newLayer) return;
       graph.layerlist.get(layer).remove(this);
       layer = newLayer;
-      while(layer >= graph.layerlist.size()) graph.layerlist.add(new ArrayList<VizNode>());
+      while(layer >= graph.layerlist.size()) graph.layerlist.add(new ArrayList<GraphNode>());
       graph.layerlist.get(layer).add(this);
    }
 
    /** Returns an unmodifiable view of the list of "in" edges. */
-   public List<VizEdge> inEdges() { return Collections.unmodifiableList(ins); }
+   public List<GraphEdge> inEdges() { return Collections.unmodifiableList(ins); }
 
    /** Returns an unmodifiable view of the list of "out" edges. */
-   public List<VizEdge> outEdges() { return Collections.unmodifiableList(outs); }
+   public List<GraphEdge> outEdges() { return Collections.unmodifiableList(outs); }
 
    /** Returns an unmodifiable view of the list of "self" edges. */
-   public List<VizEdge> selfEdges() { return Collections.unmodifiableList(selfs); }
+   public List<GraphEdge> selfEdges() { return Collections.unmodifiableList(selfs); }
 
    /** Returns the node's current position in the node list, which is always between 0 and node.size()-1 */
    int pos() { return pos; }
@@ -233,31 +233,31 @@ public final strictfp class VizNode {
    DotShape shape() { return shape; }
 
    /** Changes the node shape (where null means change the node into a dummy node), then invalidate the computed bounds. */
-   public VizNode set(DotShape shape) {
+   public GraphNode set(DotShape shape) {
       if (this.shape!=shape) { this.shape = shape; updown = (-1); }
       return this;
    }
 
    /** Changes the node color, then invalidate the computed bounds. */
-   public VizNode set(Color color) {
+   public GraphNode set(Color color) {
       if (this.color!=color && color!=null) { this.color = color; updown = (-1); }
       return this;
    }
 
    /** Changes the line style, then invalidate the computed bounds. */
-   public VizNode set(DotStyle style) {
+   public GraphNode set(DotStyle style) {
       if (this.style!=style && style!=null) { this.style = style; updown = (-1); }
       return this;
    }
 
    /** Changes the font boldness, then invalidate the computed bounds. */
-   public VizNode setFontBoldness(boolean bold) {
+   public GraphNode setFontBoldness(boolean bold) {
       if (this.fontBold != bold) { this.fontBold = bold; updown = (-1); }
       return this;
    }
 
    /** Add the given label after the existing labels, then invalidate the computed bounds. */
-   public VizNode addLabel(String label) {
+   public GraphNode addLabel(String label) {
       if (label==null || label.length()==0) return this;
       if (labels==null) labels=new ArrayList<String>();
       labels.add(label);
@@ -344,19 +344,19 @@ public final strictfp class VizNode {
 
    /** Helper method that sets the Y coordinate of every node in a given layer. */
    private void setY(int layer, int y) {
-      for(VizNode n: graph.layer(layer)) n.centerY = y;
+      for(GraphNode n: graph.layer(layer)) n.centerY = y;
    }
 
    /** Helper method that shifts a node up. */
    private void shiftUp(int y) {
       final int[] ph = graph.layerPH;
-      final int yJump = VizGraph.yJump/6;
+      final int yJump = Graph.yJump/6;
       int i=layer();
       setY(i,y);
       y=y-ph[i]/2; // y is now the top-most edge of this layer
       for(i++; i<graph.layers(); i++) {
-         List<VizNode> list=graph.layer(i);
-         VizNode first=list.get(0);
+         List<GraphNode> list=graph.layer(i);
+         GraphNode first=list.get(0);
          if (first.centerY+ph[i]/2+yJump > y) setY(i, y-ph[i]/2-yJump);
          y=first.centerY-ph[i]/2;
       }
@@ -366,13 +366,13 @@ public final strictfp class VizNode {
    /** Helper method that shifts a node down. */
    private void shiftDown(int y) {
       final int[] ph = graph.layerPH;
-      final int yJump = VizGraph.yJump/6;
+      final int yJump = Graph.yJump/6;
       int i=layer();
       setY(i,y);
       y=y+ph[i]/2; // y is now the bottom-most edge of this layer
       for(i--; i>=0; i--) {
-         List<VizNode> list=graph.layer(i);
-         VizNode first=list.get(0);
+         List<GraphNode> list=graph.layer(i);
+         GraphNode first=list.get(0);
          if (first.centerY-ph[i]/2-yJump < y) setY(i, y+ph[i]/2+yJump);
          y=first.centerY+ph[i]/2;
       }
@@ -380,12 +380,12 @@ public final strictfp class VizNode {
    }
 
    /** Helper method that shifts a node left. */
-   private void shiftLeft(List<VizNode> peers, int i, int x) {
-      final int xJump = VizGraph.xJump/3;
+   private void shiftLeft(List<GraphNode> peers, int i, int x) {
+      final int xJump = Graph.xJump/3;
       centerX = x;
       x=x-(shape==null?0:side); // x is now the left-most edge of this node
       for(i--;i>=0;i--) {
-         VizNode node=peers.get(i);
+         GraphNode node=peers.get(i);
          int side=(node.shape==null?0:node.side);
          if (node.centerX+side+node.getReserved()+xJump>x) node.centerX=x-side-node.getReserved()-xJump;
          x=node.centerX-side;
@@ -393,12 +393,12 @@ public final strictfp class VizNode {
    }
 
    /** Helper method that shifts a node right. */
-   private void shiftRight(List<VizNode> peers, int i, int x) {
-      final int xJump = VizGraph.xJump/3;
+   private void shiftRight(List<GraphNode> peers, int i, int x) {
+      final int xJump = Graph.xJump/3;
       centerX = x;
       x=x+(shape==null?0:side)+getReserved(); // x is now the right most edge of this node
       for(i++;i<peers.size();i++) {
-         VizNode node=peers.get(i);
+         GraphNode node=peers.get(i);
          int side=(node.shape==null?0:node.side);
          if (node.centerX-side-xJump<x) node.centerX=x+side+xJump;
          x=node.centerX+side+node.getReserved();
@@ -406,12 +406,12 @@ public final strictfp class VizNode {
    }
 
    /** Helper method that swaps a node towards the left. */
-   private void swapLeft(List<VizNode> peers, int i, int x) {
+   private void swapLeft(List<GraphNode> peers, int i, int x) {
       int side=(shape==null ? 2 : this.side);
       int left=x-side;
       while(true) {
          if (i==0) { centerX=x; return; } // no clash possible
-         VizNode other=peers.get(i-1);
+         GraphNode other=peers.get(i-1);
          int otherSide=(other.shape==null ? 0 : other.side);
          int otherRight=other.centerX+otherSide+other.getReserved();
          if (otherRight<left) { centerX=x; return; } // no clash
@@ -422,12 +422,12 @@ public final strictfp class VizNode {
    }
 
    /** Helper method that swaps a node towards the right. */
-   private void swapRight(List<VizNode> peers, int i, int x) {
+   private void swapRight(List<GraphNode> peers, int i, int x) {
       int side = (shape==null ? 2 : this.side);
       int right=x+side+getReserved();
       while(true) {
          if (i==peers.size()-1) { centerX=x; return; } // no clash possible
-         VizNode other=peers.get(i+1);
+         GraphNode other=peers.get(i+1);
          int otherSide=(other.shape==null ? 0 : other.side);
          int otherLeft=other.centerX-otherSide;
          if (otherLeft>right) { centerX=x; return; } // no clash
@@ -440,7 +440,7 @@ public final strictfp class VizNode {
    /** Assuming the graph is already laid out, this shifts this node (and re-layouts nearby nodes/edges as necessary) */
    void tweak(int x, int y) {
       if (centerX==x && centerY==y) return; // If no change, then return right away
-      List<VizNode> layer = graph.layer(layer());
+      List<GraphNode> layer = graph.layer(layer());
       final int n = layer.size();
       int i;
       for(i=0; i<n; i++) if (layer.get(i)==this) break; // Figure out this node's position in its layer

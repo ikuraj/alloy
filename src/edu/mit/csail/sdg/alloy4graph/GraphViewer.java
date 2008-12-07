@@ -66,21 +66,21 @@ import static edu.mit.csail.sdg.alloy4.OurUtil.empty;
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
-public final strictfp class VizViewer extends JPanel {
+public final strictfp class GraphViewer extends JPanel {
 
     /** This silences javac's warning about missing serialVersionUID. */
     private static final long serialVersionUID = 1L;
 
     /** The graph that we are displaying. */
-    private final VizGraph graph;
+    private final Graph graph;
 
     /** The current amount of zoom. */
     private double scale = 1d;
 
-    /** The currently hovered VizNode or VizEdge or group, or null if there is none. */
+    /** The currently hovered GraphNode or GraphEdge or group, or null if there is none. */
     private Object highlight = null;
 
-    /** The currently selected VizNode or VizEdge or group, or null if there is none. */
+    /** The currently selected GraphNode or GraphEdge or group, or null if there is none. */
     private Object selected = null;
 
     /** The button that initialized the drag-and-drop; this value is undefined when we're not currently doing drag-and-drop. */
@@ -95,22 +95,22 @@ public final strictfp class VizViewer extends JPanel {
     /** Returns the annotation for the node or edge at location x,y (or null if none) */
     public Object alloyGetAnnotationAtXY(int mouseX, int mouseY) {
         Object obj = alloyFind(mouseX, mouseY);
-        if (obj instanceof VizNode) return ((VizNode)obj).uuid;
-        if (obj instanceof VizEdge) return ((VizEdge)obj).uuid;
+        if (obj instanceof GraphNode) return ((GraphNode)obj).uuid;
+        if (obj instanceof GraphEdge) return ((GraphEdge)obj).uuid;
         return null;
     }
 
     /** Returns the annotation for the currently selected node/edge (or null if none) */
     public Object alloyGetSelectedAnnotation() {
-        if (selected instanceof VizNode) return ((VizNode)selected).uuid;
-        if (selected instanceof VizEdge) return ((VizEdge)selected).uuid;
+        if (selected instanceof GraphNode) return ((GraphNode)selected).uuid;
+        if (selected instanceof GraphEdge) return ((GraphEdge)selected).uuid;
         return null;
     }
 
     /** Returns the annotation for the currently highlighted node/edge (or null if none) */
     public Object alloyGetHighlightedAnnotation() {
-        if (highlight instanceof VizNode) return ((VizNode)highlight).uuid;
-        if (highlight instanceof VizEdge) return ((VizEdge)highlight).uuid;
+        if (highlight instanceof GraphNode) return ((GraphNode)highlight).uuid;
+        if (highlight instanceof GraphEdge) return ((GraphEdge)highlight).uuid;
         return null;
     }
 
@@ -125,8 +125,8 @@ public final strictfp class VizViewer extends JPanel {
         if (c!=null) { c.invalidate(); c.repaint(); c.validate(); } else { invalidate(); repaint(); validate(); }
     }
 
-    /** Construct a VizViewer that displays the given graph. */
-    public VizViewer(final VizGraph graph) {
+    /** Construct a GraphViewer that displays the given graph. */
+    public GraphViewer(final Graph graph) {
         OurUtil.make(this, BLACK, WHITE, empty);
         setBorder(null);
         this.scale = graph.defaultScale;
@@ -168,10 +168,10 @@ public final strictfp class VizViewer extends JPanel {
               if (highlight!=obj) { highlight=obj; alloyRepaint(); }
            }
            @Override public void mouseDragged(MouseEvent ev) {
-              if (selected instanceof VizNode && dragButton==1) {
+              if (selected instanceof GraphNode && dragButton==1) {
                  int newX=(int)(oldX+(ev.getX()-oldMouseX)/scale);
                  int newY=(int)(oldY+(ev.getY()-oldMouseY)/scale);
-                 VizNode n=(VizNode)selected;
+                 GraphNode n=(GraphNode)selected;
                  if (n.x()!=newX || n.y()!=newY) {
                     n.tweak(newX,newY);
                     alloyRepaint();
@@ -194,16 +194,16 @@ public final strictfp class VizViewer extends JPanel {
                int mod = ev.getModifiers();
                if ((mod & BUTTON3_MASK)!=0) {
                   selected=alloyFind(ev.getX(), ev.getY()); highlight=null; alloyRepaint();
-                  pop.show(VizViewer.this, ev.getX(), ev.getY());
+                  pop.show(GraphViewer.this, ev.getX(), ev.getY());
                } else if ((mod & BUTTON1_MASK)!=0 && (mod & CTRL_MASK)!=0) {
                   // This lets Ctrl+LeftClick bring up the popup menu, just like RightClick,
                   // since many Mac mouses do not have a right button.
                   selected=alloyFind(ev.getX(), ev.getY()); highlight=null; alloyRepaint();
-                  pop.show(VizViewer.this, ev.getX(), ev.getY());
+                  pop.show(GraphViewer.this, ev.getX(), ev.getY());
                } else if ((mod & BUTTON1_MASK)!=0) {
                   dragButton=1;
                   selected=alloyFind(oldMouseX=ev.getX(), oldMouseY=ev.getY()); highlight=null; alloyRepaint();
-                  if (selected instanceof VizNode) { oldX=((VizNode)selected).x(); oldY=((VizNode)selected).y(); }
+                  if (selected instanceof GraphNode) { oldX=((GraphNode)selected).x(); oldY=((GraphNode)selected).y(); }
                }
            }
            @Override public void mouseExited(MouseEvent ev) {
@@ -271,7 +271,7 @@ public final strictfp class VizViewer extends JPanel {
        final double ratio=((double)(graph.getTotalWidth()))/graph.getTotalHeight();
        double dpi, iw=8.5D, ih=((int)(iw*100/ratio))/100D;    // First set the width to be 8.5inch and compute height accordingly
        if (ih>11D) { ih=11D; iw=((int)(ih*100*ratio))/100D; } // If too tall, then set height=11inch, and compute width accordingly
-       synchronized(VizViewer.class) { dpi=oldDPI; }
+       synchronized(GraphViewer.class) { dpi=oldDPI; }
        // Prepare the dialog box
        final JLabel msg = OurUtil.label(" ", Color.RED);
        final JLabel w = OurUtil.label("Width: "+((int)(graph.getTotalWidth()*scale))+" pixels");
@@ -375,7 +375,7 @@ public final strictfp class VizViewer extends JPanel {
              alloySaveAsPDF(filename.getAbsolutePath(), (int)dpi);
           else
              alloySaveAsPNG(filename.getAbsolutePath(), myScale, dpi, dpi);
-          synchronized(VizViewer.class) { oldDPI=dpi; }
+          synchronized(GraphViewer.class) { oldDPI=dpi; }
           Util.setCurrentDirectory(filename.getParentFile());
        } catch(IOException ex) {
           OurDialog.alert(me, "An error has occured in writing the output file:\n"+ex, "Error");
@@ -435,10 +435,10 @@ public final strictfp class VizViewer extends JPanel {
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.scale(scale, scale);
         Object sel=(selected!=null ? selected : highlight);
-        VizNode c=null;
-        if (sel instanceof VizNode && ((VizNode)sel).shape()==null) { c = (VizNode)sel; sel = c.ins.get(0); }
+        GraphNode c=null;
+        if (sel instanceof GraphNode && ((GraphNode)sel).shape()==null) { c = (GraphNode)sel; sel = c.ins.get(0); }
         graph.draw(new Artist(g2), scale, sel, true);
-        if (c!=null) { gr.setColor(((VizEdge)sel).color()); gr.fillArc(c.x()-5-graph.getLeft(), c.y()-5-graph.getTop(), 10, 10, 0, 360); }
+        if (c!=null) { gr.setColor(((GraphEdge)sel).color()); gr.fillArc(c.x()-5-graph.getLeft(), c.y()-5-graph.getTop(), 10, 10, 0, 360); }
         g2.setTransform(oldAF);
     }
 }

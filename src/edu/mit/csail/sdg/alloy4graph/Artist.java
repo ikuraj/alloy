@@ -82,7 +82,7 @@ public final strictfp class Artist {
     private static boolean in(double left, double x, double right)  { return (left<=x && x<=right) || (right<=x && x<=left); }
 
     /** Draws the given curve smoothly (assuming the curve is monotonic vertically) */
-    public void drawSmoothly(VizCurve curve) {
+    public void drawSmoothly(Curve curve) {
         final int smooth=15;
         double cx=0, cy=0, slope;
         for(int n=curve.list.size(), i=0; i<n; i++) {
@@ -100,7 +100,7 @@ public final strictfp class Artist {
     }
 
     /** Draws the given curve. */
-    public void draw(VizCurve curve) {
+    public void draw(Curve curve) {
         for(CubicCurve2D.Double c: curve.list) draw(c, false);
     }
 

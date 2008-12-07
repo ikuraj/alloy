@@ -31,7 +31,7 @@ import java.awt.geom.CubicCurve2D;
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
-final class VizCurve {
+final class Curve {
 
     /** starting position and ending position. */
     public double startX, startY, endX, endY;
@@ -40,14 +40,14 @@ final class VizCurve {
     public final List<CubicCurve2D.Double> list = new ArrayList<CubicCurve2D.Double>();
 
     /** Construct a curve starting at the given location. */
-    public VizCurve(double startX, double startY) {
+    public Curve(double startX, double startY) {
         this.startX=startX; this.endX=startX;
         this.startY=startY; this.endY=startY;
     }
 
-    /** Make a deep copy of this VizCurve object. */
-    public VizCurve dup() {
-        VizCurve ans = new VizCurve(startX, startY);
+    /** Make a deep copy of this Curve object. */
+    public Curve dup() {
+        Curve ans = new Curve(startX, startY);
         ans.endX = endX;
         ans.endY = endY;
         for(CubicCurve2D.Double x:list) {
@@ -58,9 +58,9 @@ final class VizCurve {
         return ans;
     }
     /** Precondition: this.lastX==next.firstX and this.lastY==next.firstY.
-     * Note: the resulting VizCurve will still share the same CubicCurve2D objects as this and that. */
-    VizCurve join(VizCurve that) {
-        VizCurve ans = new VizCurve(startX, startY);
+     * Note: the resulting Curve will still share the same CubicCurve2D objects as this and that. */
+    Curve join(Curve that) {
+        Curve ans = new Curve(startX, startY);
         ans.list.addAll(list);
         ans.list.addAll(that.list);
         ans.endX=that.endX;
@@ -74,7 +74,7 @@ final class VizCurve {
     }
 
     /** Add a straightline segment to (ax,ay) */
-    public VizCurve lineTo(double ax, double ay) {
+    public Curve lineTo(double ax, double ay) {
         list.add(makeline(endX, endY, ax, ay));
         this.endX = ax;
         this.endY = ay;
@@ -82,7 +82,7 @@ final class VizCurve {
     }
 
     /** Add a cubic bezier segment to (cx,cy) using (ax,ay) and (bx,by) as the two control points. */
-    public VizCurve cubicTo(double ax, double ay, double bx, double by, double cx, double cy) {
+    public Curve cubicTo(double ax, double ay, double bx, double by, double cx, double cy) {
         list.add(new CubicCurve2D.Double(endX, endY, ax, ay, bx, by, cx, cy));
         this.endX = cx;
         this.endY = cy;
