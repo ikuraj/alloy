@@ -46,6 +46,7 @@ import edu.mit.csail.sdg.alloy4.OurBorder;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Util;
+import static edu.mit.csail.sdg.alloy4.Util.encode;
 
 /** This utility class takes an AlloyInstance and generates a JTree showing
  * the types, sets, and relation tuples from it.
@@ -163,19 +164,6 @@ public final class StaticTreeMaker {
 
    /** Constructor is private, since this utility class never needs to be instantiated. */
    private StaticTreeMaker() { }
-
-   /** Encodes a String for HTML. */
-   private static String encode(String x) {
-      StringBuilder sb=new StringBuilder();
-      for(int i=0; i<x.length(); i++) {
-         char c=x.charAt(i);
-         if (c=='&') sb.append("&amp;");
-         else if (c=='<') sb.append("&lt;");
-         else if (c=='>') sb.append("&gt;");
-         else sb.append(c);
-      }
-      return sb.toString();
-   }
 
    /** Custom TreeCellRenderer to print the tree nodes better.
     * The idea of using JLabel is inspired by the DefaultTreeCellRenderer implementation.

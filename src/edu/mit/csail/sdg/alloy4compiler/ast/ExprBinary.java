@@ -318,7 +318,7 @@ public final class ExprBinary extends Expr {
       @Override public final String toString() { return label; }
 
       /** Returns the human readable label already encoded for HTML */
-      public final String toHTML() { return "<b>" + (label.replace("&", "&amp;").replace("<","&lt;").replace(">","&gt;")) + "</b>"; }
+      public final String toHTML() { return "<b>" + Util.encode(label) + "</b>"; }
    }
 
    //============================================================================================================//
