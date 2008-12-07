@@ -55,18 +55,18 @@ import edu.mit.csail.sdg.alloy4graph.DotStyle;
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
-final class MagicColour {
+final class MagicColor {
 
    /** The VizState object that we're going to configure. */
    private final VizState vizState;
 
    /** Constructor. */
-   private MagicColour(final VizState vizState) { this.vizState = vizState; }
+   private MagicColor(final VizState vizState) { this.vizState = vizState; }
 
    /** Main method to infer settings. */
    public static void magic(final VizState vizState) {
       vizState.setNodePalette(DotPalette.MARTHA);
-      final MagicColour st = new MagicColour(vizState);
+      final MagicColor st = new MagicColor(vizState);
       st.nodeNames();
       st.nodeShape();
       st.nodeColour();
@@ -81,7 +81,6 @@ final class MagicColour {
     * <li> symmetry breaking: colors only matter up to recoloring (diff from
     * shape!)
     * <li> color substitutes for name/label
-    *
     * </ul>
     */
    private void nodeColour() {
@@ -132,7 +131,6 @@ final class MagicColour {
 
 
    /** SYNTACTIC/VISUAL: Determine shapes for nodes.
-    *
     * <ul>
     * <li> trapezoid, hexagon, rectangle, ellipse, circle, square -- no others
     * <li> actual shape matters -- do not break symmetry as with color
@@ -193,12 +191,7 @@ final class MagicColour {
    }
 
 
-   /** Helper for nodeShape().
-    * @param t
-    * @param subTypes
-    * @param isTvisible
-    * @param shapeFamily
-    */
+   /** Helper for nodeShape(). */
    private void assignNodeShape(final AlloyType t, final Set<AlloyType> subTypes, final boolean isTvisible, final List<DotShape> shapeFamily) {
       int index = 0;
       // shape for t, if visible
@@ -219,13 +212,10 @@ final class MagicColour {
     *
     * when should names be used?
     * <ul>
-    * <li> not when only a single sig (e.g. state machine with only one 'node'
-    * sig)
+    * <li> not when only a single sig (e.g. state machine with only one 'node' sig)
     * <li> not when only a single relation
     * <li> check for single things _after_ hiding things by default
-    *
     * </ul>
-    *
     */
    private void nodeNames() {
       final Set<AlloyType> visibleUserTypes = MagicUtil.visibleUserTypes(vizState);

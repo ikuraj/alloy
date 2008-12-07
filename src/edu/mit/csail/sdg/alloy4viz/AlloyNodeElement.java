@@ -29,6 +29,6 @@ package edu.mit.csail.sdg.alloy4viz;
 
 public abstract class AlloyNodeElement extends AlloyElement {
 
-    /** Constructs an AlloyNodeElement object with that name. */
-    AlloyNodeElement(String name) { super(name); }
+   /** Constructs an AlloyNodeElement object with that name. */
+   AlloyNodeElement(String name) { super(name); }
 }
