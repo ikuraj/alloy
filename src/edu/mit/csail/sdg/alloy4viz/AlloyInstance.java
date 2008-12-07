@@ -30,12 +30,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import edu.mit.csail.sdg.alloy4viz.AlloyAtom;
-import edu.mit.csail.sdg.alloy4viz.AlloyModel;
-import edu.mit.csail.sdg.alloy4viz.AlloyRelation;
-import edu.mit.csail.sdg.alloy4viz.AlloySet;
-import edu.mit.csail.sdg.alloy4viz.AlloyTuple;
-import edu.mit.csail.sdg.alloy4viz.AlloyType;
 
 /** Immutable; represents an Alloy instance that can be displayed in the visualizer.
  *
