@@ -78,7 +78,7 @@ public final class StaticGraphMaker {
     public static JPanel produceGraph(AlloyInstance instance, VizState view, AlloyProjection proj) throws ErrorFatal {
         view = new VizState(view);
         if (proj == null) proj = new AlloyProjection();
-        VizGraph graph = new VizGraph(view.getNodePalette(), view.getEdgePalette(), view.getFontSize() / 12.0D);
+        VizGraph graph = new VizGraph(view.getFontSize() / 12.0D);
         new StaticGraphMaker(graph, instance, view, proj);
         if (graph.nodes.size()==0) new VizNode(graph, graph, "Due to your theme settings, every atom is hidden.", "Please click Theme and adjust your settings.");
         return new VizViewer(graph);
@@ -165,7 +165,7 @@ public final class StaticGraphMaker {
                 edgesAsAttribute(rel);
         for(Map.Entry<VizNode,Set<String>> e: attribs.entrySet()) {
            Set<String> set = e.getValue();
-           if (set!=null) for(String s: set) if (s.length() > 0) e.getKey().addAfter(s);
+           if (set!=null) for(String s: set) if (s.length() > 0) e.getKey().addLabel(s);
         }
         for(Map.Entry<AlloyRelation,Integer> e: rels.entrySet()) {
            Color c = magicColor.get(e.getKey());
@@ -189,7 +189,7 @@ public final class StaticGraphMaker {
         DotStyle style = view.nodeStyle(atom, instance);
         DotShape shape = view.shape(atom, instance);
         String label = atomname(atom, false);
-        node = new VizNode(graph, atom, label).set(shape).set(color).set(style);
+        node = new VizNode(graph, atom, label).set(shape).set(color.getColor(view.getNodePalette())).set(style);
         // Get the label based on the sets and relations
         String setsLabel="";
         boolean showLabelByDefault = view.showAsLabel.get(null);
@@ -244,7 +244,7 @@ public final class StaticGraphMaker {
         DotColor color = view.edgeColor.resolve(rel);
         int weight = view.weight.get(rel);
         VizEdge e = new VizEdge((layoutBack ? end : start), (layoutBack ? start : end), tuple, label, rel);
-        if (color == DotColor.MAGIC && magicColor != null) e.set(magicColor); else e.set(color);
+        if (color == DotColor.MAGIC && magicColor != null) e.set(magicColor); else e.set(color.getColor(view.getEdgePalette()));
         e.set(style);
         e.set(dir!=DotDirection.FORWARD, dir!=DotDirection.BACK);
         e.set(weight<1 ? 1 : (weight>100 ? 10000 : 100*weight));

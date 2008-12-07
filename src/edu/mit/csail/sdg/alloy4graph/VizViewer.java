@@ -90,7 +90,7 @@ public final strictfp class VizViewer extends JPanel {
     public final JPopupMenu pop = new JPopupMenu();
 
     /** Locates the node or edge at the given (X,Y) location. */
-    private Object alloyFind(int mouseX, int mouseY) { return graph.alloyFind(scale, mouseX, mouseY); }
+    private Object alloyFind(int mouseX, int mouseY) { return graph.find(scale, mouseX, mouseY); }
 
     /** Returns the annotation for the node or edge at location x,y (or null if none) */
     public Object alloyGetAnnotationAtXY(int mouseX, int mouseY) {
@@ -129,7 +129,7 @@ public final strictfp class VizViewer extends JPanel {
     public VizViewer(final VizGraph graph) {
         OurUtil.make(this, BLACK, WHITE, empty);
         setBorder(null);
-        this.scale = graph.getDefaultScale();
+        this.scale = graph.defaultScale;
         this.graph = graph;
         graph.layout();
         final JMenuItem zoomIn = new JMenuItem("Zoom In");
@@ -187,7 +187,7 @@ public final strictfp class VizViewer extends JPanel {
         addMouseListener(new MouseAdapter() {
            @Override public void mouseReleased(MouseEvent ev) {
                Object obj = alloyFind(ev.getX(), ev.getY());
-               graph.recalc_bound(true); selected=null; highlight=obj; alloyRepaint();
+               graph.recalcBound(true); selected=null; highlight=obj; alloyRepaint();
            }
            @Override public void mousePressed(MouseEvent ev) {
                dragButton=0;
@@ -436,7 +436,7 @@ public final strictfp class VizViewer extends JPanel {
         g2.scale(scale, scale);
         Object sel=(selected!=null ? selected : highlight);
         VizNode c=null;
-        if (sel instanceof VizNode && ((VizNode)sel).shape()==null) { c=(VizNode)sel; sel=c.inEdges().get(0); }
+        if (sel instanceof VizNode && ((VizNode)sel).shape()==null) { c = (VizNode)sel; sel = c.ins.get(0); }
         graph.draw(new Artist(g2), scale, sel, true);
         if (c!=null) { gr.setColor(((VizEdge)sel).color()); gr.fillArc(c.x()-5-graph.getLeft(), c.y()-5-graph.getTop(), 10, 10, 0, 360); }
         g2.setTransform(oldAF);

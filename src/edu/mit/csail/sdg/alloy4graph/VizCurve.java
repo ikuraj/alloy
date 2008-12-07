@@ -74,17 +74,19 @@ final class VizCurve {
     }
 
     /** Add a straightline segment to (ax,ay) */
-    public void lineTo(double ax, double ay) {
+    public VizCurve lineTo(double ax, double ay) {
         list.add(makeline(endX, endY, ax, ay));
-        this.endX=ax;
-        this.endY=ay;
+        this.endX = ax;
+        this.endY = ay;
+        return this;
     }
 
     /** Add a cubic bezier segment to (cx,cy) using (ax,ay) and (bx,by) as the two control points. */
-    public void cubicTo(double ax, double ay, double bx, double by, double cx, double cy) {
+    public VizCurve cubicTo(double ax, double ay, double bx, double by, double cx, double cy) {
         list.add(new CubicCurve2D.Double(endX, endY, ax, ay, bx, by, cx, cy));
-        this.endX=cx;
-        this.endY=cy;
+        this.endX = cx;
+        this.endY = cy;
+        return this;
     }
 
     /** Returns true if (x1,y1)..(x2,y2) intersects (x,y3)..(x,y4) */

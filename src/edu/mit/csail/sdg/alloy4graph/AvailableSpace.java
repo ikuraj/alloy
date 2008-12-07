@@ -35,7 +35,9 @@ public final class AvailableSpace {
     /** Mutable; represents a rectangle. */
     static final class Box {
         /** (x,y) is the top-left corner; w is the width; h is the height. */
-        int x, y, w, h;
+        int x, y;
+        final int w, h;
+        public Box(int x, int y, int w, int h) { this.x=x; this.y=y; this.w=w; this.h=h; }
     }
 
     /** The list of existing rectangles; we ensure every rectangle in here has width>0 and height>0. */
@@ -59,9 +61,7 @@ public final class AvailableSpace {
     /** Add the given rectangle to the list of rectangles in this space. */
     public void add(int x, int y, int w, int h) {
         if (w<=0 || h<=0) return; // no-op
-        Box b = new Box();
-        b.x=x; b.y=y; b.w=w; b.h=h;
-        list.add(b);
+        list.add(new Box(x, y, w, h));
     }
 
     /** Erases the list of rectangles in this space. */
