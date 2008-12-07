@@ -34,9 +34,8 @@ public final class AvailableSpace {
 
     /** Mutable; represents a rectangle. */
     static final class Box {
-        /** (x,y) is the top-left corner; w is the width; h is the height. */
-        int x, y;
-        final int w, h;
+        /** (x,y) is the top-left corner. */   int x, y;
+        /** (w,h) is the width and height. */  final int w, h;
         public Box(int x, int y, int w, int h) { this.x=x; this.y=y; this.w=w; this.h=h; }
     }
 
