@@ -74,7 +74,7 @@ public final class AlloyTuple implements Comparable<AlloyTuple> {
     public AlloyAtom getEnd() { return atoms.get(atoms.size()-1); }
 
     /** Returns a new AlloyTuple whose list of atoms is the same but in reverse. */
-    public AlloyTuple reversed() {
+    public AlloyTuple reverse() {
         List<AlloyAtom> newlist = new ArrayList<AlloyAtom>(atoms.size());
         for(int i=atoms.size()-1; i>=0; i--) newlist.add(atoms.get(i));
         return new AlloyTuple(newlist);

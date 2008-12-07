@@ -265,7 +265,7 @@ public final class StaticGraphMaker {
         Set<AlloyTuple> ignore = new LinkedHashSet<AlloyTuple>();
         for (AlloyTuple tuple: tuples) {
             if (!ignore.contains(tuple)) {
-                AlloyTuple reverse = tuple.getArity()>2 ? null : tuple.reversed();
+                AlloyTuple reverse = tuple.getArity()>2 ? null : tuple.reverse();
                 // If the reverse tuple is in the same relation, and it is not a self-edge, then draw it as a <-> arrow.
                 if (reverse!=null && tuples.contains(reverse) && !reverse.equals(tuple)) {
                     ignore.add(reverse);
