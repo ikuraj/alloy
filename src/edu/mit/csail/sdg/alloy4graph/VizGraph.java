@@ -45,6 +45,34 @@ import static edu.mit.csail.sdg.alloy4graph.Artist.getBounds;
 
 public final strictfp class VizGraph extends DiGraph {
 
+   /** Helper method that encodes a String for printing into a DOT file. */
+   static String esc(String name) {
+      if (name.indexOf('\"') < 0) return name;
+      StringBuilder out = new StringBuilder();
+      for(int i=0; i<name.length(); i++) {
+          char c=name.charAt(i);
+          if (c=='\"') out.append('\\');
+          out.append(c);
+      }
+      return out.toString();
+  }
+
+   /** Returns a DOT representation of the current graph. */
+   @Override public String toString() {
+       StringBuilder sb = new StringBuilder();
+       sb.append("digraph \"graph\" {\n");
+       sb.append("graph [fontsize=12]\n");
+       sb.append("node [fontsize=12]\n");
+       sb.append("edge [fontsize=12]\n");
+       sb.append("rankdir=TB;\n");
+       IdentityHashMap<VizNode,String> ids = new IdentityHashMap<VizNode,String>();
+       for (VizNode node: nodes) ids.put(node, "N"+ids.size());
+       for (VizEdge edge: edges) edge.toDOT(ids, sb);
+       for (VizNode node: nodes) node.toDOT(ids, sb);
+       sb.append("}\n");
+       return sb.toString();
+   }
+
     //================================ adjustable options ========================================================================//
 
     /** Minimum horizontal distance between adjacent nodes. */

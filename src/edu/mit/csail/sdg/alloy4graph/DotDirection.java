@@ -40,5 +40,5 @@ public enum DotDirection {
    private DotDirection(String text) { this.displayText = text; }
 
    /** Returns the String that should be written into the dot file for this value, when used with the given palette. */
-   public String getDotText(DotPalette pal) { return displayText; }
+   public String getDotText() { return displayText; }
 }

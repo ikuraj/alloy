@@ -22,7 +22,7 @@
 
 package edu.mit.csail.sdg.alloy4graph;
 
-/** Immutable; this defines the set of color palettes that the user can choose from.
+/** Immutable; this defines the set of possible color palettes.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */

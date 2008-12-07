@@ -26,6 +26,7 @@ import java.awt.Color;
 import java.awt.geom.CubicCurve2D;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
+import java.util.IdentityHashMap;
 import static java.awt.Color.BLACK;
 import static java.lang.StrictMath.PI;
 import static java.lang.StrictMath.sin;
@@ -36,6 +37,7 @@ import static edu.mit.csail.sdg.alloy4graph.Artist.getBounds;
 import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopA;
 import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopGL;
 import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopGR;
+import static edu.mit.csail.sdg.alloy4graph.VizGraph.esc;
 
 /** Mutable; represents a graphical edge.
  *
@@ -150,6 +152,26 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
     /** Returns a String representing this edge. */
     @Override public String toString() {
         return "Edge " + a() + (ahead?"<--":"---") + label + (bhead?"-->":"---") + b();
+    }
+
+    /** Write this edge into a StringBuilder as if writing to a DOT file. */
+    void toDOT(IdentityHashMap<VizNode,String> ids, StringBuilder out) {
+        VizNode a = a(), b = b();
+        if (a.shape()==null) return; // This means this edge is virtual
+        while(b.shape()==null) b = b.outEdges().get(0).b(); // If b is dummy, jump ahead until we find the actual target node
+        String color = Integer.toHexString(this.color.getRGB() & 0xFFFFFF);  while(color.length() < 6) { color = "0" + color; }
+        out.append("\"" + ids.get(a()) + "\"");
+        out.append(" -> ");
+        out.append("\"" + ids.get(b) + "\"");
+        out.append(" [");
+        out.append("uuid = \"" + (uuid==null ? "" : esc(uuid.toString())) + "\"");
+        out.append(", color = \"#" + color + "\"");
+        out.append(", fontcolor = \"#" + color + "\"");
+        out.append(", style = \"" + style.getDotText() + "\"");
+        out.append(", label = \"" + esc(label) + "\"");
+        out.append(", dir = \"" + (ahead && bhead ? "both" : (bhead ? "forward" : "back")) + "\"");
+        out.append(", weight = \"" + weight + "\"");
+        out.append("]\n");
     }
 
     /** Construct an edge from "from" to "to" with the given arrow head settings, then add the edge to the graph. */

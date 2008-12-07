@@ -28,6 +28,7 @@ import java.awt.Shape;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
 import static java.awt.Color.BLACK;
 import static java.lang.StrictMath.sqrt;
@@ -36,6 +37,7 @@ import static edu.mit.csail.sdg.alloy4graph.Artist.getBounds;
 import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopA;
 import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopGL;
 import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopGR;
+import static edu.mit.csail.sdg.alloy4graph.VizGraph.esc;
 
 /** Mutable; represents a graphical node.
  *
@@ -179,6 +181,32 @@ public final strictfp class VizNode extends DiGraph.DiNode {
 
     /** Returns a brief summary of this node. */
     @Override public String toString() { return (labels!=null && labels.size()>0) ? labels.get(0).trim() : ""; }
+
+    /** Writes this node into a StringBuilder as if we were writing to a DOT file
+     * @param ids - maps each node in a DOT file to a unique identifier
+     * @param out - the StringBuilder object that will receive the text
+     */
+    void toDOT (IdentityHashMap<VizNode,String> ids, StringBuilder out) {
+       if (shape == null) return; // This means it's a virtual node
+       int rgb = color.getRGB() & 0xFFFFFF;
+       String text = (rgb==0xFF0000 || rgb==0x0000FF || rgb==0) ? "FFFFFF" : "000000";
+       String main = Integer.toHexString(rgb);  while(main.length() < 6) { main = "0" + main; }
+       out.append("\"" + ids.get(this) + "\"");
+       out.append(" [");
+       out.append("uuid=\"");
+       if (uuid!=null) out.append(esc(uuid.toString()));
+       out.append("\", label=\"");
+       boolean first = true;
+       if (labels != null) for(String label: labels) if (label.length() > 0) {
+          out.append((first ? "" : "\\n") + esc(label));
+          first = false;
+       }
+       out.append("\", color=\"#" + main + "\"");
+       out.append(", fontcolor = \"#" + text + "\"");
+       out.append(", shape = \"" + shape.getDotText() + "\"");
+       out.append(", style = \"filled, " + style.getDotText() + "\"");
+       out.append("]\n");
+    }
 
     // ============================ these are computed by calcBounds() =========================================
 

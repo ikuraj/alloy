@@ -30,7 +30,7 @@ import java.util.Map;
 import javax.swing.Icon;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 
-/** Immutable; this defines the set of colors that dot can produce.
+/** Immutable; this defines the set of possible colors.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -128,11 +128,6 @@ public enum DotColor {
 
    /** Returns the String that will be displayed in the GUI to represent this value. */
    public String getDisplayedText() { return displayText; }
-
-   /** Returns the color to use for the text label, based on the given palette. */
-   public String getLabelColorText(DotPalette pal) {
-      return (this==BLACK || (pal==DotPalette.STANDARD && (this==RED || this==BLUE))) ? "white" : "black";
-   }
 
    /** This method is used in parsing the XML value into a valid color; returns null if there is no match. */
    public static DotColor parse(String x) {

@@ -366,13 +366,13 @@ public final class VizCustomizationPanel extends JPanel {
         JComboBox shape = new OurCombobox(true, DotShape.values(), 125, 35, vizState.shape.get(elt)) {
             private static final long serialVersionUID = 1L;
             @Override public String do_getText(Object value) { if (value==null) return "Inherit"; else return ((DotShape)value).getDisplayedText(); }
-            @Override public Icon   do_getIcon(Object value) { if (value==null) value=vizState.shape.resolve(elt2); return value==null ? null : ((DotShape)value).getIcon(vizState.getNodePalette()); }
+            @Override public Icon   do_getIcon(Object value) { if (value==null) value=vizState.shape.resolve(elt2); return value==null ? null : ((DotShape)value).getIcon(); }
             @Override public void   do_changed(Object value) { vizState.shape.put(elt, (DotShape)value); }
         };
         JComboBox style = new OurCombobox(true, DotStyle.values(), 95, 35, vizState.nodeStyle.get(elt)) {
             private static final long serialVersionUID = 1L;
             @Override public String do_getText(Object value) { if (value==null) return "Inherit"; else return ((DotStyle)value).getDisplayedText(); }
-            @Override public Icon   do_getIcon(Object value) { if (value==null) value=vizState.nodeStyle.resolve(elt2); return value==null ? null : ((DotStyle)value).getIcon(vizState.getNodePalette()); }
+            @Override public Icon   do_getIcon(Object value) { if (value==null) value=vizState.nodeStyle.resolve(elt2); return value==null ? null : ((DotStyle)value).getIcon(); }
             @Override public void   do_changed(Object value) { vizState.nodeStyle.put(elt, (DotStyle)value); }
         };
         //
@@ -461,7 +461,7 @@ public final class VizCustomizationPanel extends JPanel {
         OurCombobox style = new OurCombobox(true, DotStyle.values(), 105, 35, vizState.edgeStyle.get(rel)) {
             private static final long serialVersionUID = 1L;
             @Override public String do_getText(Object value) { return value==null ? "Inherit" : ((DotStyle)value).getDisplayedText(); }
-            @Override public Icon   do_getIcon(Object value) { if (value==null) value=vizState.edgeStyle.get(null); return value==null ? null : ((DotStyle)value).getIcon(vizState.getEdgePalette()); }
+            @Override public Icon   do_getIcon(Object value) { if (value==null) value=vizState.edgeStyle.get(null); return value==null ? null : ((DotStyle)value).getIcon(); }
             @Override public void   do_changed(Object value) { vizState.edgeStyle.put(rel, (DotStyle)value); }
         };
         JPanel visible    = vizState.edgeVisible.pick(rel, "Show as arcs",      "Show relation as arcs");
@@ -534,13 +534,13 @@ public final class VizCustomizationPanel extends JPanel {
         JComboBox shape = new OurCombobox(false, DotShape.values(), 135, 35, vizState.shape.get(null)) {
             private static final long serialVersionUID = 1L;
             @Override public String do_getText(Object value) { return ((DotShape)value).getDisplayedText(); }
-            @Override public Icon   do_getIcon(Object value) { return ((DotShape)value).getIcon(vizState.getNodePalette()); }
+            @Override public Icon   do_getIcon(Object value) { return ((DotShape)value).getIcon(); }
             @Override public void   do_changed(Object value) { vizState.shape.put(null, (DotShape)value); }
         };
         JComboBox style = new OurCombobox(false, DotStyle.values(), 110, 35, vizState.nodeStyle.get(null)) {
             private static final long serialVersionUID = 1L;
             @Override public String do_getText(Object value) { return ((DotStyle)value).getDisplayedText(); }
-            @Override public Icon   do_getIcon(Object value) { return ((DotStyle)value).getIcon(vizState.getNodePalette()); }
+            @Override public Icon   do_getIcon(Object value) { return ((DotStyle)value).getIcon(); }
             @Override public void   do_changed(Object value) { vizState.nodeStyle.put(null, (DotStyle)value); }
         };
         JPanel vis  = vizState.nodeVisible    .pick("Show",                        "Show members of type as nodes");
@@ -567,7 +567,7 @@ public final class VizCustomizationPanel extends JPanel {
         JComboBox outlineComboE = new OurCombobox(false, DotStyle.values(), 110, 35, vizState.edgeStyle.get(null)) {
             private static final long serialVersionUID = 1L;
             @Override public String do_getText(Object value) { return ((DotStyle)value).getDisplayedText(); }
-            @Override public Icon   do_getIcon(Object value) { return ((DotStyle)value).getIcon(vizState.getEdgePalette()); }
+            @Override public Icon   do_getIcon(Object value) { return ((DotStyle)value).getIcon(); }
             @Override public void   do_changed(Object value) { vizState.edgeStyle.put(null, (DotStyle)value); }
         };
         JPanel dispCBE       = vizState.edgeVisible.pick("Show as arcs",       "Show relations as arcs");

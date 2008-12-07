@@ -25,7 +25,7 @@ package edu.mit.csail.sdg.alloy4graph;
 import javax.swing.Icon;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 
-/** Immutable; enumerates the possible line styles (SOLID, DASHED, DOTTED...)
+/** Immutable; this defines the set of possible line styles (SOLID, DASHED, DOTTED...)
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -64,10 +64,10 @@ public enum DotStyle {
     public String getDisplayedText() { return name; }
 
     /** Returns the String that should be written into the dot file for this value, when used with the given palette. */
-    public String getDotText(DotPalette pal) { return dotName; }
+    public String getDotText() { return dotName; }
 
     /** Returns the Icon that will be displayed in the GUI to represent this value, when used with the given palette. */
-    public Icon getIcon(DotPalette pal) { return icon; }
+    public Icon getIcon() { return icon; }
 
     /** This method is used in parsing the XML value into a valid style; returns null if there is no match. */
     public static DotStyle parse(String x) {

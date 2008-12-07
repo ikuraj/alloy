@@ -238,11 +238,11 @@ public final class VizGraphPanel extends JPanel {
             navPanel.add(tp);
             map.put(tp.getAlloyType(), tp.getAlloyAtom());
         }
-        currentProjection=new AlloyProjection(map);
-        JPanel graph=vizState.getGraph(currentProjection).b;
+        currentProjection = new AlloyProjection(map);
+        JPanel graph = vizState.getGraph(currentProjection);
         if (seeDot && (graph instanceof VizViewer)) {
             viewer = null;
-            JTextArea txt = OurUtil.textarea(((VizViewer)graph).alloyGetAnnotation(), 10, 10, false, true, getFont());
+            JTextArea txt = OurUtil.textarea(graph.toString(), 10, 10, false, true, getFont());
             diagramScrollPanel.setViewportView(txt);
         } else {
             if (graph instanceof VizViewer) viewer=(VizViewer)graph; else viewer=null;

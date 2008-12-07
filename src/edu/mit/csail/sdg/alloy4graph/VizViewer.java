@@ -89,9 +89,6 @@ public final strictfp class VizViewer extends JPanel {
     /** The right-click context menu associated with this JPanel. */
     public final JPopupMenu pop = new JPopupMenu();
 
-    /** This allows users to attach a String object to this JPanel. */
-    private String annotation = "";
-
     /** Locates the node or edge at the given (X,Y) location. */
     private Object alloyFind(int mouseX, int mouseY) { return graph.alloyFind(scale, mouseX, mouseY); }
 
@@ -131,6 +128,7 @@ public final strictfp class VizViewer extends JPanel {
     /** Construct a VizViewer that displays the given graph. */
     public VizViewer(final VizGraph graph) {
         OurUtil.make(this, BLACK, WHITE, empty);
+        setBorder(null);
         this.scale = graph.getDefaultScale();
         this.graph = graph;
         graph.layout();
@@ -213,12 +211,6 @@ public final strictfp class VizViewer extends JPanel {
            }
         });
     }
-
-    /** Retrieves the annotation associated with this object; "" if no annotation has been set yet. */
-    public String alloyGetAnnotation() { return annotation; }
-
-    /** Changes the annotation associated with this object. */
-    public void alloySetAnnotation(String newAnnotation) { this.annotation=newAnnotation; }
 
     /** This color is used as the background for a JTextField that contains bad data.
      * <p> Note: we intentionally choose to make it an instance field rather than a static field,
@@ -423,6 +415,11 @@ public final strictfp class VizViewer extends JPanel {
     /** Show the popup menu at location (x,y) */
     public void alloyPopup(Component c, int x, int y) {
        pop.show(c,x,y);
+    }
+
+    /** Returns a DOT representation of the current graph. */
+    @Override public String toString() {
+       return graph.toString();
     }
 
     /** Returns the preferred size of this component. */

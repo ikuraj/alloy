@@ -35,7 +35,6 @@ import javax.swing.JScrollPane;
 import edu.mit.csail.sdg.alloy4.MailBug;
 import edu.mit.csail.sdg.alloy4.OurCheckbox;
 import edu.mit.csail.sdg.alloy4.OurUtil;
-import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4graph.DotColor;
 import edu.mit.csail.sdg.alloy4graph.DotPalette;
 import edu.mit.csail.sdg.alloy4graph.DotShape;
@@ -165,25 +164,25 @@ public final class VizState {
     }
 
     /** Caches previously generated graphs. */
-    private LinkedHashMap<AlloyProjection,Pair<String,JPanel>> cache=new LinkedHashMap<AlloyProjection,Pair<String,JPanel>>();
+    private LinkedHashMap<AlloyProjection,JPanel> cache=new LinkedHashMap<AlloyProjection,JPanel>();
 
     /** Generate a VizGraphPanel for a given projection choice, using the current settings. */
-    public Pair<String,JPanel> getGraph(AlloyProjection projectionChoice) {
-        Pair<String,JPanel> ans = cache.get(projectionChoice);
+    public JPanel getGraph(AlloyProjection projectionChoice) {
+        JPanel ans = cache.get(projectionChoice);
         if (ans!=null) return ans;
         AlloyInstance inst = originalInstance;
         try {
             ans = StaticGraphMaker.produceGraph(inst, this, projectionChoice);
-            cache.put(projectionChoice,ans);
+            cache.put(projectionChoice, ans);
         } catch(Throwable ex) {
             String msg = "An error has occurred: " + ex + "\n\nStackTrace:\n" + MailBug.dump(ex) + "\n";
             JScrollPane scroll = OurUtil.scrollpane(OurUtil.textarea(msg, 0, 0, false, false));
-            ans=new Pair<String,JPanel>("",new JPanel());
-            ans.b.setLayout(new BorderLayout());
-            ans.b.add(scroll, BorderLayout.CENTER);
-            ans.b.setBackground(Color.WHITE);
+            ans = new JPanel();
+            ans.setLayout(new BorderLayout());
+            ans.add(scroll, BorderLayout.CENTER);
+            ans.setBackground(Color.WHITE);
         }
-        ans.b.setBorder(null);
+        ans.setBorder(null);
         return ans;
     }
 
