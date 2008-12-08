@@ -142,7 +142,7 @@ public final class Func extends Browsable {
             if (get(i)==get(j))
               throw new ErrorSyntax(get(j).span(),
                 "The same variable cannot appear more than once in a predicate/function's parameter list.");
-        for(Decl d: decls) if (d.expr!=null && d.expr.hasCall())
+        for(Decl d: this.decls) if (d.expr!=null && d.expr.hasCall())
            throw new ErrorSyntax(d.expr.span(), "Parameter declaration cannot contain predicate/function calls.");
         if (returnDecl.hasCall())
            throw new ErrorSyntax(returnDecl.span(), "Return type declaration cannot contain predicate/function calls.");
