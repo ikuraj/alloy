@@ -34,10 +34,12 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.prefs.Preferences;
@@ -342,9 +344,6 @@ public final class SimpleGUI implements ComponentListener {
     /** The darker background color (for the MessageLog window and the Toolbar and the Status Bar, etc.) */
     private static final Color background = new Color(0.9f, 0.9f, 0.9f);
 
-    /** Whether we should force ".als" when opening a file. */
-    private boolean openAlsOnly = true;
-
     /** If subrunning==true: 0 means SAT solving; 1 means metamodel; 2 means enumeration. */
     private int subrunningTask = 0;
 
@@ -448,11 +447,11 @@ public final class SimpleGUI implements ComponentListener {
         if (arch.equals("powerpc")) arch="ppc-"+os; else arch=arch.replaceAll("\\Ai[3456]86\\z","x86")+"-"+os;
         if (os.equals("mac")) arch="x86-mac"; // our pre-compiled binaries are all universal binaries
         // Find out the appropriate Alloy directory
-        final String platformBinary=Helper.alloyHome()+fs+"binary";
+        final String platformBinary = alloyHome() + fs + "binary";
         // Write a few test files
         try {
             (new File(platformBinary)).mkdirs();
-            Util.writeAll(platformBinary+fs+"tmp.cnf", "p cnf 3 1\n1 0\n");
+            Util.writeAll(platformBinary + fs + "tmp.cnf", "p cnf 3 1\n1 0\n");
         } catch(Err er) {
             // The error will be caught later by the "berkmin" or "spear" test
         }
@@ -466,7 +465,7 @@ public final class SimpleGUI implements ComponentListener {
            arch+"/minisat.dll", arch+"/minisatprover.dll", arch+"/zchaff.dll",
            arch+"/berkmin.exe", arch+"/spear.exe");
         // Copy the model files
-        Util.copy(false, true, Helper.alloyHome(),
+        Util.copy(false, true, alloyHome(),
            "models/book/appendixA/addressBook1.als", "models/book/appendixA/addressBook2.als", "models/book/appendixA/barbers.als",
            "models/book/appendixA/closure.als", "models/book/appendixA/distribution.als", "models/book/appendixA/phones.als",
            "models/book/appendixA/prison.als", "models/book/appendixA/properties.als", "models/book/appendixA/ring.als",
@@ -521,8 +520,8 @@ public final class SimpleGUI implements ComponentListener {
            "models/util/sequniv.als", "models/util/ternary.als", "models/util/time.als"
            );
         // Record the locations
-        System.setProperty("alloy.theme0", Helper.alloyHome()+fs+"models");
-        System.setProperty("alloy.home", Helper.alloyHome());
+        System.setProperty("alloy.theme0", alloyHome() + fs + "models");
+        System.setProperty("alloy.home", alloyHome());
     }
 
     /** Called when this window is resized. */
@@ -590,6 +589,81 @@ public final class SimpleGUI implements ComponentListener {
         };
     }
 
+    /** This variable caches the result of alloyHome() function call. */
+    private static String alloyHome = null;
+
+    /** Find a temporary directory to store Alloy files; it's guaranteed to be a canonical absolute path. */
+    private static synchronized String alloyHome() {
+        if (alloyHome!=null) return alloyHome;
+        String temp=System.getProperty("java.io.tmpdir");
+        if (temp==null || temp.length()==0)
+            OurDialog.fatal(null,"Error. JVM need to specify a temporary directory using java.io.tmpdir property.");
+        String username=System.getProperty("user.name");
+        File tempfile=new File(temp+File.separatorChar+"alloy4tmp39-"+(username==null?"":username));
+        tempfile.mkdirs();
+        String ans=Util.canon(tempfile.getPath());
+        if (!tempfile.isDirectory()) {
+            OurDialog.fatal(null, "Error. Cannot create the temporary directory "+ans);
+        }
+        if (!Util.onWindows()) {
+            String[] args={"chmod", "700", ans};
+            try {Runtime.getRuntime().exec(args).waitFor();}
+            catch (Throwable ex) {} // We only intend to make a best effort.
+        }
+        return alloyHome=ans;
+    }
+
+    /** Create an empty temporary directory for use, designate it "deleteOnExit", then return it.
+     * It is guaranteed to be a canonical absolute path. */
+    private static String maketemp() {
+        Random r=new Random(new Date().getTime());
+        while(true) {
+            int i=r.nextInt(1000000);
+            String dest = alloyHome()+File.separatorChar+"tmp"+File.separatorChar+i;
+            File f=new File(dest);
+            if (f.mkdirs()) {
+                f.deleteOnExit();
+                return Util.canon(dest);
+            }
+        }
+    }
+
+    /** Return the number of bytes used by the Temporary Directory (or return -1 if the answer exceeds "long") */
+    private static long computeTemporarySpaceUsed() {
+        long ans = iterateTemp(null,false);
+        if (ans<0) return -1; else return ans;
+    }
+
+    /** Delete every file in the Temporary Directory. */
+    private static void clearTemporarySpace() {
+        iterateTemp(null,true);
+        // Also clear the temp dir from previous versions of Alloy4
+        String temp=System.getProperty("java.io.tmpdir");
+        if (temp==null || temp.length()==0) return;
+        String username=System.getProperty("user.name");
+        if (username==null) username="";
+        for(int i=1; i<39; i++) iterateTemp(temp+File.separatorChar+"alloy4tmp"+i+"-"+username, true);
+    }
+
+    /** Helper method for performing either computeTemporarySpaceUsed() or clearTemporarySpace() */
+    private static long iterateTemp(String filename, boolean delete) {
+        long ans=0;
+        if (filename==null) filename = alloyHome()+File.separatorChar+"tmp";
+        File x = new File(filename);
+        if (x.isDirectory()) {
+            for(String subfile:x.list()) {
+                long tmp=iterateTemp(filename+File.separatorChar+subfile, delete);
+                if (ans>=0) ans=ans+tmp;
+            }
+        }
+        else if (x.isFile()) {
+            long tmp=x.length();
+            if (ans>=0) ans=ans+tmp;
+        }
+        if (delete) x.delete();
+        return ans;
+    }
+
     //===============================================================================================================//
 
     /** This method refreshes the "file" menu. */
@@ -640,9 +714,8 @@ public final class SimpleGUI implements ComponentListener {
     /** This method performs File->Open. */
     private Runner doOpen() {
         if (wrap) return wrapMe();
-        File file=OurDialog.askFile(frame, true, null, openAlsOnly?".als":"", ".als files");
+        File file=OurDialog.askFile(frame, true, null, ".als", ".als files");
         if (file!=null) {
-            if (!file.getPath().toLowerCase(Locale.US).endsWith(".als")) openAlsOnly=false;
             Util.setCurrentDirectory(file.getParentFile());
             doOpenFile(file.getPath());
         }
@@ -652,9 +725,8 @@ public final class SimpleGUI implements ComponentListener {
     /** This method performs File->OpenBuiltinModels. */
     private Runner doBuiltin() {
         if (wrap) return wrapMe();
-        File file=OurDialog.askFile(frame, true, Helper.alloyHome()+fs+"models", openAlsOnly?".als":"", ".als files");
+        File file=OurDialog.askFile(frame, true, alloyHome() + fs + "models", ".als", ".als files");
         if (file!=null) {
-            if (!file.getPath().toLowerCase(Locale.US).endsWith(".als")) openAlsOnly=false;
             doOpenFile(file.getPath());
         }
         return null;
@@ -699,7 +771,7 @@ public final class SimpleGUI implements ComponentListener {
     /** This method clears the temporary files and then reinitialize the temporary directory. */
     private Runner doClearTemp() {
         if (!wrap) {
-           Helper.clearTemporarySpace();
+           clearTemporarySpace();
            copyFromJAR();
            log.logBold("Temporary directory has been cleared.\n\n");
            log.logDivider();
@@ -957,8 +1029,8 @@ public final class SimpleGUI implements ComponentListener {
         SimpleCallback1 cb = new SimpleCallback1(this, null, log, Verbosity.get().ordinal(), latestAlloyVersionName, latestAlloyVersion);
         SimpleTask1 task = new SimpleTask1();
         A4Options opt = new A4Options();
-        opt.tempDirectory = Helper.alloyHome() + fs + "tmp";
-        opt.solverDirectory = Helper.alloyHome() + fs + "binary";
+        opt.tempDirectory = alloyHome() + fs + "tmp";
+        opt.solverDirectory = alloyHome() + fs + "binary";
         opt.recordKodkod = RecordKodkod.get();
         opt.unrolls = Version.experimental ? Unrolls.get() : (-1);
         opt.skolemDepth = SkolemDepth.get();
@@ -970,7 +1042,7 @@ public final class SimpleGUI implements ComponentListener {
         task.map = text.do_takeSnapshot();
         task.options = opt.dup();
         task.resolutionMode = (Version.experimental && ImplicitThis.get()) ? 2 : 1;
-        task.tempdir = Helper.maketemp();
+        task.tempdir = maketemp();
         try {
             runmenu.setEnabled(false);
             runbutton.setVisible(false);
@@ -981,7 +1053,7 @@ public final class SimpleGUI implements ComponentListener {
             if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG)
                 WorkerEngine.runLocally(task, cb);
             else
-                WorkerEngine.run(task, newmem, newstack, Helper.alloyHome()+fs+"binary", "", cb);
+                WorkerEngine.run(task, newmem, newstack, alloyHome() + fs + "binary", "", cb);
             subMemoryNow = newmem;
             subStackNow = newstack;
         } catch(Throwable ex) {
@@ -1040,8 +1112,8 @@ public final class SimpleGUI implements ComponentListener {
             try {
                 int resolutionMode = (Version.experimental && ImplicitThis.get()) ? 2 : 1;
                 A4Options opt = new A4Options();
-                opt.tempDirectory = Helper.alloyHome() + fs + "tmp";
-                opt.solverDirectory = Helper.alloyHome() + fs + "binary";
+                opt.tempDirectory = alloyHome() + fs + "tmp";
+                opt.solverDirectory = alloyHome() + fs + "binary";
                 opt.originalFilename = Util.canon(text.do_getFilename());
                 world = CompUtil.parseEverything_fromFile(A4Reporter.NOP, text.do_takeSnapshot(), opt.originalFilename, resolutionMode);
             } catch(Err er) {
@@ -1610,7 +1682,7 @@ public final class SimpleGUI implements ComponentListener {
             SimpleTask2 task = new SimpleTask2();
             task.filename = arg;
             try {
-                WorkerEngine.run(task, SubMemory.get(), SubStack.get(), Helper.alloyHome()+fs+"binary", "", cb);
+                WorkerEngine.run(task, SubMemory.get(), SubStack.get(), alloyHome() + fs + "binary", "", cb);
             } catch(Throwable ex) {
                 WorkerEngine.stop();
                 log.logBold("Fatal Error: Solver failed due to unknown reason.\n" +
@@ -1850,7 +1922,7 @@ public final class SimpleGUI implements ComponentListener {
 
         // Copy required files from the JAR
         copyFromJAR();
-        final String binary = Helper.alloyHome()+fs+"binary";
+        final String binary = alloyHome() + fs + "binary";
 
         // Create the menu bar
         JMenuBar bar = new JMenuBar();
@@ -1978,7 +2050,7 @@ public final class SimpleGUI implements ComponentListener {
         }
 
         // If the temporary directory has become too big, then tell the user they can "clear temporary directory".
-        long space = Helper.computeTemporarySpaceUsed();
+        long space = computeTemporarySpaceUsed();
         if (space<0 || space>=20*1024768) {
             if (space<0) log.logBold("Warning: Alloy4's temporary directory has exceeded 1024M.\n");
             else log.logBold("Warning: Alloy4's temporary directory now uses "+(space/1024768)+"M.\n");
