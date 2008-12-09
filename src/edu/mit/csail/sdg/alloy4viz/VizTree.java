@@ -55,11 +55,11 @@ public final class VizTree extends OurTree {
       if (val instanceof Sig) {
          String label = ((Sig)val).label;
          if (label.startsWith("this/")) label = label.substring(5);
-         return "<html> <b" + c + "sig</b> <span" + c + encode(label) + "</span></html>";
+         return "<html> <b" + c + "sig " + encode(label) + "</b></html>";
       }
-      if (val instanceof ExprVar) return "<html> <b" + c + "set</b> <span" + c + encode(((ExprVar)val).label) + "</span></html>";
+      if (val instanceof ExprVar) return "<html> <b" + c + "set " + encode(((ExprVar)val).label) + "</b></html>";
       if (val instanceof String) return "<html> <span" + c + encode((String)val) + "</span></html>";
-      if (val instanceof Pair) return "<html> <b" + c + "field</b> <span" + c + encode(((ExprHasName)(((Pair<?,?>)val).b)).label) + "</span></html>";
+      if (val instanceof Pair) return "<html> <b" + c + "field " + encode(((ExprHasName)(((Pair<?,?>)val).b)).label) + "</b></html>";
       if (val instanceof A4Tuple) {
          StringBuilder sb = new StringBuilder("<html> <span" + c);
          A4Tuple tp = (A4Tuple) val;
@@ -81,20 +81,7 @@ public final class VizTree extends OurTree {
       List<Object> ans = new ArrayList<Object>();
       try {
          if (parent instanceof A4Solution) {
-            for(Sig s: instance.getAllReachableSigs()) { if (s!=Sig.NONE) ans.add(s); }
-            for(ExprVar v: instance.getAllSkolems()) if (v.type.arity()==1 && v.label.startsWith("$")) ans.add(v);
-            Collections.sort(ans, new Comparator<Object>() {
-               public int compare(Object a, Object b) {
-                  if (a==Sig.UNIV) return -1; else if (b==Sig.UNIV) return 1;
-                  if (a==Sig.SIGINT) return -1; else if (b==Sig.SIGINT) return 1;
-                  if (a==Sig.SEQIDX) return -1; else if (b==Sig.SEQIDX) return 1;
-                  if (a==Sig.STRING) return -1; else if (b==Sig.STRING) return 1;
-                  String t1, t2;
-                  if (a instanceof Sig) { t1=((Sig)a).label; if (b instanceof ExprVar) return -1; else t2=((Sig)b).label; }
-                     else { t1=((ExprVar)a).label; if (b instanceof Sig) return 1; else t2=((ExprVar)b).label; }
-                  return Util.slashComparator.compare(t1, t2);
-               }
-            });
+            return toplevel;
          } else if (parent instanceof Sig || parent instanceof ExprVar) {
             A4TupleSet ts = (A4TupleSet) (instance.eval((Expr)parent));
             for(A4Tuple t: ts) ans.add(t.atom(0));
@@ -136,12 +123,31 @@ public final class VizTree extends OurTree {
    /** The instance being displayed. */
    private final A4Solution instance;
 
+   /** The list of toplevel nodes to show. */
+   private final List<Object> toplevel;
+
    /** Constructs a tree to display the given instance. */
    public VizTree(A4Solution instance, String title, int fontSize) {
       super(fontSize);
       this.instance = instance;
       this.title = title;
       this.onWindows = Util.onWindows();
+      ArrayList<Object> toplevel = new ArrayList<Object>();
+      for(Sig s: instance.getAllReachableSigs()) if (s!=Sig.UNIV && s!=Sig.SEQIDX && s!=Sig.NONE) toplevel.add(s);
+      for(ExprVar v: instance.getAllSkolems()) if (v.type.arity()==1 && v.label.startsWith("$")) toplevel.add(v);
+      Collections.sort(toplevel, new Comparator<Object>() {
+         public int compare(Object a, Object b) {
+            //if (a==Sig.UNIV) return -1; else if (b==Sig.UNIV) return 1;
+            //if (a==Sig.SIGINT) return -1; else if (b==Sig.SIGINT) return 1;
+            //if (a==Sig.SEQIDX) return -1; else if (b==Sig.SEQIDX) return 1;
+            //if (a==Sig.STRING) return -1; else if (b==Sig.STRING) return 1;
+            String t1, t2;
+            if (a instanceof Sig) { t1=((Sig)a).label; if (b instanceof ExprVar) return -1; else t2=((Sig)b).label; }
+               else { t1=((ExprVar)a).label; if (b instanceof Sig) return 1; else t2=((ExprVar)b).label; }
+            return Util.slashComparator.compare(t1, t2);
+         }
+      });
+      this.toplevel = Collections.unmodifiableList(toplevel);
       alloyStart();
    }
 }
