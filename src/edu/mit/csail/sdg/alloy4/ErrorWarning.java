@@ -22,25 +22,22 @@
 
 package edu.mit.csail.sdg.alloy4;
 
-/** Immutable; represents a nonfatal warning that should be reported to the user.
- *
- * <p><b>Invariant:</b> pos!=null && msg!=null
- */
+/** Immutable; represents a nonfatal warning that should be reported to the user. */
 
 public final class ErrorWarning extends Err {
 
    /** This silences javac's warning about missing serialVersionUID. */
-   private static final long serialVersionUID = 1L;
+   private static final long serialVersionUID = 0;
 
    /** Constructs a new warning.
-    * @param msg - the actual error message
+    * @param msg - the actual error message (can be null)
     */
    public ErrorWarning(String msg) {
       super(null, msg, null);
    }
 
    /** Constructs a new warning with "cause" as the underlying cause.
-    * @param msg - the actual error message
+    * @param msg - the actual error message (can be null)
     * @param cause - if nonnull, it is the cause of this exception
     */
    public ErrorWarning(String msg, Throwable cause) {
@@ -49,23 +46,10 @@ public final class ErrorWarning extends Err {
 
    /** Constructs a new warning.
     * @param pos - the filename/line/row information (can be null if unknown)
-    * @param msg - the actual error message
+    * @param msg - the actual error message (can be null)
     */
    public ErrorWarning(Pos pos, String msg) {
       super(pos, msg, null);
-   }
-
-   /** Two Err objects are equal if the type, position, and message are the same. */
-   @Override public boolean equals(Object other) {
-      if (this==other) return true;
-      if (!(other instanceof ErrorWarning)) return false;
-      Err that = (Err) other;
-      return pos.equals(that.pos) && msg.equals(that.msg);
-   }
-
-   /** Returns a hash code consistent with equals() */
-   @Override public int hashCode() {
-      return msg.hashCode();
    }
 
    /** Returns a textual description of the error. */

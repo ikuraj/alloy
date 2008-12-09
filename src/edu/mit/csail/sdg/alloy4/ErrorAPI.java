@@ -22,25 +22,22 @@
 
 package edu.mit.csail.sdg.alloy4;
 
-/** Immutable; represents an API usage error.
- *
- * <p><b>Invariant:</b> pos!=null && msg!=null
- */
+/** Immutable; represents an API usage error. */
 
 public final class ErrorAPI extends Err {
 
    /** This silences javac's warning about missing serialVersionUID. */
-   private static final long serialVersionUID = 1L;
+   private static final long serialVersionUID = 0;
 
    /** Constructs a new API usage error.
-    * @param msg - the actual error message
+    * @param msg - the actual error message (can be null)
     */
    public ErrorAPI(String msg) {
       super(null, msg, null);
    }
 
    /** Constructs a new API usage error with "cause" as the underlying cause.
-    * @param msg - the actual error message
+    * @param msg - the actual error message (can be null)
     * @param cause - if nonnull, it is the cause of this exception
     */
    public ErrorAPI(String msg, Throwable cause) {
@@ -49,23 +46,10 @@ public final class ErrorAPI extends Err {
 
    /** Constructs a new API usage error.
     * @param pos - the filename/line/row information (can be null if unknown)
-    * @param msg - the actual error message
+    * @param msg - the actual error message (can be null)
     */
    public ErrorAPI(Pos pos, String msg) {
       super(pos, msg, null);
-   }
-
-   /** Two Err objects are equal if the type, position, and message are the same. */
-   @Override public boolean equals(Object other) {
-      if (this==other) return true;
-      if (!(other instanceof ErrorAPI)) return false;
-      Err that = (Err) other;
-      return pos.equals(that.pos) && msg.equals(that.msg);
-   }
-
-   /** Returns a hash code consistent with equals() */
-   @Override public int hashCode() {
-      return msg.hashCode();
    }
 
    /** Returns a textual description of the error. */

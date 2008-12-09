@@ -30,23 +30,26 @@ import java.util.Map;
 /** Mutable; this implements a graph with nodes and directed edges; null node is allowed.
  *
  * <p> Note: it uses n1==n2 for comparing nodes rather than using n1.equals(n2)
- *
- * @param <N> - the node type
  */
 
-public final class DirectedGraph<N> {
+public final class DirectedGraph {
+
+   /** This substitutes for null nodes. This allows hasPath() method to use put() to both insert and test membership in one go. */
+   private static final Object NULL = new Object();
 
    /** This field maps each node X to a list of "neighbor nodes" that X can reach by following one or more directed edges. */
-   private final Map<N,List<N>> nodeToTargets = new IdentityHashMap<N,List<N>>();
+   private final Map<Object,List<Object>> nodeToTargets = new IdentityHashMap<Object,List<Object>>();
 
    /** Constructs an empty graph. */
    public DirectedGraph () { }
 
    /** Add a directed edge from start node to end node (if there wasn't such an edge already). */
-   public void addEdge (final N start, final N end) {
-      List<N> targets = nodeToTargets.get(start);
+   public void addEdge (Object start, Object end) {
+      if (start == null) start = NULL;
+      if (end == null) end = NULL;
+      List<Object> targets = nodeToTargets.get(start);
       if (targets == null) {
-         targets = new ArrayList<N>();
+         targets = new ArrayList<Object>();
          targets.add(end);
          nodeToTargets.put(start, targets);
       } else {
@@ -56,10 +59,12 @@ public final class DirectedGraph<N> {
    }
 
    /** Returns whether there is a directed path from start node to end node by following 0 or more directed edges (breath-first). */
-   public boolean hasPath (final N start, final N end) {
+   public boolean hasPath (Object start, Object end) {
+      if (start == null) start = NULL;
+      if (end == null) end = NULL;
       if (start == end) return true;
-      List<N> todo = new ArrayList<N>();
-      Map<N,N> visited = new IdentityHashMap<N,N>();
+      List<Object> todo = new ArrayList<Object>();
+      Map<Object,Object> visited = new IdentityHashMap<Object,Object>();
       // The correctness and guaranteed termination relies on following three invariants:
       // (1) Every time we add X to "visited", we also simultaneously add X to "todo".
       // (2) Every time we add X to "todo", we also simultaneously add X to "visited".
@@ -67,12 +72,12 @@ public final class DirectedGraph<N> {
       visited.put(start, start);
       todo.add(start);
       for(int k = 0; k < todo.size(); k++) {
-         List<N> targets = nodeToTargets.get(todo.get(k));
+         List<Object> targets = nodeToTargets.get(todo.get(k));
          if (targets == null) continue;
          for (int i = targets.size()-1; i >= 0; i--) {
-            N next = targets.get(i);
+            Object next = targets.get(i);
             if (next == end) { addEdge(start, end); return true; } // Cache so that hasPath(start,end) returns true immediately
-            if (!visited.containsKey(next)) { visited.put(next, next); todo.add(next); }
+            if (visited.put(next, next) == null) todo.add(next);
          }
       }
       return false;

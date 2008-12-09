@@ -281,7 +281,7 @@ public final class ExprUnary extends Expr {
      */
     private static Type resolveClosure (Type parent, Type child) {
         LinkedHashSet<PrimSig> nodes = new LinkedHashSet<PrimSig>();
-        DirectedGraph<PrimSig> graph = new DirectedGraph<PrimSig>();
+        DirectedGraph graph = new DirectedGraph();
         // For each (v1->v2) in childType, add (v1->v2) into the graph.
         for (ProductType c:child) if (c.arity()==2) {
             PrimSig a=c.get(0), b=c.get(1);

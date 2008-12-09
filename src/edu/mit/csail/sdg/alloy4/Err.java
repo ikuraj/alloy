@@ -22,22 +22,19 @@
 
 package edu.mit.csail.sdg.alloy4;
 
-/** Immutable; this is the abstract super class of the various possible errors.
- *
- * <p><b>Invariant</b>: pos!=null && msg!=null
- */
+/** Immutable; this is the abstract super class of the various possible errors. */
 
 public abstract class Err extends Exception {
 
-   /** This stores the filename/line/row information (Pos.UNKNOWN if unknown). */
+   /** This stores the filename/line/column information (Pos.UNKNOWN if unknown) (it's never null) */
    public final Pos pos;
 
-   /** The actual error message. */
+   /** The actual error message (it's never null) */
    public final String msg;
 
    /** Constructs a new Err object.
     * @param pos - the filename/line/row information (can be null if unknown)
-    * @param msg - the actual error message
+    * @param msg - the actual error message (can be null)
     * @param ex - if nonnull, it will be recorded as the cause of this exception
     */
    Err(Pos pos, String msg, Throwable ex) {
@@ -46,6 +43,18 @@ public abstract class Err extends Exception {
       this.msg = (msg==null ? "" : msg);
    }
 
-   /** Returns this error message and a complete stack trace. */
+   /** Two Err objects are equal if the type, position, and message are the same. */
+   @Override public final boolean equals(Object other) {
+      if (this==other) return true; else if (other==null || getClass()!=other.getClass()) return false;
+      Err that = (Err) other;
+      return pos.equals(that.pos) && msg.equals(that.msg);
+   }
+
+   /** Returns a hash code consistent with equals() */
+   @Override public final int hashCode() {
+      return msg.hashCode();
+   }
+
+   /** Returns this exception type, its error message, and its complete stack trace. */
    public final String dump() { return MailBug.dump(this); }
 }
