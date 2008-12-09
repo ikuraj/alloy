@@ -25,13 +25,13 @@ package edu.mit.csail.sdg.alloy4viz;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.TreeSet;
 import javax.swing.Icon;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import edu.mit.csail.sdg.alloy4.ConstSet;
 import edu.mit.csail.sdg.alloy4.MailBug;
 import edu.mit.csail.sdg.alloy4.OurCheckbox;
 import edu.mit.csail.sdg.alloy4.OurUtil;
@@ -238,14 +238,10 @@ public final class VizState {
    private Set<AlloyType> projectedTypes = new TreeSet<AlloyType>();
 
    /** Gets an unmodifiable copy of the set of types we are currently projecting over. */
-   public Set<AlloyType> getProjectedTypes() {
-      return Collections.unmodifiableSet(new TreeSet<AlloyType>(projectedTypes));
-   }
+   public ConstSet<AlloyType> getProjectedTypes() { return ConstSet.make(projectedTypes); }
 
    /** Returns true iff the type is not univ, and it is a toplevel type. */
-   public boolean canProject(final AlloyType type) {
-      return isTopLevel(type);
-   }
+   public boolean canProject(final AlloyType type) { return isTopLevel(type); }
 
    /** Returns true iff the type is not univ, and it is a toplevel type. */
    public boolean isTopLevel(final AlloyType type) {

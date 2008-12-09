@@ -80,7 +80,7 @@ public final class StaticGraphMaker {
       if (proj == null) proj = new AlloyProjection();
       Graph graph = new Graph(view.getFontSize() / 12.0D);
       new StaticGraphMaker(graph, instance, view, proj);
-      if (graph.nodes.size()==0) new GraphNode(graph, graph, "Due to your theme settings, every atom is hidden.", "Please click Theme and adjust your settings.");
+      if (graph.nodes.size()==0) new GraphNode(graph, "", "Due to your theme settings, every atom is hidden.", "Please click Theme and adjust your settings.");
       return new GraphViewer(graph);
    }
 

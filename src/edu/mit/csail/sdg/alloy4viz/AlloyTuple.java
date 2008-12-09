@@ -23,10 +23,11 @@
 package edu.mit.csail.sdg.alloy4viz;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.ArrayList;
 import java.util.List;
+import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 
 /** Immutable; represents an Alloy tuple.
  *
@@ -36,13 +37,13 @@ import edu.mit.csail.sdg.alloy4.Util;
 public final class AlloyTuple implements Comparable<AlloyTuple> {
 
    /** The unmodifiable list of atoms in this tuple. */
-   private final List<AlloyAtom> atoms;
+   private final ConstList<AlloyAtom> atoms;
 
    /** Creates a new AlloyTuple containing the atoms specified by the list; atoms.size() must be 2 or above. */
    public AlloyTuple(List<AlloyAtom> atoms) {
       if (atoms==null || atoms.size()<2)
          throw new RuntimeException("An AlloyTuple object must have 2 or more atoms.");
-      this.atoms = Collections.unmodifiableList(new ArrayList<AlloyAtom>(atoms));
+      this.atoms = ConstList.make(atoms);
    }
 
    /** Creates a new AlloyTuple containing the atoms specified by the list; atoms.size() must be 2 or above. */
@@ -55,10 +56,10 @@ public final class AlloyTuple implements Comparable<AlloyTuple> {
    /** Project this tuple and return an unmodifiable list of remaining atoms (after removing zero or more columns)
     * @param columns - the collection of columns to remove (0 is the first column, 1 is the second column...)
     */
-   public List<AlloyAtom> project(Collection<Integer> columns) {
-      List<AlloyAtom> list=new ArrayList<AlloyAtom>(atoms.size());
+   public ConstList<AlloyAtom> project(Collection<Integer> columns) {
+      TempList<AlloyAtom> list = new TempList<AlloyAtom>(atoms.size());
       for(int i=0; i<atoms.size(); i++) if (!columns.contains(i)) list.add(atoms.get(i));
-      if (list.size()==atoms.size()) return this.atoms; else return Collections.unmodifiableList(list);
+      if (list.size()==atoms.size()) return atoms; else return list.makeConst();
    }
 
    /** Returns the arity of this AlloyTuple. */

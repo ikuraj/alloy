@@ -87,11 +87,8 @@ public final class A4SolutionReader {
     /** Helper method that returns true if the given attribute value in the given XML node is equal to "yes" */
     private static boolean yes(XMLNode node, String attr) { return node.getAttribute(attr).equals("yes"); }
 
-    /** Helper method that returns a shorter label given a label. */
-    private static String label(String label) { return label.startsWith("this/") ? label.substring(5) : label; }
-
-    /** Helper method that returns a shorter label from an XML node's "label" attribute. */
-    private static String label(XMLNode node) { return label(node.getAttribute("label")); }
+    /** Helper method that returns an XML node's "label" attribute. */
+    private static String label(XMLNode node) { return node.getAttribute("label"); }
 
     /** Helper method that returns true if the two iterables contain the same elements (though possibly in different order) */
     private static boolean sameset(Iterable<Sig> a, Iterable<Sig> b) {
@@ -161,8 +158,8 @@ public final class A4SolutionReader {
            String parentID = node.getAttribute("parentID");
            Sig parent = parseSig(parentID, depth+1);
            if (!(parent instanceof PrimSig)) throw new IOException("Parent of sig "+label+" (id="+id+") must not be a subset sig.");
-           for(Expr choice:choices)
-              if (choice instanceof PrimSig && parent==((PrimSig)choice).parent && label(((Sig)choice).label).equals(label))
+           for(Expr choice: choices)
+              if (choice instanceof PrimSig && parent==((PrimSig)choice).parent && ((Sig)choice).label.equals(label))
                  { ans=(Sig)choice; choices.remove(choice); break; }
            if (ans==null) {
               ans = new PrimSig(label, (PrimSig)parent, isAbstract, isLone, isOne, isSome, isPrivate, isMeta, isEnum);
@@ -170,7 +167,7 @@ public final class A4SolutionReader {
            }
         } else {
            for(Expr choice:choices)
-              if (choice instanceof SubsetSig && label(((Sig)choice).label).equals(label) && sameset(parents, ((SubsetSig)choice).parents))
+              if (choice instanceof SubsetSig && ((Sig)choice).label.equals(label) && sameset(parents, ((SubsetSig)choice).parents))
                  { ans=(Sig)choice; choices.remove(choice); break; }
            if (ans==null) {
               ans = new SubsetSig(label, parents, isExact, isLone, isOne, isSome, isPrivate, isMeta);
@@ -219,7 +216,7 @@ public final class A4SolutionReader {
        if (parent==null) throw new IOException("ID "+parentID+" is not a sig.");
        Field field = null;
        for(Field f: parent.getFields())
-           if (label(f.label).equals(label) && f.type.arity()==arity && choices.contains(f))
+           if (f.label.equals(label) && f.type.arity()==arity && choices.contains(f))
               { field=f; choices.remove(f); break; }
        if (field==null) field = parent.addTrickyField(Pos.UNKNOWN, isPrivate, null, null, isMeta, new String[] {label}, UNIV.join(type)) [0];
        TupleSet ts = parseTuples(node, arity);

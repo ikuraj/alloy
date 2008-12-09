@@ -69,11 +69,6 @@ public final class A4SolutionWriter {
        return id;
     }
 
-    /** Helper method that returns a shorter label. */
-    private static String label(String label) {
-        return label.startsWith("this/") ? label.substring(5) : label;
-    }
-
     /** Helper method that returns the list of direct subsignatures. */
     private Iterable<PrimSig> children(PrimSig x) throws Err {
        if (x==Sig.NONE) return new ArrayList<PrimSig>();
@@ -128,7 +123,7 @@ public final class A4SolutionWriter {
           if (ts2==null) ts2 = ts3; else ts2 = ts2.plus(ts3);
        }
        if (rep!=null) rep.write(x);
-       Util.encodeXMLs(out, "\n<sig label=\"", label(x.label), "\" ID=\"", map(x));
+       Util.encodeXMLs(out, "\n<sig label=\"", x.label, "\" ID=\"", map(x));
        if (x instanceof PrimSig && x!=Sig.UNIV) Util.encodeXMLs(out, "\" parentID=\"", map(((PrimSig)x).parent));
        if (x.builtin) out.print("\" builtin=\"yes");
        if (x.isAbstract!=null) out.print("\" abstract=\"yes");
@@ -160,7 +155,7 @@ public final class A4SolutionWriter {
           if (sol==null && x.isMeta!=null) return; // when writing the metamodel, skip the metamodel fields!
           if (x.type.hasNoTuple()) return;         // we do not allow "none" in the XML file's type declarations
           if (rep!=null) rep.write(x);
-          Util.encodeXMLs(out, "\n<field label=\"", label(x.label), "\" ID=\"", map(x), "\" parentID=\"", map(x.sig));
+          Util.encodeXMLs(out, "\n<field label=\"", x.label, "\" ID=\"", map(x), "\" parentID=\"", map(x.sig));
           if (x.isPrivate!=null) out.print("\" private=\"yes");
           if (x.isMeta!=null) out.print("\" meta=\"yes");
           out.print("\">\n");
@@ -177,7 +172,7 @@ public final class A4SolutionWriter {
           if (sol==null) return;             // when writing a metamodel, skip the skolems
           if (x.type.hasNoTuple()) return;   // we do not allow "none" in the XML file's type declarations
           StringBuilder sb = new StringBuilder();
-          Util.encodeXMLs(sb, "\n<skolem label=\"", label(x.label), "\" ID=\"", map(x), "\">\n");
+          Util.encodeXMLs(sb, "\n<skolem label=\"", x.label, "\" ID=\"", map(x), "\">\n");
           if (writeExpr(sb.toString(), x)) { out.print("</skolem>\n"); }
        } catch(Throwable ex) {
           throw new ErrorFatal("Error evaluating skolem "+x.label, ex);
@@ -201,7 +196,7 @@ public final class A4SolutionWriter {
         if (sol!=null) for (ExprVar s:sol.getAllSkolems()) { if (rep!=null) rep.write(s); writeSkolem(s); }
         int m=0;
         if (sol!=null && extraSkolems!=null) for(Func f:extraSkolems) if (f.count()==0 && f.call().type.hasTuple()) {
-            String label=label(f.label);
+            String label = f.label;
             while(label.length()>0 && label.charAt(0)=='$') label=label.substring(1);
             label="$"+label;
             try {

@@ -159,6 +159,6 @@ public final class StaticProjector {
       // Here, we don't have to explicitly filter out "illegal" atoms/tuples/...
       // (that is, atoms that belong to types that no longer exist, etc).
       // That's because AlloyInstance's constructor must do the check too, so there's no point in doing that twice.
-      return new AlloyInstance(oldInstance.filename, oldInstance.commandname, newModel, atom2sets, rel2tuples, oldInstance.isMetamodel);
+      return new AlloyInstance(oldInstance.originalA4, oldInstance.filename, oldInstance.commandname, newModel, atom2sets, rel2tuples, oldInstance.isMetamodel);
    }
 }

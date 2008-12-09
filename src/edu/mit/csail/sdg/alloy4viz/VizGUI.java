@@ -37,7 +37,6 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,9 +57,9 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.JToolBar;
-import javax.swing.JTree;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
 import edu.mit.csail.sdg.alloy4.Computer;
+import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.OurBorder;
 import edu.mit.csail.sdg.alloy4.OurCheckbox;
 import edu.mit.csail.sdg.alloy4.OurConsole;
@@ -187,7 +186,7 @@ public final class VizGUI implements ComponentListener {
    private final List<String> xmlLoaded=new ArrayList<String>();
 
    /** Return the list of XML files loaded in this session so far. */
-   public List<String> getInstances() { return Collections.unmodifiableList(xmlLoaded); }
+   public ConstList<String> getInstances() { return ConstList.make(xmlLoaded); }
 
    //==============================================================================================//
 
@@ -531,7 +530,7 @@ public final class VizGUI implements ComponentListener {
       if (frame!=null) frame.setTitle(makeVizTitle());
       switch (currentMode) {
          case Tree: {
-            final JTree t = new VizJTree(myState.getOriginalInstance(), makeVizTitle(), myState, fontSize);
+            final VizTree t = new VizTree(myState.getOriginalInstance().originalA4, makeVizTitle(), fontSize);
             final JScrollPane scroll = OurUtil.scrollpane(t, Color.BLACK, Color.WHITE, new OurBorder(true, false, true, false));
             scroll.addFocusListener(new FocusListener() {
                public final void focusGained(FocusEvent e) { t.requestFocusInWindow(); }

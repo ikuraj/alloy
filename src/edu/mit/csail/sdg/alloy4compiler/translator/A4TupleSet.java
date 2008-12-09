@@ -41,8 +41,7 @@ public final class A4TupleSet implements Iterable<A4Tuple> {
     /** Construct a TupleSet from the kodkod TupleSet, while renaming each atom using the atom2name map in sol.
      * <br> NOTE: caller must ensure the Kodkod tupleset is not modified, since we expect the resulting A4Tupleset to be constant.
      */
-    A4TupleSet(TupleSet tuples, A4Solution sol) throws ErrorAPI {
-        if (!sol.satisfiable()) throw new ErrorAPI("This solution is unsatisfiable.");
+    A4TupleSet(TupleSet tuples, A4Solution sol) {
         this.tuples = tuples;
         this.sol = sol;
     }

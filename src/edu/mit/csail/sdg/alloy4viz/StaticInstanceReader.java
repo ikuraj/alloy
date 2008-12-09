@@ -90,7 +90,7 @@ public final class StaticInstanceReader {
 
    /** Create a new AlloyType whose label is unambiguous with any existing one. */
    private AlloyType makeType(String label, boolean isOne, boolean isAbstract, boolean isBuiltin, boolean isPrivate, boolean isMeta, boolean isEnum) {
-      while(label.equals(Sig.UNIV.label) || label.equals(Sig.SIGINT.label) || label.equals(Sig.SEQIDX.label) || label.equals(Sig.STRING.label)) label=label+"'";
+      if (label.startsWith("this/")) label = label.substring(5);
       while(true) {
          AlloyType ans = new AlloyType(label, isOne, isAbstract, isBuiltin, isPrivate, isMeta, isEnum);
          if (!sig2type.values().contains(ans)) return ans;
@@ -291,7 +291,7 @@ public final class StaticInstanceReader {
          if (exts.size()>0) { rels.put(AlloyRelation.EXTENDS, exts); }
       }
       AlloyModel am = new AlloyModel(sig2type.values(), sets, rels.keySet(), ts);
-      ans=new AlloyInstance(sol.getOriginalFilename(), sol.getOriginalCommand(), am, atom2sets, rels, isMeta);
+      ans=new AlloyInstance(sol, sol.getOriginalFilename(), sol.getOriginalCommand(), am, atom2sets, rels, isMeta);
    }
 
    /** Parse the file into an AlloyInstance if possible. */

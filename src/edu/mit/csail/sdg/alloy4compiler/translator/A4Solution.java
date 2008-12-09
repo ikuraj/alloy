@@ -74,6 +74,7 @@ import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
 import kodkod.util.ints.IndexedEntry;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
+import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstMap;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
@@ -141,8 +142,8 @@ public final class A4Solution {
     /** The maximum allowed number of loop unrolling and recursion level. */
     private final int unrolls;
 
-    /** The collection of all atoms; immutable. */
-    private final List<String> kAtoms;
+    /** The list of all atoms. */
+    private final ConstList<String> kAtoms;
 
     /** The Kodkod TupleFactory object. */
     private final TupleFactory factory;
@@ -235,7 +236,7 @@ public final class A4Solution {
         if (bitwidth > 30) throw new ErrorSyntax("Cannot specify a bitwidth greater than 30");
         if (maxseq < 0)   throw new ErrorSyntax("The maximum sequence length cannot be negative.");
         if (maxseq > max) throw new ErrorSyntax("With integer bitwidth of "+bitwidth+", you cannot have sequence length longer than "+max);
-        kAtoms = Collections.unmodifiableList(new ArrayList<String>(atoms));
+        kAtoms = ConstList.make(atoms);
         bounds = new Bounds(new Universe(kAtoms));
         factory = bounds.universe().factory();
         TupleSet sigintBounds = factory.noneOf(1);
@@ -558,31 +559,52 @@ public final class A4Solution {
     /** Caches eval(Sig) and eval(Field) results. */
     private Map<Expr,A4TupleSet> evalCache = new LinkedHashMap<Expr,A4TupleSet>();
 
-    /** If this solution is solved and satisfiable, evaluates the given expression and returns an A4TupleSet, a java Integer, or a java Boolean.
-     * @throws Err if the expression has syntax error, type error, or other errors, or is not fully typechecked
-     * @throws Err if this solution is not yet solved or it is not satisfiable
-     */
+    /** Return the A4TupleSet for the given sig (if solution not yet solved, or unsatisfiable, or sig not found, then return an empty tupleset) */
+    public A4TupleSet eval(Sig sig) {
+       try {
+          if (!solved || eval==null) return new A4TupleSet(factory.noneOf(1), this);
+          A4TupleSet ans = evalCache.get(sig);
+          if (ans!=null) return ans;
+          TupleSet ts = eval.evaluate((Expression) TranslateAlloyToKodkod.alloy2kodkod(this, sig));
+          ans = new A4TupleSet(ts, this);
+          evalCache.put(sig, ans);
+          return ans;
+       } catch(Err er) {
+          return new A4TupleSet(factory.noneOf(1), this);
+       }
+    }
+
+    /** Return the A4TupleSet for the given field (if solution not yet solved, or unsatisfiable, or field not found, then return an empty tupleset) */
+    public A4TupleSet eval(Field field) {
+       try {
+          if (!solved || eval==null) return new A4TupleSet(factory.noneOf(field.type.arity()), this);
+          A4TupleSet ans = evalCache.get(field);
+          if (ans!=null) return ans;
+          TupleSet ts = eval.evaluate((Expression) TranslateAlloyToKodkod.alloy2kodkod(this, field));
+          ans = new A4TupleSet(ts, this);
+          evalCache.put(field, ans);
+          return ans;
+       } catch(Err er) {
+          return new A4TupleSet(factory.noneOf(field.type.arity()), this);
+       }
+    }
+
+    /** If this solution is solved and satisfiable, evaluates the given expression and returns an A4TupleSet, a java Integer, or a java Boolean. */
     public Object eval(Expr expr) throws Err {
         try {
-            if (!solved) throw new ErrorAPI("This solution is not yet solved, so eval() is not allowed.");
-            if (eval==null) throw new ErrorAPI("This solution is unsatisfiable, so eval() is not allowed.");
-            if (expr instanceof Sig || expr instanceof Field) {
-                A4TupleSet ans = evalCache.get(expr);
-                if (ans!=null) return ans;
-            }
-            if (expr.ambiguous && !expr.errors.isEmpty()) expr = expr.resolve(expr.type, null);
-            if (!expr.errors.isEmpty()) throw expr.errors.pick();
-            Object result = TranslateAlloyToKodkod.alloy2kodkod(this, expr);
-            if (result instanceof IntExpression) return eval.evaluate((IntExpression)result);
-            if (result instanceof Formula) return eval.evaluate((Formula)result);
-            if (result instanceof Expression) {
-                A4TupleSet ans = new A4TupleSet(eval.evaluate((Expression)result), this);
-                if (expr instanceof Sig || expr instanceof Field) evalCache.put(expr, ans);
-                return ans;
-            }
-            throw new ErrorFatal("Unknown internal error encountered in the evaluator.");
+           if (expr instanceof Sig) return eval((Sig)expr);
+           if (expr instanceof Field) return eval((Field)expr);
+           if (!solved) throw new ErrorAPI("This solution is not yet solved, so eval() is not allowed.");
+           if (eval==null) throw new ErrorAPI("This solution is unsatisfiable, so eval() is not allowed.");
+           if (expr.ambiguous && !expr.errors.isEmpty()) expr = expr.resolve(expr.type, null);
+           if (!expr.errors.isEmpty()) throw expr.errors.pick();
+           Object result = TranslateAlloyToKodkod.alloy2kodkod(this, expr);
+           if (result instanceof IntExpression) return eval.evaluate((IntExpression)result);
+           if (result instanceof Formula) return eval.evaluate((Formula)result);
+           if (result instanceof Expression) return new A4TupleSet(eval.evaluate((Expression)result), this);
+           throw new ErrorFatal("Unknown internal error encountered in the evaluator.");
         } catch(CapacityExceededException ex) {
-            throw TranslateAlloyToKodkod.rethrow(ex);
+           throw TranslateAlloyToKodkod.rethrow(ex);
         }
     }
 

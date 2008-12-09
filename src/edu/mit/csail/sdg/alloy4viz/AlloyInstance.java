@@ -30,6 +30,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
 
 /** Immutable; represents an Alloy instance that can be displayed in the visualizer.
  *
@@ -37,6 +39,9 @@ import java.util.TreeSet;
  */
 
 public final class AlloyInstance {
+
+   /** The original A4Solution object. */
+   final A4Solution originalA4; // FIXTHIS: shouldn't need this...
 
    /** If true, it is a metamodel, else it is not a metamodel. */
    public final boolean isMetamodel;
@@ -55,7 +60,7 @@ public final class AlloyInstance {
     * <br> Furthermore, every AlloyAtom's type is in model.getTypes()
     * <br> Finally, if an atom A is in a set S, we guarantee that A.type is equal or subtype of S.type
     */
-   private final Map<AlloyAtom,List<AlloySet>> atom2sets;
+   private final Map<AlloyAtom,ConstList<AlloySet>> atom2sets;
 
    /** Maps each AlloyType to the AlloyAtom(s) in that type; it is derived from atom2sets.keySet() directly.
     * <br> Thus, every AlloyType here is in model.getTypes(), and every AlloyAtom here is in atom2sets.keySet()
@@ -78,10 +83,10 @@ public final class AlloyInstance {
    private final Map<AlloyRelation,Set<AlloyTuple>> rel2tuples;
 
    /** This always stores an empty unmodifiable list of atoms. */
-   private static final List<AlloyAtom> noAtom = Collections.unmodifiableList(new ArrayList<AlloyAtom>());
+   private static final List<AlloyAtom> noAtom = ConstList.make();
 
    /** This always stores an empty unmodifiable list of sets. */
-   private static final List<AlloySet> noSet = Collections.unmodifiableList(new ArrayList<AlloySet>());
+   private static final List<AlloySet> noSet = ConstList.make();
 
    /** This always stores an empty unmodifiable set of tuples. */
    private static final Set<AlloyTuple> noTuple = Collections.unmodifiableSet(new TreeSet<AlloyTuple>());
@@ -97,15 +102,16 @@ public final class AlloyInstance {
     * (The constructor will ignore any atoms, sets, types, and relations not in the model. So there's no need
     * to explicitly filter them out prior to passing "atom2sets" and "rel2tuples" to the constructor.)
     */
-   public AlloyInstance(String filename, String commandname, AlloyModel model,
+   public AlloyInstance(A4Solution originalA4, String filename, String commandname, AlloyModel model,
          Map<AlloyAtom,Set<AlloySet>> atom2sets, Map<AlloyRelation,Set<AlloyTuple>> rel2tuples, boolean isMetamodel) {
+      this.originalA4 = originalA4;
       this.filename = filename;
       this.commandname = commandname;
       this.model = model;
       this.isMetamodel=isMetamodel;
       // First, construct atom2sets (Use a treemap because we want its keyset to be sorted)
       {
-         Map<AlloyAtom,List<AlloySet>> a2s = new TreeMap<AlloyAtom,List<AlloySet>>();
+         Map<AlloyAtom,ConstList<AlloySet>> a2s = new TreeMap<AlloyAtom,ConstList<AlloySet>>();
          for(Map.Entry<AlloyAtom,Set<AlloySet>> e:atom2sets.entrySet()) {
             AlloyAtom atom=e.getKey();
             if (!model.hasType(atom.getType())) continue; // We discard any AlloyAtom whose type is not in this model
@@ -115,14 +121,14 @@ public final class AlloyInstance {
                if (model.getSets().contains(set) && model.isEqualOrSubtype(atom.getType(), set.getType()))
                   sets.add(set);
             Collections.sort(sets);
-            a2s.put(atom, Collections.unmodifiableList(sets));
+            a2s.put(atom, ConstList.make(sets));
          }
          this.atom2sets = Collections.unmodifiableMap(a2s);
       }
       // Next, construct set2atoms
       {
          Map<AlloySet,List<AlloyAtom>> s2a = new LinkedHashMap<AlloySet,List<AlloyAtom>>();
-         for(Map.Entry<AlloyAtom,List<AlloySet>> e:this.atom2sets.entrySet()) for(AlloySet set:e.getValue()) {
+         for(Map.Entry<AlloyAtom,ConstList<AlloySet>> e:this.atom2sets.entrySet()) for(AlloySet set:e.getValue()) {
             List<AlloyAtom> atoms=s2a.get(set);
             if (atoms==null) {atoms=new ArrayList<AlloyAtom>(); s2a.put(set,atoms);}
             atoms.add(e.getKey());
@@ -229,7 +235,7 @@ public final class AlloyInstance {
       sb.append("Instance's model:\n");
       sb.append(model.toString());
       sb.append("Instance's atom2sets:\n");
-      for(Map.Entry<AlloyAtom,List<AlloySet>> entry: atom2sets.entrySet()) {
+      for(Map.Entry<AlloyAtom,ConstList<AlloySet>> entry: atom2sets.entrySet()) {
          sb.append("  "); sb.append(entry.getKey()); sb.append(" "); sb.append(entry.getValue()); sb.append('\n');
       }
       sb.append("Instance's rel2tuples:\n");

@@ -22,7 +22,6 @@
 
 package edu.mit.csail.sdg.alloy4viz;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 
 /** Immutable; represents an Alloy model.
  *
@@ -153,20 +154,20 @@ public final class AlloyModel {
     * <br> This method will search recursively, so if the subtypes themselves have subtypes, they too are included.
     * <br> If type==null, or it does not exist in this model, or it has no subsigs, then we return an empty set.
     */
-   public List<AlloyType> getSubTypes(AlloyType type) {
-      List<AlloyType> subtypes = new ArrayList<AlloyType>();
+   public ConstList<AlloyType> getSubTypes(AlloyType type) {
+      TempList<AlloyType> subtypes = new TempList<AlloyType>();
       for (AlloyType subType:types) if (isSubtype(subType,type)) subtypes.add(subType);
-      return Collections.unmodifiableList(subtypes); // Since this.types is sorted, the result is already sorted.
+      return subtypes.makeConst(); // Since this.types is sorted, the result is already sorted.
    }
 
    /** Returns a sorted, unmodifiable list of types that are direct subtypes of the given type.
     * <br> This method will only return types that are direct subtypes of the given argument.
     * <br> If type==null, or it does not exist in this model, or it has no subsigs, then we return an empty set.
     */
-   public List<AlloyType> getDirectSubTypes(AlloyType type) {
-      List<AlloyType> subtypes = new ArrayList<AlloyType>();
-      for (AlloyType subType:types) if (isDirectSubtype(subType,type)) subtypes.add(subType);
-      return Collections.unmodifiableList(subtypes); // Since this.types is sorted, the result is already sorted.
+   public ConstList<AlloyType> getDirectSubTypes(AlloyType type) {
+      TempList<AlloyType> subtypes = new TempList<AlloyType>();
+      for (AlloyType subType: types) if (isDirectSubtype(subType,type)) subtypes.add(subType);
+      return subtypes.makeConst(); // Since this.types is sorted, the result is already sorted.
    }
 
    /** Returns true iff "subType" is a direct or indirect subsig of "superType".

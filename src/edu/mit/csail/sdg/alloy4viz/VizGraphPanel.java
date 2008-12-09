@@ -49,6 +49,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
+import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.OurBorder;
 import edu.mit.csail.sdg.alloy4.OurCombobox;
 import edu.mit.csail.sdg.alloy4.OurUtil;
@@ -99,7 +100,7 @@ public final class VizGraphPanel extends JPanel {
       /** The type being projected. */
       private final AlloyType type;
       /** The list of atoms; can be an empty list if there are no atoms in this type to be projected. */
-      private final List<AlloyAtom> atoms;
+      private final ConstList<AlloyAtom> atoms;
       /** The list of atom names; atomnames.empty() iff atoms.isEmpty() */
       private final String[] atomnames;
       /** The combo box showing the possible atoms to choose from. */
@@ -127,7 +128,7 @@ public final class VizGraphPanel extends JPanel {
          this.type=type;
          atoms=new ArrayList<AlloyAtom>(atoms);
          Collections.sort(atoms);
-         this.atoms=Collections.unmodifiableList(atoms);
+         this.atoms=ConstList.make(atoms);
          setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
          setBorder(null);
          this.atomnames=new String[this.atoms.size()];

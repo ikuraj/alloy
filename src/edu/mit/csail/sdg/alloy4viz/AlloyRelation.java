@@ -22,11 +22,11 @@
 
 package edu.mit.csail.sdg.alloy4viz;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
+import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 
 /** Immutable; represents an Alloy relation of 2 or higher arity.
  *
@@ -42,7 +42,7 @@ public final class AlloyRelation extends AlloyElement {
    public static final AlloyRelation IN = new AlloyRelation("in", false, false, Util.asList(AlloyType.SET, AlloyType.UNIV));
 
    /** The unmodifiable list of types. */
-   private final List<AlloyType> types;
+   private final ConstList<AlloyType> types;
 
    /** Records whether this relation is known to be "private"; NOTE: this value is NOT USED during equals() comparison. */
    public final boolean isPrivate;
@@ -55,7 +55,7 @@ public final class AlloyRelation extends AlloyElement {
       super(name);
       if (types==null || types.size()<2)
          throw new RuntimeException("An AlloyRelation object must have 2 or more types.");
-      this.types = Collections.unmodifiableList(new ArrayList<AlloyType>(types));
+      this.types = ConstList.make(types);
       this.isPrivate = isPrivate;
       this.isMeta = isMeta;
    }
@@ -64,9 +64,9 @@ public final class AlloyRelation extends AlloyElement {
     * @param columns - the collection of columns to remove (0 is the first column, 1 is the second column...)
     */
    public List<AlloyType> project(Collection<Integer> columns) {
-      List<AlloyType> list=new ArrayList<AlloyType>(types.size());
+      TempList<AlloyType> list = new TempList<AlloyType>(types.size());
       for(int i=0; i<types.size(); i++) if (!columns.contains(i)) list.add(types.get(i));
-      if (list.size()==types.size()) return this.types; else return Collections.unmodifiableList(list);
+      if (list.size()==types.size()) return types; else return list.makeConst();
    }
 
    /** Returns an unmodifiable list of AlloyTypes representing the relation's type. */
