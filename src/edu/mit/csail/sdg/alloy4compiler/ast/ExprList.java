@@ -141,22 +141,22 @@ public final class ExprList extends Expr {
             Expr a = (op==Op.AND || op==Op.OR) ? args.get(i).typecheck_as_formula() : args.get(i).typecheck_as_set();
             ambiguous = ambiguous || a.ambiguous;
             weight = weight + a.weight;
-            if (a.mult != 0) errs = errs.append(new ErrorSyntax(a.span(), "Multiplicity expression not allowed here."));
-            if (!a.errors.isEmpty()) errs = errs.join(a.errors); else if (commonArity==null) commonArity = a.type; else commonArity = commonArity.pickCommonArity(a.type);
+            if (a.mult != 0) errs = errs.make(new ErrorSyntax(a.span(), "Multiplicity expression not allowed here."));
+            if (!a.errors.isEmpty()) errs = errs.make(a.errors); else if (commonArity==null) commonArity = a.type; else commonArity = commonArity.pickCommonArity(a.type);
             if (op==Op.AND) addAND(newargs, a); else if (op==Op.OR) addOR(newargs, a); else newargs.add(a);
         }
         if (op==Op.TOTALORDER) {
            if (newargs.size()!=3) {
-              errs = errs.append(new ErrorSyntax(pos, "The builtin pred/totalOrder[] predicate must be called with exactly three arguments."));
+              errs = errs.make(new ErrorSyntax(pos, "The builtin pred/totalOrder[] predicate must be called with exactly three arguments."));
            } else if (errs.isEmpty()) {
-              if (!newargs.get(0).type.hasArity(1)) errs = errs.append(new ErrorType(pos, "The first argument to pred/totalOrder must be unary."));
-              if (!newargs.get(1).type.hasArity(1)) errs = errs.append(new ErrorType(pos, "The second argument to pred/totalOrder must be unary."));
-              if (!newargs.get(2).type.hasArity(2)) errs = errs.append(new ErrorType(pos, "The third argument to pred/totalOrder must be binary."));
+              if (!newargs.get(0).type.hasArity(1)) errs = errs.make(new ErrorType(pos, "The first argument to pred/totalOrder must be unary."));
+              if (!newargs.get(1).type.hasArity(1)) errs = errs.make(new ErrorType(pos, "The second argument to pred/totalOrder must be unary."));
+              if (!newargs.get(2).type.hasArity(2)) errs = errs.make(new ErrorType(pos, "The third argument to pred/totalOrder must be binary."));
            }
         }
         if (op==Op.DISJOINT) {
-           if (newargs.size()<2) errs = errs.append(new ErrorSyntax(pos, "The builtin disjoint[] predicate must be called with at least two arguments."));
-           if (commonArity==EMPTY) errs = errs.append(new ErrorType(pos, "The builtin predicate disjoint[] cannot be used among expressions of different arities."));
+           if (newargs.size()<2) errs = errs.make(new ErrorSyntax(pos, "The builtin disjoint[] predicate must be called with at least two arguments."));
+           if (commonArity==EMPTY) errs = errs.make(new ErrorType(pos, "The builtin predicate disjoint[] cannot be used among expressions of different arities."));
         }
         return new ExprList(pos, closingBracket, op, ambiguous, newargs.makeConst(), weight, errs);
     }

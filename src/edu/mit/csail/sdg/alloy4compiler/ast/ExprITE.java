@@ -104,9 +104,9 @@ public final class ExprITE extends Expr {
      */
     public static Expr make(Pos pos, Expr cond, Expr left, Expr right) {
         JoinableList<Err> errs = emptyListOfErrors;
-        if (cond.mult != 0) errs = errs.append(new ErrorSyntax(cond.span(), "Multiplicity expression not allowed here."));
-        if (left.mult != 0) errs = errs.append(new ErrorSyntax(left.span(), "Multiplicity expression not allowed here."));
-        if (right.mult != 0) errs = errs.append(new ErrorSyntax(right.span(), "Multiplicity expression not allowed here."));
+        if (cond.mult != 0) errs = errs.make(new ErrorSyntax(cond.span(), "Multiplicity expression not allowed here."));
+        if (left.mult != 0) errs = errs.make(new ErrorSyntax(left.span(), "Multiplicity expression not allowed here."));
+        if (right.mult != 0) errs = errs.make(new ErrorSyntax(right.span(), "Multiplicity expression not allowed here."));
         Type c=EMPTY;
         while(left.errors.isEmpty() && right.errors.isEmpty()) {
             Type a=left.type, b=right.type;
@@ -122,14 +122,14 @@ public final class ExprITE extends Expr {
                     if (a.is_int && b.hasArity(1)) { left=left.cast2sigint(); continue; }
                     if (b.is_int && a.hasArity(1)) { right=right.cast2sigint(); continue; }
                 }
-                errs = errs.append(new ErrorType(cond.span().merge(right.span()).merge(left.span()),
+                errs = errs.make(new ErrorType(cond.span().merge(right.span()).merge(left.span()),
                     "The then-clause and the else-clause must match.\nThe then-clause has type: "
                     + a + "\nand the else-clause has type: " + b));
             }
             break;
         }
         cond = cond.typecheck_as_formula();
-        return new ExprITE(pos, cond, left, right, c, errs.join(cond.errors).join(left.errors).join(right.errors));
+        return new ExprITE(pos, cond, left, right, c, errs.make(cond.errors).make(left.errors).make(right.errors));
     }
 
     /** {@inheritDoc} */

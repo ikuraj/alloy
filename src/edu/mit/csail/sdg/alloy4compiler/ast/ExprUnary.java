@@ -161,11 +161,11 @@ public final class ExprUnary extends Expr {
          */
         public final Expr make(Pos pos, Expr sub, Err extraError, long extraWeight) {
             if (pos==null || pos==Pos.UNKNOWN) { if (this==NOOP) pos = sub.pos; else pos = sub.span(); }
-            JoinableList<Err> errors = sub.errors.append(extraError);
+            JoinableList<Err> errors = sub.errors.make(extraError);
             if (sub.mult!=0) {
                if (this==SETOF) return sub;
                if (this!=NOOP && extraError==null)
-                  errors=errors.append(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
+                  errors = errors.make(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
                // When you have a multiplicity expression like (A one->one B), and you call cint() on it,
                // cint() will try to compose a NOOP node around the (A one->one B) with the error message "This must be an integer!"
                // So in such a case, we will have a "NOOP" in front of a "MULTIPLICITY", and we don't want
@@ -212,7 +212,7 @@ public final class ExprUnary extends Expr {
                 type=SIGINT.type;
                 break;
             }
-            return new ExprUnary(pos, this, sub, type, extraWeight + sub.weight, errors.append(extraError));
+            return new ExprUnary(pos, this, sub, type, extraWeight + sub.weight, errors.make(extraError));
         }
 
         /** Returns the human readable label for this operator */

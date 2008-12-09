@@ -23,16 +23,14 @@
 package edu.mit.csail.sdg.alloy4;
 
 import java.io.Serializable;
-import java.util.List;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.AbstractList;
 
 /** Immutable; implements an ordered list where it is cheap to join or append; null values are NOT allowed. */
 
-public final class JoinableList<E> implements Serializable, Iterable<E> {
+public final class JoinableList<E> extends AbstractList<E> implements Serializable {
 
    /** This ensures the class can be serialized reliably. */
-   private static final long serialVersionUID = 1L;
+   private static final long serialVersionUID = 0;
 
    /** The number of items stored in this list.
     * <p> <b>Invariant:</b> count == (pre!=null ? pre.count : 0) + (item!=null ? 1 : 0) + (post!=null ? post.count : 0)
@@ -67,85 +65,39 @@ public final class JoinableList<E> implements Serializable, Iterable<E> {
    public JoinableList()  { this(0, null, null, null); }
 
    /** Returns a list that represents the concatenation of this list and that list. */
-   public JoinableList<E> join(JoinableList<E> that) {
-      if (that==null || that.count==0) return this;
-      if (count==0) return that;
+   public JoinableList<E> make(JoinableList<E> that) {
+      if (that == null || that.count == 0) return this; else if (count == 0) return that;
       int sum = count + that.count;
-      if (sum<count) throw new OutOfMemoryError();
-      if (post!=null) return new JoinableList<E>(sum, this, null, that);
-      return new JoinableList<E>(sum, pre, item, that);
+      if (sum < count) throw new OutOfMemoryError(); // integer overflow
+      if (post != null) return new JoinableList<E>(sum, this, null, that); else return new JoinableList<E>(sum, pre, item, that);
    }
 
    /** Returns a list that represents the result of appending newItem onto this list; if newItem==null we return this list as-is. */
-   public JoinableList<E> append(E newItem) {
-      if (newItem==null) return this; else if (count==0) return new JoinableList<E>(newItem);
-      int sum = count + 1;
-      if (sum<1) throw new OutOfMemoryError();
-      if (post!=null) return new JoinableList<E>(sum, this, newItem, null);
-      if (item!=null) return new JoinableList<E>(sum, pre, item, new JoinableList<E>(newItem));
+   public JoinableList<E> make(E newItem) {
+      if (newItem == null) return this; else if (count == 0) return new JoinableList<E>(newItem);
+      int sum = count + 1; // integer overflow
+      if (sum < 1) throw new OutOfMemoryError();
+      if (post != null) return new JoinableList<E>(sum, this, newItem, null);
+      if (item != null) return new JoinableList<E>(sum, pre, item, new JoinableList<E>(newItem));
       return new JoinableList<E>(sum, pre, newItem, null);
    }
 
    /** If the list if nonempty, arbitrarily return one of the item, otherwise throw ArrayIndexOutOfBoundsException. */
-   public E pick() { return get(0); }
+   public E pick() { if (item!=null) return item; else return get(0); }
 
    /** Return the i-th element
     * @throws ArrayIndexOutOfBoundsException if the given index doesn't exist
     */
-   private E get(int i) {
-      if (i<0 || i>=count) throw new ArrayIndexOutOfBoundsException();
+   @Override public E get(int i) {
+      if (i < 0 || i >= count) throw new ArrayIndexOutOfBoundsException();
       JoinableList<E> x = this;
       while(true) {
-         int pre = (x.pre==null) ? 0 : x.pre.count;
-         if (i<pre) { x=x.pre; continue; }
-         if (x.item==null) { i=i-pre; x=x.post; } else if (i!=pre) { i=i-pre-1; x=x.post; } else return x.item;
+         int pre = (x.pre == null) ? 0 : x.pre.count;
+         if (i < pre) { x = x.pre; continue; }
+         if (x.item == null) { i = i - pre; x = x.post; } else if (i != pre) { i = i - pre - 1; x = x.post; } else return x.item;
       }
    }
 
    /** Returns the number of elements in this list. */
-   public int size() { return count; }
-
-   /** Returns true iff the list is empty. */
-   public boolean isEmpty() { return count==0; }
-
-   /** Returns a String representation of this list. */
-   @Override public String toString() {
-      StringBuilder sb = new StringBuilder("[");
-      boolean first = true;
-      for(Object x: this) {
-         if (first) first = false; else sb.append(", ");
-         sb.append(x);
-      }
-      return sb.append(']').toString();
-   }
-
-   /** Computes a hash code that is consistent with JoinableList's equals() and java.util.List's hashCode() methods. */
-   @Override public int hashCode() {
-      int answer = 1;
-      for(Object x: this) { answer = 31*answer + x.hashCode(); }
-      return answer;
-   }
-
-   /** Returns true if that is a List or JoinableList, and contains the same elements as this list. */
-   @SuppressWarnings("unchecked")
-   @Override public boolean equals(Object that) {
-      if (this==that) return true;
-      Iterator<?> b;
-      if (that instanceof JoinableList) { JoinableList x=(JoinableList)that; if (count!=x.size()) return false; b=x.iterator(); }
-      else if (that instanceof List) { List x=(List)that; if (count!=x.size()) return false; b=x.iterator(); }
-      else return false;
-      Iterator<?> a=iterator();
-      for(int i=0; i<count; i++) if (!a.next().equals(b.next())) return false;
-      return true;
-   }
-
-   /** Returns a readonly iterator that iterates over the elements in this list. */
-   public Iterator<E> iterator() {
-      return new Iterator<E>() {
-         private int i = 0;
-         public final E next() { if (i>=count) throw new NoSuchElementException(); E ans=get(i); i++; return ans; }
-         public final boolean hasNext() { return i < count; }
-         public final void remove() { throw new UnsupportedOperationException(); }
-      };
-   }
+   @Override public int size() { return count; }
 }

@@ -97,16 +97,16 @@ public final class ExprLet extends Expr {
      */
     public static Expr make(Pos pos, ExprVar var, Expr expr, Expr sub) {
         if (expr.ambiguous) expr = expr.resolve(expr.type, null);
-        JoinableList<Err> errs = var.errors.join(expr.errors).join(sub.errors);
+        JoinableList<Err> errs = var.errors.make(expr.errors).make(sub.errors);
         if (expr.mult!=0)
-            errs = errs.append(new ErrorSyntax(expr.span(), "Multiplicity expression not allowed here."));
+            errs = errs.make(new ErrorSyntax(expr.span(), "Multiplicity expression not allowed here."));
         if (sub.mult != 0)
-            errs = errs.append(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
+            errs = errs.make(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
         if (errs.size()==0 && var.type!=expr.type)
             if (var.type.is_int!=expr.type.is_int
              || var.type.is_bool!=expr.type.is_bool
              || var.type.arity()!=expr.type.arity())
-                errs = errs.append(new ErrorType(var.span(), "This variable has type "+var.type+" but is bound to a value of type "+expr.type));
+                errs = errs.make(new ErrorType(var.span(), "This variable has type "+var.type+" but is bound to a value of type "+expr.type));
         return new ExprLet(pos, var, expr, sub, errs);
     }
 

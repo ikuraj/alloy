@@ -196,18 +196,18 @@ public final class ExprCall extends Expr {
         JoinableList<Err> errs = emptyListOfErrors;
         TempList<Expr> newargs = new TempList<Expr>(args.size());
         if (args.size() != fun.count()) {
-            errs = errs.append(
+            errs = errs.make(
               new ErrorSyntax(pos, ""+fun+" has "+fun.count()+" parameters but is called with "+args.size()+" arguments."));
         }
         for(int i=0; i<args.size(); i++) {
             final int a = (i<fun.count()) ? fun.get(i).type.arity() : 0;
             final Expr x = args.get(i).typecheck_as_set();
             ambiguous = ambiguous || x.ambiguous;
-            errs = errs.join(x.errors);
+            errs = errs.make(x.errors);
             weight = weight + x.weight;
-            if (x.mult!=0) errs = errs.append(new ErrorSyntax(x.span(), "Multiplicity expression not allowed here."));
+            if (x.mult!=0) errs = errs.make(new ErrorSyntax(x.span(), "Multiplicity expression not allowed here."));
             if (a>0 && x.errors.isEmpty() && !x.type.hasArity(a))
-              errs=errs.append(new ErrorType(x.span(), "This should have arity "+a+" but instead its possible type(s) are "+x.type));
+              errs = errs.make(new ErrorType(x.span(), "This should have arity "+a+" but instead its possible type(s) are "+x.type));
             newargs.add(x);
         }
         Type t=Type.FORMULA;

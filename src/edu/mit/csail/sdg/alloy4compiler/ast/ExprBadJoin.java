@@ -78,14 +78,14 @@ public final class ExprBadJoin extends Expr {
 
     /** Constructs an ExprBadJoin node. */
     public static Expr make(Pos pos, Pos closingBracket, Expr left, Expr right) {
-        JoinableList<Err> errors = left.errors.join(right.errors);
+        JoinableList<Err> errors = left.errors.make(right.errors);
         if (errors.isEmpty()) {
             StringBuilder sb=new StringBuilder("This cannot be a legal relational join where\nleft hand side is ");
             left.toString(sb,-1);
             sb.append(" (type = ").append(left.type).append(")\nright hand side is ");
             right.toString(sb,-1);
             sb.append(" (type = ").append(right.type).append(")\n");
-            errors = errors.append(new ErrorType(pos, sb.toString()));
+            errors = errors.make(new ErrorType(pos, sb.toString()));
         }
         return new ExprBadJoin(pos, closingBracket, left, right, errors);
     }

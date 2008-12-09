@@ -259,7 +259,7 @@ public final class ExprBinary extends Expr {
          }
          Err e=null;
          Type type=EMPTY;
-         JoinableList<Err> errs = left.errors.join(right.errors);
+         JoinableList<Err> errs = left.errors.make(right.errors);
          if (errs.isEmpty()) switch(this) {
            case LT: case LTE: case GT: case GTE: case NOT_LT: case NOT_LTE: case NOT_GT: case NOT_GTE:
            case AND: case OR: case IFF: case IMPLIES:
@@ -308,10 +308,10 @@ public final class ExprBinary extends Expr {
               type=left.type.product(right.type);
          }
          if ((isArrow && left.mult==1) || (!isArrow && left.mult!=0))
-            errs = errs.append(new ErrorSyntax(left.span(), "Multiplicity expression not allowed here."));
+            errs = errs.make(new ErrorSyntax(left.span(), "Multiplicity expression not allowed here."));
          if ((isArrow && right.mult==1) || (!isArrow && this!=Op.IN && right.mult!=0))
-            errs = errs.append(new ErrorSyntax(right.span(), "Multiplicity expression not allowed here."));
-         return new ExprBinary(pos, closingBracket, this, left, right, type, errs.append(e));
+            errs = errs.make(new ErrorSyntax(right.span(), "Multiplicity expression not allowed here."));
+         return new ExprBinary(pos, closingBracket, this, left, right, type, errs.make(e));
       }
 
       /** Returns the human readable label for this operator. */

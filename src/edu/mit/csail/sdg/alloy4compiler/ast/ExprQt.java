@@ -168,33 +168,33 @@ public final class ExprQt extends Expr {
          if (this!=SUM) sub = sub.typecheck_as_formula(); else sub = sub.typecheck_as_int();
          boolean ambiguous = sub.ambiguous;
          JoinableList<Err> errs = emptyListOfErrors;
-         if (sub.mult!=0) errs = errs.append(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
+         if (sub.mult!=0) errs = errs.make(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
          long weight = sub.weight;
-         if (decls.size()==0) errs = errs.append(new ErrorSyntax(pos, "List of variables cannot be empty."));
+         if (decls.size()==0) errs = errs.make(new ErrorSyntax(pos, "List of variables cannot be empty."));
          for(Decl d: decls) {
             Expr v = d.expr;
             ambiguous = ambiguous || v.ambiguous;
             weight = weight + v.weight;
-            errs = errs.join(v.errors);
+            errs = errs.make(v.errors);
             if (v.errors.size()>0) continue;
             if (v.type.size()==0) {
-               errs = errs.append(new ErrorType(v.span(), "This must be a set or relation. Instead, its type is " + v.type));
+               errs = errs.make(new ErrorType(v.span(), "This must be a set or relation. Instead, its type is " + v.type));
                continue;
             }
             ExprUnary.Op op = v.mult();
-            if (op==ExprUnary.Op.EXACTLYOF) { errs = errs.append(new ErrorType(v.span(), "This cannot be an exactly-of expression.")); continue; }
+            if (op==ExprUnary.Op.EXACTLYOF) { errs = errs.make(new ErrorType(v.span(), "This cannot be an exactly-of expression.")); continue; }
             if (this!=SUM && this!=COMPREHENSION) continue;
             if (!v.type.hasArity(1)) {
-               errs = errs.append(new ErrorType(v.span(), "This must be a unary set. Instead, its type is " + v.type));
+               errs = errs.make(new ErrorType(v.span(), "This must be a unary set. Instead, its type is " + v.type));
                continue;
             }
             if (v.mult==1) {
                if (op == ExprUnary.Op.SETOF)
-                  errs = errs.append(new ErrorType(v.span(), "This cannot be a set-of expression."));
+                  errs = errs.make(new ErrorType(v.span(), "This cannot be a set-of expression."));
                else if (op == ExprUnary.Op.SOMEOF)
-                  errs = errs.append(new ErrorType(v.span(), "This cannot be a some-of expression."));
+                  errs = errs.make(new ErrorType(v.span(), "This cannot be a some-of expression."));
                else if (op == ExprUnary.Op.LONEOF)
-                  errs = errs.append(new ErrorType(v.span(), "This cannot be a lone-of expression."));
+                  errs = errs.make(new ErrorType(v.span(), "This cannot be a lone-of expression."));
             }
             if (this==COMPREHENSION) {
                Type t1 = v.type.extract(1);

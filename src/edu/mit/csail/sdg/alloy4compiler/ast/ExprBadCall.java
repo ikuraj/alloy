@@ -94,7 +94,7 @@ public final class ExprBadCall extends Expr {
         for(Expr x: args) {
             weight = weight + x.weight;
             ambiguous = ambiguous || x.ambiguous;
-            errors = errors.join(x.errors);
+            errors = errors.make(x.errors);
         }
         if (errors.isEmpty()) {
             StringBuilder sb=new StringBuilder("This cannot be a correct call to ");
@@ -112,7 +112,7 @@ public final class ExprBadCall extends Expr {
                 v.toString(sb, -1);
                 sb.append(" (type = ").append(v.type).append(")\n");
             }
-            errors = errors.append(new ErrorType(pos, sb.toString()));
+            errors = errors.make(new ErrorType(pos, sb.toString()));
         }
         return new ExprBadCall(pos, closingBracket, ambiguous, fun, args, errors, extraPenalty, weight);
     }

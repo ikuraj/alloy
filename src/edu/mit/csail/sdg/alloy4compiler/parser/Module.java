@@ -1064,7 +1064,7 @@ public final class Module extends Browsable {
             for(Decl d: f.decls) {
                TempList<ExprVar> tmpvars = new TempList<ExprVar>();
                Expr val = cx.check(d.expr).resolve_as_set(warns);
-               if (!val.errors.isEmpty()) { err = true; errors = errors.join(val.errors); }
+               if (!val.errors.isEmpty()) { err = true; errors = errors.make(val.errors); }
                for(ExprHasName n: d.names) {
                   ExprVar v = ExprVar.make(n.span(), n.label, val.type);
                   cx.put(n.label, v);
@@ -1076,14 +1076,14 @@ public final class Module extends Browsable {
             Expr ret = null;
             if (!f.isPred) {
                ret = cx.check(f.returnDecl).resolve_as_set(warns);
-               if (!ret.errors.isEmpty()) { err=true; errors=errors.join(ret.errors); }
+               if (!ret.errors.isEmpty()) { err = true; errors = errors.make(ret.errors); }
             }
             if (err) continue;
             try {
                f = new Func(f.pos, f.isPrivate, fullname, tmpdecls.makeConst(), ret, f.getBody());
                list.set(listi, f);
                rep.typecheck("" + f + ", RETURN: " + f.returnDecl.type + "\n");
-            } catch(Err ex) { errors = errors.append(ex); }
+            } catch(Err ex) { errors = errors.make(ex); }
          }
       }
       return errors;
@@ -1097,9 +1097,9 @@ public final class Module extends Browsable {
          for(Decl d: ff.decls) for(ExprHasName n: d.names) cx.put(n.label, n);
          Expr newBody = cx.check(ff.getBody());
          if (ff.isPred) newBody = newBody.resolve_as_formula(warns); else newBody = newBody.resolve_as_set(warns);
-         errors = errors.join(newBody.errors);
+         errors = errors.make(newBody.errors);
          if (!newBody.errors.isEmpty()) continue;
-         try { ff.setBody(newBody); } catch(Err er) {errors=errors.append(er); continue;}
+         try { ff.setBody(newBody); } catch(Err er) {errors = errors.make(er); continue;}
          if (warns!=null && ff.returnDecl.type.hasTuple() && newBody.type.hasTuple() && !newBody.type.intersects(ff.returnDecl.type))
             warns.add(new ErrorWarning(newBody.span(),
                   "Function return value is disjoint from its return type.\n"
@@ -1146,7 +1146,7 @@ public final class Module extends Browsable {
          if (expr.errors.isEmpty()) {
             e.setValue(expr);
             rep.typecheck("Assertion " + e.getKey() + ": " + expr.type+"\n");
-         } else errors=errors.join(expr.errors);
+         } else errors = errors.make(expr.errors);
       }
       return errors;
    }
@@ -1179,7 +1179,7 @@ public final class Module extends Browsable {
          if (expr.errors.isEmpty()) {
             facts.set(i, new Pair<String,Expr>(name, expr));
             rep.typecheck("Fact " + name + ": " + expr.type+"\n");
-         } else errors=errors.join(expr.errors);
+         } else errors = errors.make(expr.errors);
       }
       for(Sig s: sigs.values()) {
          Expr f = res.old2appendedfacts.get(res.new2old.get(s));
@@ -1195,7 +1195,7 @@ public final class Module extends Browsable {
             formula = cx.check(f).resolve_as_formula(warns);
          }
          cx.remove("this");
-         if (formula.errors.size()>0) errors = errors.join(formula.errors); else { s.addFact(formula);  rep.typecheck("Fact "+s+"$fact: " + formula.type+"\n");  }
+         if (formula.errors.size()>0) errors = errors.make(formula.errors); else { s.addFact(formula);  rep.typecheck("Fact "+s+"$fact: " + formula.type+"\n");  }
       }
       return errors;
    }
