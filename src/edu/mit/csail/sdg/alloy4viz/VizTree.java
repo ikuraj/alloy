@@ -105,6 +105,15 @@ public final class VizTree extends OurTree {
             for(int i=1; i<tp.arity(); i++) ans.add(tp.atom(i));
             for(int i=ans.size()-1; i>0; i--) for(int j=i-1; j>=0; j--) if (ans.get(i).equals(ans.get(j))) { ans.remove(i); break; }
          }
+         Collections.sort(ans, new Comparator<Object>() {
+            public int compare(Object a, Object b) {
+               String t1, t2;
+               if (a instanceof Pair) { t1=((ExprHasName)(((Pair<?,?>)a).b)).label; t2=((ExprHasName)(((Pair<?,?>)b).b)).label; }
+                  else { t1=a.toString(); t2=b.toString(); }
+               int i = t1.compareToIgnoreCase(t2);
+               if (i!=0) return i; else return t1.compareTo(t2);
+            }
+         });
          return ans;
       } catch(Err er) {
          return ans;
