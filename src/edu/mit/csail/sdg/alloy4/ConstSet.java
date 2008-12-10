@@ -73,9 +73,9 @@ public final class ConstSet<K> extends AbstractSet<K> implements Serializable {
    /** Returns a read-only iterator over this set. */
    @Override public Iterator<K> iterator() { return set.iterator(); }
 
-   /** {@inheritDoc} */
+   /** Returns the number of objects in this set. */
    @Override public int size() { return set.size(); }
 
-   /** {@inheritDoc} */
+   /** Returns true if the given object is in this set. */
    @Override public boolean contains(Object element) { return set.contains(element); }  // overridden for performance
 }
