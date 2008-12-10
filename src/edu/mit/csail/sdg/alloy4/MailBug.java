@@ -24,7 +24,6 @@ package edu.mit.csail.sdg.alloy4;
 
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.BorderLayout;
 import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -36,13 +35,11 @@ import java.util.Map;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import java.lang.Thread.UncaughtExceptionHandler;
-import javax.swing.JButton;
-import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.border.EmptyBorder;
+import javax.swing.SwingUtilities;
 import javax.swing.border.LineBorder;
 
 /** This class asks the user for permission to email a bug report when an uncaught exception occurs. */
@@ -194,24 +191,22 @@ public final class MailBug implements UncaughtExceptionHandler, Runnable {
    /** This method sends the crash report then displays alloy.mit.edu's reply in a text window. */
    private static void sendCrashReport (Thread thread, Throwable ex, String email, String problem) {
       try {
-         String report = prepareCrashReport(thread, ex, email, problem);
-         String alt = "Sorry. An error has occurred in posting the bug report.\nPlease email this report to alloy@mit.edu directly.\n\n" + dump(ex);
-         int w = OurUtil.getScreenWidth(), h = OurUtil.getScreenHeight();
-         JFrame statusWindow = new JFrame("Sending the bug report... please wait...");
-         JButton done = OurUtil.button("Close", Runner.createExit(1));
-         JTextArea status = OurUtil.textarea("Sending the bug report... please wait...", 10, 40, false, true, new EmptyBorder(2,2,2,2));
-         JScrollPane statusPane = OurUtil.scrollpane(status);
-         statusWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-         statusWindow.setBackground(Color.LIGHT_GRAY);
-         statusWindow.setLayout(new BorderLayout());
-         statusWindow.add(statusPane, BorderLayout.CENTER);
-         statusWindow.add(done, BorderLayout.SOUTH);
-         statusWindow.pack();
-         statusWindow.setSize(600, 200);
-         statusWindow.setLocation((w-600)/2, (h-200)/2);
-         statusWindow.setVisible(true);
-         status.setText(readAll(ALLOY_URL, report, alt));
-         status.setCaretPosition(0);
+         final String report = prepareCrashReport(thread, ex, email, problem);
+         final String alt = "Sorry. An error has occurred in posting the bug report.\nPlease email this report to alloy@mit.edu directly.\n\n" + dump(ex);
+         final JTextArea status = OurUtil.textarea("Sending the bug report... please wait...", 10, 40, false, true, new LineBorder(Color.GRAY));
+         new Thread(new Runnable() {
+            public void run() {
+               final String output = readAll(ALLOY_URL, report, alt);
+               SwingUtilities.invokeLater(new Runnable() {
+                  public void run() {
+                     status.setText(output);
+                     status.setCaretPosition(0);
+                  }
+               });
+            }
+         }).start();
+         JOptionPane.showMessageDialog(null, new Object[] {status}, "Sending the bug report... please wait...", JOptionPane.ERROR_MESSAGE);
+         System.exit(1);
       } catch(Throwable exception) {
          System.exit(1);
       }
