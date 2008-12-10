@@ -32,25 +32,19 @@ public final class ErrorFatal extends Err {
    /** Constructs a new fatal error.
     * @param msg - the actual error message (can be null)
     */
-   public ErrorFatal(String msg) {
-      super(null, msg, null);
-   }
+   public ErrorFatal(String msg) { super(null, msg, null); }
 
    /** Constructs a new fatal error with "cause" as the underlying cause.
     * @param msg - the actual error message (can be null)
     * @param cause - if nonnull, it is the cause of this exception
     */
-   public ErrorFatal(String msg, Throwable cause) {
-      super(null, msg, cause);
-   }
+   public ErrorFatal(String msg, Throwable cause) { super(null, msg, cause); }
 
    /** Constructs a new fatal error.
     * @param pos - the filename/line/row information (can be null if unknown)
     * @param msg - the actual error message (can be null)
     */
-   public ErrorFatal(Pos pos, String msg) {
-      super(pos, msg, null);
-   }
+   public ErrorFatal(Pos pos, String msg) { super(pos, msg, null); }
 
    /** Returns a textual description of the error. */
    @Override public String toString() {

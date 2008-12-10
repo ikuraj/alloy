@@ -24,8 +24,8 @@ package edu.mit.csail.sdg.alloy4;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.IdentityHashMap;
 
 /** Mutable; this implements a graph with nodes and directed edges; null node is allowed.
  *

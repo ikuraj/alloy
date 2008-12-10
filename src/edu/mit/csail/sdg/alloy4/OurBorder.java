@@ -86,9 +86,9 @@ public final class OurBorder implements Border {
       graphics.setColor(oldColor);
    }
 
-   /** This method is called by Swing to retrieve the dimension of the border. */
-   public Insets getBorderInsets (Component c)  { return new Insets(top!=null?1:0, left!=null?1:0, bottom!=null?1:0, right!=null?1:0); }
-
    /** This method is called by Swing to find out whether this border object needs to fill in its own background. */
    public boolean isBorderOpaque()  { return true; }
+
+   /** This method is called by Swing to retrieve the dimension of the border. */
+   public Insets getBorderInsets (Component c)  { return new Insets(top!=null?1:0, left!=null?1:0, bottom!=null?1:0, right!=null?1:0); }
 }

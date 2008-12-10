@@ -63,8 +63,8 @@ public final class ConstSet<K> extends AbstractSet<K> implements Serializable {
    public static<K> ConstSet<K> make(Iterable<K> collection) {
       if (collection instanceof ConstSet) return (ConstSet<K>)collection;
       LinkedHashSet<K> ans = null;
-      if (collection!=null) for(K element: collection) {
-         if (ans==null) ans = new LinkedHashSet<K>();
+      if (collection != null) for(K element: collection) {
+         if (ans == null) ans = new LinkedHashSet<K>();
          ans.add(element);
       }
       if (ans==null) return make(); else return new ConstSet<K>(ans);

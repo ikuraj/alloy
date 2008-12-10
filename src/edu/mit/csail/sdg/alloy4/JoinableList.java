@@ -58,11 +58,11 @@ public final class JoinableList<E> extends AbstractList<E> implements Serializab
       this.post = post;
    }
 
-   /** Construct a list containing a single item, or return an empty list if item==null. */
-   public JoinableList(E item)  { this((item!=null ? 1 : 0), null, item, null); }
-
    /** Construct an empty list. */
    public JoinableList()  { this(0, null, null, null); }
+
+   /** Construct a list containing a single item, or return an empty list if item==null. */
+   public JoinableList(E item)  { this((item!=null ? 1 : 0), null, item, null); }
 
    /** Returns a list that represents the concatenation of this list and that list. */
    public JoinableList<E> make(JoinableList<E> that) {

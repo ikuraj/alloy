@@ -32,25 +32,19 @@ public final class ErrorWarning extends Err {
    /** Constructs a new warning.
     * @param msg - the actual error message (can be null)
     */
-   public ErrorWarning(String msg) {
-      super(null, msg, null);
-   }
+   public ErrorWarning(String msg) { super(null, msg, null); }
 
    /** Constructs a new warning with "cause" as the underlying cause.
     * @param msg - the actual error message (can be null)
     * @param cause - if nonnull, it is the cause of this exception
     */
-   public ErrorWarning(String msg, Throwable cause) {
-      super(null, msg, cause);
-   }
+   public ErrorWarning(String msg, Throwable cause) { super(null, msg, cause); }
 
    /** Constructs a new warning.
     * @param pos - the filename/line/row information (can be null if unknown)
     * @param msg - the actual error message (can be null)
     */
-   public ErrorWarning(Pos pos, String msg) {
-      super(pos, msg, null);
-   }
+   public ErrorWarning(Pos pos, String msg) { super(pos, msg, null); }
 
    /** Returns a textual description of the error. */
    @Override public String toString() {

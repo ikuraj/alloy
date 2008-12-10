@@ -79,12 +79,12 @@ public final class ConstMap<K,V> extends AbstractMap<K,V> implements Serializabl
    /** Returns the number of (key, value) mapping in this map. */
    @Override public int size()                          { return map.size(); }  // overridden for performance
 
-   /** Returns true if the given key is in this map. */
+   /** Returns true if exists at least one (k, v) mapping where (k==null ? key==null : k.equals(key)) */
    @Override public boolean containsKey(Object key)     { return map.containsKey(key); }  // overridden for performance
 
-   /** Returns true if at least one key is mapped to the given value. */
+   /** Returns true if exists at least one (k, v) mapping where (v==null ? value==null : v.equals(value)) */
    @Override public boolean containsValue(Object value) { return map.containsValue(value); }  // overridden for performance
 
-   /** Returns the value associated with the given key (or null if the key is not bound in this map) */
+   /** Returns the value associated with the given key (or null if not found); null is also returned if the given key maps to null. */
    @Override public V get(Object key)                   { return map.get(key); }  // overridden for performance
 }

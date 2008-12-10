@@ -32,25 +32,19 @@ public final class ErrorType extends Err {
    /** Constructs a new type error.
     * @param msg - the actual error message (can be null)
     */
-   public ErrorType(String msg) {
-      super(null, msg, null);
-   }
+   public ErrorType(String msg) { super(null, msg, null); }
 
    /** Constructs a new type error with "cause" as the underlying cause.
     * @param msg - the actual error message (can be null)
     * @param cause - if nonnull, it is the cause of this exception
     */
-   public ErrorType(String msg, Throwable cause) {
-      super(null, msg, cause);
-   }
+   public ErrorType(String msg, Throwable cause) { super(null, msg, cause); }
 
    /** Constructs a new type error.
     * @param pos - the filename/line/row information (can be null if unknown)
     * @param msg - the actual error message (can be null)
     */
-   public ErrorType(Pos pos, String msg) {
-      super(pos, msg, null);
-   }
+   public ErrorType(Pos pos, String msg) { super(pos, msg, null); }
 
    /** Returns a textual description of the error. */
    @Override public String toString() {

@@ -41,8 +41,7 @@ public class A4Reporter {
    public static final A4Reporter NOP = new A4Reporter();
 
    /** This method is called at various points to report the current progress;
-    * it is only intended as a debugging aid for the developers;
-    * the messages are generally not useful for end users.
+    * it is intended as a debugging aid for the developers; the messages are generally not useful for end users.
     */
    public void debug (String msg) { if (parent != null) parent.debug(msg); }
 

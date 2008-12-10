@@ -48,6 +48,8 @@ public abstract class OurTree extends JTree {
 
    /** Custom TreeModel that calls the alloyAskRoot() and alloyAsk() method to lazily construct the tree on a as-needed basis. */
    private final class OurTreeModel implements TreeModel {
+      /** Constructs this tree model. */
+      public OurTreeModel() { }
       /** {@inheritDoc} */
       public Object getChild(Object parent, int index) {
          List<?> ans = alloyAsk(parent);
@@ -81,14 +83,14 @@ public abstract class OurTree extends JTree {
       private boolean isSelected;
       /** Whether the current object is focused or not. */
       private boolean isFocused;
-      /** Constructs the Renderer. */
+      /** Constructs this renderer. */
       public OurTreeRenderer() {
          super("Anything"); // This ensures that the height is calculated properly
          setFont(OurUtil.getVizFont().deriveFont((float)80));
          setVerticalAlignment(JLabel.BOTTOM);
          setBorder(new EmptyBorder(0, 3, 0, 3));
       }
-      /** Returns an object to be drawn. */
+      /** This method is called by Swing to return an object to be drawn. */
       public Component getTreeCellRendererComponent(JTree tree, Object value, boolean isSelected, boolean expanded, boolean isLeaf, int row, boolean isFocused) {
          if (value instanceof DefaultMutableTreeNode) value = ((DefaultMutableTreeNode)value).getUserObject();
          String string = tree.convertValueToText(value, isSelected, expanded, isLeaf, row, isFocused);
@@ -99,7 +101,7 @@ public abstract class OurTree extends JTree {
          this.setSize(getPreferredSize());
          return this;
       }
-      /** We override the paint() method. */
+      /** This method is called by Swing to draw this object. */
       @Override public void paint(Graphics g) {
          int w=getWidth(), h=getHeight();
          Color background = isSelected ? UIManager.getColor("Tree.selectionBackground") : Color.WHITE;
@@ -124,7 +126,7 @@ public abstract class OurTree extends JTree {
    /** Subclass should call this method when it has initialized its fields properly; we will not call alloyAskRoot() and alloyAsk() until subclass calls this method. */
    protected final void alloyStart() { setModel(new OurTreeModel()); }
 
-   /** {@inheritDoc} */
+   /** This method is called by Swing to figure out what text should be displayed for each node in the tree. */
    @Override public abstract String convertValueToText(Object val, boolean selected, boolean expanded, boolean leaf, int row, boolean focus);
 
    /** Construct a Tree object with the given font size. */

@@ -37,8 +37,12 @@ public final strictfp class OurPNGWriter {
 
    /** Writes the image as a PNG file with the given horizontal and vertical dots-per-inch. */
    public static void writePNG (BufferedImage image, String filename, double dpiX, double dpiY) throws IOException {
-      ImageIO.write(image, "PNG", new File(filename));
-      setDPI(filename, dpiX, dpiY);
+      try {
+         ImageIO.write(image, "PNG", new File(filename)); // some versions of Java sometimes throws an exception during saving...
+         setDPI(filename, dpiX, dpiY);
+      } catch(Throwable ex) {
+         throw new IOException("Error writing the PNG file to " + filename);
+      }
    }
 
    /* PNG consists of a "8 byte header" followed by one or more CHUNK...

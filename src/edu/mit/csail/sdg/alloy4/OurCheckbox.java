@@ -39,7 +39,7 @@ import javax.swing.JPanel;
 public abstract class OurCheckbox extends JPanel {
 
    /** This silences javac's warning about missing serialVersionUID. */
-   private static final long serialVersionUID = 1L;
+   private static final long serialVersionUID = 0;
 
    /** The icon to use when the checkbox is off. */
    public static final Icon OFF = OurUtil.loadIcon("images/cb0.gif");
@@ -71,7 +71,6 @@ public abstract class OurCheckbox extends JPanel {
     * @param icon - the initial icon to display
     */
    public OurCheckbox(String label, String tooltip, Icon icon) {
-      super();
       setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
       box = new JCheckBox(icon);
       box.addActionListener(new ActionListener() {

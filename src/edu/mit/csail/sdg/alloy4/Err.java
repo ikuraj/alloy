@@ -22,7 +22,7 @@
 
 package edu.mit.csail.sdg.alloy4;
 
-/** Immutable; this is the abstract super class of the various possible errors. */
+/** Immutable; this is the abstract parent class of the various possible errors. */
 
 public abstract class Err extends Exception {
 

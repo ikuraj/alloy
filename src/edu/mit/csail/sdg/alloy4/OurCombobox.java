@@ -43,10 +43,10 @@ import javax.swing.border.EmptyBorder;
 public class OurCombobox extends JComboBox {
 
    /** This silences javac's warning about missing serialVersionUID. */
-   private static final long serialVersionUID = 1L;
+   private static final long serialVersionUID = 0;
 
    /** This caches a preconstructed JLabel that is used for the rendering of each Combo value. */
-   private final JLabel renderer = OurUtil.label("", Color.BLACK, Color.WHITE, new EmptyBorder(0, 2, 0, 0));
+   private static JLabel renderer;
 
    /** Subclass can override this method to provide the custom text for any given value (or "" if no text is needed) */
    public String do_getText(Object value) { return String.valueOf(value); }
@@ -58,7 +58,7 @@ public class OurCombobox extends JComboBox {
    public void do_changed(Object newValue) { }
 
    /** This helper method makes a copy of the list, and then optionally prepend null at the beginning of the list. */
-   private static Vector<Object> copy (Object[] list, boolean addNull) {
+   private static Vector<Object> do_copy (Object[] list, boolean addNull) {
       Vector<Object> answer = new Vector<Object>(list.length + (addNull ? 1 : 0));
       if (addNull) answer.add(null);
       for(int i=0; i<list.length; i++) answer.add(list[i]);
@@ -78,10 +78,11 @@ public class OurCombobox extends JComboBox {
     * @param initialValue - if nonnull it is the initial value to choose in this combo box
     */
    public OurCombobox (boolean addNull, Object[] list, int width, int height, Object initialValue) {
-      super(copy(list, addNull));
+      super(do_copy(list, addNull));
       setFont(OurUtil.getVizFont());
       setRenderer(new ListCellRenderer() {
          public Component getListCellRendererComponent(JList list, Object value, int i, boolean selected, boolean focused) {
+            if (renderer == null) renderer = OurUtil.label("", Color.BLACK, Color.WHITE, new EmptyBorder(0, 2, 0, 0));
             renderer.setText(do_getText(value));
             renderer.setIcon(do_getIcon(value));
             renderer.setBackground(selected ? list.getSelectionBackground() : list.getBackground());
@@ -89,9 +90,8 @@ public class OurCombobox extends JComboBox {
             return renderer;
          }
       });
-      if (width>0 && height>0) {
-         // Make some platform-specific adjustments which should make the combobox look nicer
-         if (Util.onWindows() && height>25) height=25; // Otherwise, the height is too high on Windows
+      if (width>0 && height>0) { // Make some platform-specific adjustments which should make the combobox look nicer
+         if (Util.onWindows() && height>25) height = 25; // Otherwise, the height is too high on Windows
          setPreferredSize(new Dimension(width, height));
          setMaximumSize(new Dimension(width, height));
          if (!Util.onWindows() && !Util.onMac()) setBorder(new EmptyBorder(4, 3, 4, 0));

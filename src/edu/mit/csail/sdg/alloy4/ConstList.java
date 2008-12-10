@@ -144,7 +144,9 @@ public final class ConstList<T> extends AbstractList<T> implements Serializable 
       if (ans==null) return make(); else return new ConstList<T>(ans);
    }
 
-   /** Returns the i-th object in this list. */
+   /** Return the i-th element
+    * @throws ArrayIndexOutOfBoundsException if the given index doesn't exist
+    */
    @Override public T get(int index) { return list.get(index); }
 
    /** Returns the number of objects in this list. */
