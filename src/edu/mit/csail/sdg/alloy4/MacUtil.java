@@ -30,7 +30,7 @@ import com.apple.eawt.ApplicationEvent;
 
 /** This class provides better integration on Mac OS X.
  *
- * <p> You must not call any methods here if you're not on a Mac,
+ * <p> You must not call any methods here if you're not on Mac OS X,
  * since that triggers the loading of com.apple.eawt.* which are not available on other platforms.
  *
  * <p><b>Thread Safety:</b>  Safe.
@@ -44,7 +44,7 @@ public final class MacUtil {
    /** The cached Application object. */
    private static Application app = null;
 
-   /** The previous listener (or null if there was none). */
+   /** The previous ApplicationListener (or null if there was none). */
    private static ApplicationListener listener = null;
 
    /** Register a Mac OS X "ApplicationListener"; if there was a previous listener, it will be removed first.
@@ -54,24 +54,24 @@ public final class MacUtil {
     * @param quit - when the user clicks on Quit, we'll call quit.run() using SwingUtilities.invokeAndWait
     */
    public synchronized static void registerApplicationListener (final Runnable reopen, final Runnable about, final Runner open, final Runnable quit) {
-      if (app==null) app = new Application(); else if (listener!=null) app.removeApplicationListener(listener);
+      if (app == null) app = new Application(); else if (listener != null) app.removeApplicationListener(listener);
       listener = new ApplicationAdapter() {
-         @Override public void handleReOpenApplication (final ApplicationEvent arg) {
+         @Override public void handleReOpenApplication(ApplicationEvent arg) {
             SwingUtilities.invokeLater(reopen);
          }
-         @Override public void handleAbout (final ApplicationEvent arg) {
+         @Override public void handleAbout(ApplicationEvent arg) {
             arg.setHandled(true);
             SwingUtilities.invokeLater(about);
          }
-         @Override public void handleOpenFile (final ApplicationEvent arg) {
+         @Override public void handleOpenFile(ApplicationEvent arg) {
             final String filename = arg.getFilename();
             SwingUtilities.invokeLater(new Runnable() {
                public final void run() { open.run(filename); }
             });
          }
-         @Override public void handleQuit (final ApplicationEvent arg) {
+         @Override public void handleQuit(ApplicationEvent arg) {
             OurUtil.invokeAndWait(quit);
-            arg.setHandled(false); // "false" is correct; some documentation on http://www.apple.com/ claimed otherwise.
+            arg.setHandled(false);
          }
       };
       app.addApplicationListener(listener);

@@ -22,16 +22,12 @@
 
 package edu.mit.csail.sdg.alloy4whole;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -49,6 +45,8 @@ import java.awt.Container;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import static java.awt.event.KeyEvent.VK_PAGE_UP;
@@ -97,6 +95,7 @@ import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 import javax.swing.border.LineBorder;
@@ -286,9 +285,6 @@ public final class SimpleGUI implements ComponentListener {
     };
 
     //===================================================================================================//
-
-    /** The uncaught exception handler. */
-    private final MailBug exitReporter;
 
     /** The JFrame for the main window. */
     private JFrame frame;
@@ -1531,73 +1527,10 @@ public final class SimpleGUI implements ComponentListener {
         return null;
     }
 
-    /** This method checks alloy.mit.edu to see if there is a newer version. */
-    private Runner doCheckForUpdates() {
-        if (wrap) return wrapMe();
-        final String NEW_LINE = System.getProperty("line.separator");
-        final String URL = "http://alloy.mit.edu/alloy4/download/alloy4.txt?buildnum="+Version.buildNumber()+"&builddate="+Version.buildDate();
-        long now=System.currentTimeMillis();
-        BufferedReader in = null;
-        String result;
-        try {
-            URL url = new URL(URL);
-            URLConnection connection = url.openConnection();
-            connection.connect();
-            in = new BufferedReader(new InputStreamReader(connection.getInputStream(), "UTF-8"));
-            StringBuilder buf = new StringBuilder();
-            for (String inputLine = in.readLine(); inputLine != null; inputLine = in.readLine()) {
-                buf.append(inputLine);
-                buf.append(NEW_LINE);
-            }
-            result=buf.toString();
-        } catch (Throwable ex) {
-            result="";
-        } finally {
-            Util.close(in);
-        }
-        // If the "check for update" took too long, then don't display the message, since it clutters up the message panel
-        if (System.currentTimeMillis()-now >= 5000 || !result.startsWith("Alloy Build ")) return null;
-        // Now that we're online, try to remove the old ill-conceived "Java WebStart" versions of Alloy4 (which consists of Alloy4 BETA1..BETA7)
-        Subprocess.exec(20000, new String[]{"javaws","-silent","-offline","-uninstall","http://alloy.mit.edu/alloy4/download/alloy4.jnlp"});
-        // Now, display the result of the alloy.mit.edu version polling
-        try {
-            wrap=true;
-            SwingUtilities.invokeLater(doUpdate(result));
-        } finally {
-            wrap=false;
-        }
-        return null;
-    }
-
-    /** This method displays a message that "updated version of Alloy is available". */
-    private Runner doUpdate(String arg) {
-        if (wrap) return wrapMe(arg);
-        String result=arg;
-        int num=0;
-        int len=result.length();
-        boolean found=false;
-        for(int i=0; ; i++) {
-            if (i>=len) return null;
-            char c=result.charAt(i);
-            if (!(c>='0' && c<='9')) { if (!found) continue; result=result.substring(i); break; }
-            found=true;
-            num=num*10+(c-'0');
-        }
-        latestAlloyVersionName=result.trim();
-        latestAlloyVersion=num;
-        exitReporter.setLatestAlloyVersion(latestAlloyVersion, latestAlloyVersionName);
-        if (latestAlloyVersion<=Version.buildNumber()) return null;
-        log.logBold("An updated version of the Alloy Analyzer has been released.\n");
-        log.log("Please visit alloy.mit.edu to download the latest version:\nVersion "+latestAlloyVersionName+"\n");
-        log.logDivider();
-        log.flush();
-        return null;
-    }
-
     /** This method changes the latest instance. */
     void doSetLatest(String arg) {
-        latestInstance=arg;
-        latestAutoInstance=arg;
+        latestInstance = arg;
+        latestAutoInstance = arg;
     }
 
     /** The color to use for functions/predicate/paragraphs that contains part of the unsat core. */
@@ -1816,8 +1749,7 @@ public final class SimpleGUI implements ComponentListener {
     private SimpleGUI (final String[] args) {
 
         // Register an exception handler for uncaught exceptions
-        exitReporter = new MailBug();
-        Thread.setDefaultUncaughtExceptionHandler(exitReporter);
+        MailBug.setup();
 
         // Enable better look-and-feel
         if (Util.onMac() || Util.onWindows()) {
@@ -2077,14 +2009,6 @@ public final class SimpleGUI implements ComponentListener {
         // Update the title and status bar
         notifyChange();
 
-        // Start a separate thread to query alloy.mit.edu to see if an updated version of Alloy has been released or not
-        try {
-            wrap = true;
-            new Thread(doCheckForUpdates()).start();
-        } finally {
-            wrap = false;
-        }
-
         // Launch the welcome screen if needed
         if (!"yes".equals(System.getProperty("debug")) && Welcome.get() < welcomeLevel) {
             String dismiss = Util.onMac() ? "Dismiss" : "Close";
@@ -2112,5 +2036,24 @@ public final class SimpleGUI implements ComponentListener {
             }, "Welcome", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new Object[]{dismiss}, dismiss);
             if (!again.isSelected()) Welcome.set(welcomeLevel);
         }
+
+        // Periodically ask the MailBug thread to see if there is a newer version or not
+        final long now = System.currentTimeMillis();
+        final Timer t = new Timer(800, null);
+        t.addActionListener(new ActionListener() {
+           public void actionPerformed(ActionEvent e) {
+              int n = MailBug.latestBuildNumber();
+              // If beyond 3 seconds, then we should stop because the log message may run into other user messages
+              if (System.currentTimeMillis() - now >= 3000 || n <= Version.buildNumber()) { t.stop(); return; }
+              latestAlloyVersion = n;
+              latestAlloyVersionName = MailBug.latestBuildName();
+              log.logBold("An updated version of the Alloy Analyzer has been released.\n");
+              log.log("Please visit alloy.mit.edu to download the latest version:\nVersion " + latestAlloyVersionName + "\n");
+              log.logDivider();
+              log.flush();
+              t.stop();
+          }
+        });
+        t.start();
     }
 }
