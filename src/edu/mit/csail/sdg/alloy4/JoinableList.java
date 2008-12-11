@@ -25,7 +25,7 @@ package edu.mit.csail.sdg.alloy4;
 import java.io.Serializable;
 import java.util.AbstractList;
 
-/** Immutable; implements an ordered list where it is cheap to join or append; null values are NOT allowed. */
+/** Immutable; implements a list where it is cheap to join or append; null values are NOT allowed. */
 
 public final class JoinableList<E> extends AbstractList<E> implements Serializable {
 

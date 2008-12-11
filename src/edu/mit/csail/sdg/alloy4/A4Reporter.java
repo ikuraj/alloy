@@ -31,14 +31,14 @@ public class A4Reporter {
    /** If nonnull, then we will forward requests to this reporter. */
    private final A4Reporter parent;
 
+   /** This is a pre-constructed instance that simply ignores all calls. */
+   public static final A4Reporter NOP = new A4Reporter();
+
    /** Constructs a default A4Reporter object that does nothing. */
    public A4Reporter () { parent = null; }
 
    /** Constructs an A4Reporter that forwards each method to the given A4Reporter. */
    public A4Reporter (A4Reporter reporter) { parent = reporter; }
-
-   /** This is a pre-constructed instance that simply ignores all calls. */
-   public static final A4Reporter NOP = new A4Reporter();
 
    /** This method is called at various points to report the current progress;
     * it is intended as a debugging aid for the developers; the messages are generally not useful for end users.

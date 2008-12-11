@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.IdentityHashMap;
 
-/** Mutable; this implements a graph with nodes and directed edges; null node is allowed.
+/** Mutable; implements a directed graph; null node is allowed.
  *
  * <p> Note: it uses n1==n2 for comparing nodes rather than using n1.equals(n2)
  */

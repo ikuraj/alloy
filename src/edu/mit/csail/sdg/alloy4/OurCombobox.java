@@ -46,7 +46,7 @@ public class OurCombobox extends JComboBox {
    private static final long serialVersionUID = 0;
 
    /** This caches a preconstructed JLabel that is used for the rendering of each Combo value. */
-   private static JLabel show;
+   private static JLabel jlabel;
 
    /** Subclass can override this method to provide the custom text for any given value (or "" if no text is needed) */
    public String do_getText(Object value) { return String.valueOf(value); }
@@ -82,12 +82,12 @@ public class OurCombobox extends JComboBox {
       setFont(OurUtil.getVizFont());
       setRenderer(new ListCellRenderer() {
          public Component getListCellRendererComponent(JList list, Object value, int i, boolean selected, boolean focused) {
-            if (show == null) show = OurUtil.label("", Color.BLACK, Color.WHITE, new EmptyBorder(0, 2, 0, 0));
-            show.setText(do_getText(value));
-            show.setIcon(do_getIcon(value));
-            show.setBackground(selected ? list.getSelectionBackground() : list.getBackground());
-            show.setForeground(selected ? list.getSelectionForeground() : list.getForeground());
-            return show;
+            if (jlabel == null) jlabel = OurUtil.label("", Color.BLACK, Color.WHITE, new EmptyBorder(0, 2, 0, 0));
+            jlabel.setText(do_getText(value));
+            jlabel.setIcon(do_getIcon(value));
+            jlabel.setBackground(selected ? list.getSelectionBackground() : list.getBackground());
+            jlabel.setForeground(selected ? list.getSelectionForeground() : list.getForeground());
+            return jlabel;
          }
       });
       if (width>0 && height>0) { // Make some platform-specific adjustments which should make the combobox look nicer

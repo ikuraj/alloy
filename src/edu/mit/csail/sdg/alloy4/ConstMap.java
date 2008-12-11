@@ -31,7 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.Set;
 import java.io.Serializable;
 
-/** Immutable; this implements an unmodifiable map (where comparison is based on hashCode() and equals()); null keys and values are allowed.
+/** Immutable; implements a map based on hashCode() and equals(); null key and values are allowed.
  *
  * @param <K> - the type of key
  * @param <V> - the type of value

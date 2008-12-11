@@ -47,11 +47,11 @@ public final class ByteBuffer {
    private int n = 0;
 
    /** Construct an empty byte buffer. */
-   public ByteBuffer() { }
+   public ByteBuffer() { list.add(new byte[SIZE]); }
 
    /** Write the given byte into this byte buffer. */
    private ByteBuffer w(int b) {
-      if (n==SIZE || list.size()==0) { list.add(new byte[SIZE]); n=0; }
+      if (n==SIZE) { list.add(new byte[SIZE]); n=0; }
       byte[] array = list.get(list.size()-1);
       array[n] = (byte)b;
       n++;
@@ -59,9 +59,17 @@ public final class ByteBuffer {
    }
 
    /** Write the given array of bytes into this byte buffer. */
-   public ByteBuffer write(int[] b) {
-      if (b!=null) for(int i=0; i<b.length; i++) w(b[i]);
-      return this;
+   private ByteBuffer write(byte[] b, int offset, int len) {
+      if (b==null || len<=0) return this; else if (n==SIZE) { list.add(new byte[SIZE]); n=0; }
+      while(true) { // loop invariant: len>0 and SIZE>n
+         byte[] array = list.get(list.size()-1);
+         if (len <= (SIZE-n)) { System.arraycopy(b, offset, array, n, len); n += len; return this; }
+         System.arraycopy(b, offset, array, n, SIZE-n);
+         offset += (SIZE-n);
+         len -= (SIZE-n);
+         n = 0;
+         list.add(new byte[SIZE]);
+      }
    }
 
    /** Write the given String into this byte buffer (by converting the String into its UTF-8 representation if necessary) */
@@ -69,17 +77,16 @@ public final class ByteBuffer {
       if (string.length() == 0) return this;
       byte[] b;
       try { b = string.getBytes("UTF-8"); } catch(UnsupportedEncodingException ex) { return this; } // exception not possible
-      for(int i=0; i<b.length; i++) w(b[i]);
-      return this;
+      return write(b, 0, b.length);
    }
 
    /** Write the given number using decimal representation into this byte buffer, followed by a space. */
-   public ByteBuffer write(long x)  {
+   public ByteBuffer writes(long x)  {
       return write(Long.toString(x)).write(" ");
    }
 
    /** Write the given number using floating point representation into this byte buffer (truncated to the range -32767..+32767), followed by a space. */
-   public strictfp ByteBuffer write(double x) {
+   public strictfp ByteBuffer writes(double x) {
       // These extreme values shouldn't happen, but we want to protect against them
       if (Double.isNaN(x)) return write("0 ");
       long num = (long)(x * 1000000);
@@ -112,9 +119,8 @@ public final class ByteBuffer {
 
    /** Write the current ByteBuffer content into the given output file as-is, then return the number of bytes written. */
    public long dump(RandomAccessFile os) throws IOException {
-      if (list.size() == 0) return 0;
       for(int i=0, n=list.size()-1; i<n; i++) os.write(list.get(i));
-      os.write(list.get(list.size()-1), 0, n);
+      if (n>0) os.write(list.get(list.size()-1), 0, n);
       return ((long)(list.size()-1)) * SIZE + n;
    }
 }

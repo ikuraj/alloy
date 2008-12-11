@@ -60,16 +60,16 @@ public final strictfp class OurPDFWriter {
       width = dpi*8L + (dpi/2L); // "8.5 inches"
       height = dpi*11L;          // "11 inches"
       // Write the default settings, and add a default transformation that flips (0, 0) into the top-left corner of the page, then scale the page
-      buf.write("q\n" + "1 J\n" + "1 j\n" + "[] 0 d\n" + "1 w\n" + "1 0 0 -1 0 ").write(height).write("cm\n");
-      buf.write(scale).write("0 0 ").write(scale).write(dpi/2.0).write(dpi/2.0).write("cm\n");
+      buf.write("q\n" + "1 J\n" + "1 j\n" + "[] 0 d\n" + "1 w\n" + "1 0 0 -1 0 ").writes(height).write("cm\n");
+      buf.writes(scale).write("0 0 ").writes(scale).writes(dpi/2.0).writes(dpi/2.0).write("cm\n");
    }
 
    /** Changes the color for subsequent graphical drawing. */
    public OurPDFWriter setColor(Color color) {
       int rgb = color.getRGB() & 0xFFFFFF, r = (rgb>>16)&0xFF, g = (rgb>>8)&0xFF, b = (rgb&0xFF);
       if (this.color == rgb) return this; else this.color = rgb; // no need to change
-      buf.write(r/255.0).write(g/255.0).write(b/255.0).write("RG\n");
-      buf.write(r/255.0).write(g/255.0).write(b/255.0).write("rg\n");
+      buf.writes(r/255.0).writes(g/255.0).writes(b/255.0).write("RG\n");
+      buf.writes(r/255.0).writes(g/255.0).writes(b/255.0).write("rg\n");
       return this;
    }
 
@@ -86,19 +86,19 @@ public final strictfp class OurPDFWriter {
    public OurPDFWriter setDashedLine()  { if (line!=3) buf.write("1 w [6 3] 0 d\n"); line=3; return this; }
 
    /** Shifts the coordinate space by the given amount. */
-   public OurPDFWriter shiftCoordinateSpace(int x, int y)  { buf.write("1 0 0 1 ").write(x).write(y).write("cm\n"); return this; }
+   public OurPDFWriter shiftCoordinateSpace(int x, int y)  { buf.write("1 0 0 1 ").writes(x).writes(y).write("cm\n"); return this; }
 
    /** Draws a line from (x1, y1) to (x2, y2). */
-   public OurPDFWriter drawLine(int x1, int y1, int x2, int y2) { buf.write(x1).write(y1).write("m ").write(x2).write(y2).write("l S\n"); return this; }
+   public OurPDFWriter drawLine(int x1, int y1, int x2, int y2) { buf.writes(x1).writes(y1).write("m ").writes(x2).writes(y2).write("l S\n"); return this; }
 
    /** Draws a circle of the given radius, centered at (0, 0). */
    public OurPDFWriter drawCircle(int radius, boolean fillOrNot) {
       double k = (0.55238 * radius); // Approximate a circle using 4 cubic bezier curves
-      buf.write( radius).write("0 m ");
-      buf.write( radius).write(      k).write(      k).write( radius).write("0 ")   .write( radius).write("c ");
-      buf.write(     -k).write( radius).write(-radius).write(      k).write(-radius).write("0 c ");
-      buf.write(-radius).write(     -k).write(     -k).write(-radius).write("0 ")   .write(-radius).write("c ");
-      buf.write(      k).write(-radius).write( radius).write(     -k).write(radius) .write(fillOrNot ? "0 c f\n" : "0 c S\n");
+      buf.writes( radius).write("0 m ");
+      buf.writes( radius).writes(      k).writes(      k).writes( radius).write("0 ")    .writes( radius).write("c ");
+      buf.writes(     -k).writes( radius).writes(-radius).writes(      k).writes(-radius).write("0 c ");
+      buf.writes(-radius).writes(     -k).writes(     -k).writes(-radius).write("0 ")    .writes(-radius).write("c ");
+      buf.writes(      k).writes(-radius).writes( radius).writes(     -k).writes(radius) .write(fillOrNot ? "0 c f\n" : "0 c S\n");
       return this;
    }
 
@@ -106,23 +106,23 @@ public final strictfp class OurPDFWriter {
    public OurPDFWriter drawShape(Shape shape, boolean fillOrNot) {
       if (shape instanceof Polygon) {
          Polygon obj = (Polygon)shape;
-         for(int i = 0; i < obj.npoints; i++) buf.write(obj.xpoints[i]).write(obj.ypoints[i]).write(i==0 ? "m\n" : "l\n");
+         for(int i = 0; i < obj.npoints; i++) buf.writes(obj.xpoints[i]).writes(obj.ypoints[i]).write(i==0 ? "m\n" : "l\n");
          buf.write("h\n");
       } else {
          double moveX = 0, moveY = 0, nowX = 0, nowY = 0, pt[] = new double[6];
          for(PathIterator it = shape.getPathIterator(null); !it.isDone(); it.next()) switch(it.currentSegment(pt)) {
             case PathIterator.SEG_MOVETO:
-               nowX = moveX = pt[0]; nowY = moveY = pt[1]; buf.write(nowX).write(nowY).write("m\n"); break;
+               nowX = moveX = pt[0]; nowY = moveY = pt[1]; buf.writes(nowX).writes(nowY).write("m\n"); break;
             case PathIterator.SEG_CLOSE:
                nowX = moveX; nowY = moveY; buf.write("h\n"); break;
             case PathIterator.SEG_LINETO:
-               nowX = pt[0]; nowY = pt[1]; buf.write(nowX).write(nowY).write("l\n"); break;
+               nowX = pt[0]; nowY = pt[1]; buf.writes(nowX).writes(nowY).write("l\n"); break;
             case PathIterator.SEG_CUBICTO:
-               nowX = pt[4]; nowY = pt[5]; buf.write(pt[0]).write(pt[1]).write(pt[2]).write(pt[3]).write(nowX).write(nowY).write("c\n"); break;
+               nowX = pt[4]; nowY = pt[5]; buf.writes(pt[0]).writes(pt[1]).writes(pt[2]).writes(pt[3]).writes(nowX).writes(nowY).write("c\n"); break;
             case PathIterator.SEG_QUADTO: // Convert quadratic bezier into cubic bezier using de Casteljau algorithm
                double px = nowX + (pt[0] - nowX)*(2.0/3.0), qx = px + (pt[2] - nowX)/3.0;
                double py = nowY + (pt[1] - nowY)*(2.0/3.0), qy = py + (pt[3] - nowY)/3.0;
-               nowX = pt[2]; nowY = pt[3]; buf.write(px).write(py).write(qx).write(qy).write(nowX).write(nowY).write("c\n"); break;
+               nowX = pt[2]; nowY = pt[3]; buf.writes(px).writes(py).writes(qx).writes(qy).writes(nowX).writes(nowY).write("c\n"); break;
          }
       }
       buf.write(fillOrNot ? "f\n" : "S\n");
@@ -251,8 +251,7 @@ public final strictfp class OurPDFWriter {
       RandomAccessFile out = null;
       try {
          String space = "                    "; // reserve 20 bytes for the file size, which is far far more than enough
-         final int fontID = 1, contentID = 2, pageID = 3, pagesID = 4, catalogID = 5;
-         final long[] offset = new long[6];
+         final long fontID = 1, contentID = 2, pageID = 3, pagesID = 4, catalogID = 5, offset[] = new long[6];
          // Write %PDF-1.3, followed by a non-ASCII comment to force the PDF into binary mode
          out = new RandomAccessFile(filename, "rw");
          out.setLength(0);
@@ -292,7 +291,9 @@ public final strictfp class OurPDFWriter {
          out = null;
       } catch(Throwable ex) {
          Util.close(out);
-         if (ex instanceof IOException) throw (IOException)ex; else throw new IOException("Error writing the PDF file to " + filename + " (" + ex + ")");
+         if (ex instanceof IOException) throw (IOException)ex;
+         if (ex instanceof OutOfMemoryError) throw new IOException("Out of memory trying to save the PDF file to " + filename);
+         throw new IOException("Error writing the PDF file to " + filename + " (" + ex + ")");
       }
    }
 }

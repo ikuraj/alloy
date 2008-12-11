@@ -22,7 +22,7 @@
 
 package edu.mit.csail.sdg.alloy4;
 
-/** Immutable; represents a nonfatal warning that should be reported to the user. */
+/** Immutable; this represents a nonfatal warning that should be reported to the user. */
 
 public final class ErrorWarning extends Err {
 

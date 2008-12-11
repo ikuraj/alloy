@@ -42,6 +42,7 @@ public final strictfp class OurPNGWriter {
          setDPI(filename, dpiX, dpiY);
       } catch(Throwable ex) {
          if (ex instanceof IOException) throw (IOException)ex;
+         if (ex instanceof OutOfMemoryError) throw new IOException("Out of memory trying to save the PNG file to " + filename);
          throw new IOException("Error writing the PNG file to " + filename + " (" + ex + ")");
       }
    }

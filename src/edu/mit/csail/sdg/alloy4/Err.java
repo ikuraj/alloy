@@ -26,10 +26,10 @@ package edu.mit.csail.sdg.alloy4;
 
 public abstract class Err extends Exception {
 
-   /** This stores the filename/line/column information (Pos.UNKNOWN if unknown) (it's never null) */
+   /** This stores the filename/line/column information (Pos.UNKNOWN if unknown) (never null) */
    public final Pos pos;
 
-   /** The actual error message (it's never null) */
+   /** The actual error message (never null) */
    public final String msg;
 
    /** Constructs a new Err object.

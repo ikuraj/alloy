@@ -22,7 +22,7 @@
 
 package edu.mit.csail.sdg.alloy4;
 
-/** Immutable; represents an API usage error. */
+/** Immutable; this represents an API usage error. */
 
 public final class ErrorAPI extends Err {
 

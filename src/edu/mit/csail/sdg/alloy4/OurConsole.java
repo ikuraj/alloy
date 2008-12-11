@@ -236,21 +236,15 @@ public final class OurConsole extends JScrollPane {
       }
       browse = history.size()-1;
       // display the command
-      int old = doc.getLength();
-      do_add(len, cmd+"\n\n", plain);
-      len = doc.getLength() - old + len;
+      int old = doc.getLength();   do_add(len, cmd+"\n\n", plain);   len = (doc.getLength() - old + len);
       // perform the computation
       boolean isBad = false;
       try { cmd = computer.compute(cmd); } catch(Throwable ex) { cmd = ex.toString(); isBad = true; }
       int savePosition = len;
       // display the outcome
-      old = doc.getLength();
-      do_add(len, cmd.trim()+"\n\n", (isBad ? bad : good));
-      len = doc.getLength() - old + len;
+      old = doc.getLength();   do_add(len, cmd.trim()+"\n\n", (isBad ? bad : good));    len = (doc.getLength() - old + len);
       // indent the outcome
-      main.setSelectionStart(savePosition + 1);
-      main.setSelectionEnd(len);
-      main.setParagraphAttributes(good, false);
+      main.setSelectionStart(savePosition+1);   main.setSelectionEnd(len);   main.setParagraphAttributes(good, false);
       // redraw then scroll to the bottom
       invalidate();
       repaint();

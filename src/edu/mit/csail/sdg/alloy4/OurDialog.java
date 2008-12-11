@@ -105,14 +105,14 @@ public final class OurDialog {
    private static String[] allFonts = null;
 
    /** Returns true if a font with that name exists on the system. */
-   public static boolean hasFont(String fontname) {
+   public synchronized static boolean hasFont(String fontname) {
       if (allFonts == null) allFonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
       for(int i = 0; i < allFonts.length; i++) if (fontname.compareToIgnoreCase(allFonts[i]) == 0) return true;
       return false;
    }
 
    /** Asks the user to choose a font; returns "" if the user cancels the request. */
-   public static String askFont(Frame parentFrame) {
+   public synchronized static String askFont(Frame parentFrame) {
       if (allFonts == null) allFonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
       JComboBox jcombo = new OurCombobox(allFonts);
       int ans = JOptionPane.showOptionDialog(

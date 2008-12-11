@@ -26,7 +26,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.LinkedHashMap;
 
-/** Mutable; this implements a Key-to-Value map that supports the undo operation; null key and null values are allowed.
+/** Mutable; implements a undoable map based on hashCode() and equals(); null key and values are allowed.
  *
  * <p>   To be more precise, every key is internally mapped to a list of values.
  * <br>  The put(X,Y)  method appends Y onto the end of X's list.

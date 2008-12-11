@@ -22,7 +22,7 @@
 
 package edu.mit.csail.sdg.alloy4;
 
-/** Immutable; represents a fatal error. */
+/** Immutable; this represents a fatal error. */
 
 public final class ErrorFatal extends Err {
 

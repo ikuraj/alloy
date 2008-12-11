@@ -28,7 +28,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.ArrayList;
 
-/** Immutable; this implements an unmodifiable list (where comparison is based on equals()); null values are allowed.
+/** Immutable; implements a list based on equals(); null values are allowed.
  *
  * @param <T> - the type of element
  */

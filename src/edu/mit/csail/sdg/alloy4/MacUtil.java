@@ -70,7 +70,7 @@ public final class MacUtil {
             });
          }
          @Override public void handleQuit(ApplicationEvent arg) {
-            OurUtil.invokeAndWait(quit);
+            try { SwingUtilities.invokeAndWait(quit); } catch (Exception e) { } // Nothing much we can do
             arg.setHandled(false);
          }
       };

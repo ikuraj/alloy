@@ -60,7 +60,7 @@ public abstract class OurCheckbox extends JPanel {
    public static final Icon INH_ON = OurUtil.loadIcon("images/tcb04.gif");
 
    /** The underlying JCheckBox object. */
-   private final JCheckBox box;
+   private final JCheckBox jbox;
 
    /** The JLabel object for displaying a label next to the checkbox. */
    private final JLabel jlabel;
@@ -72,17 +72,17 @@ public abstract class OurCheckbox extends JPanel {
     */
    public OurCheckbox(String label, String tooltip, Icon icon) {
       setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
-      box = new JCheckBox(icon);
-      box.addActionListener(new ActionListener() {
+      jbox = new JCheckBox(icon);
+      jbox.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent e) {
             Icon icon = do_action();
-            if (icon != null && icon != box.getIcon()) box.setIcon(icon);
+            if (icon != null && icon != jbox.getIcon()) jbox.setIcon(icon);
          }
       });
-      box.setMaximumSize(box.getPreferredSize());
-      box.setToolTipText(tooltip);
+      jbox.setMaximumSize(jbox.getPreferredSize());
+      jbox.setToolTipText(tooltip);
       jlabel = OurUtil.label(label, tooltip);
-      if (icon==ON || icon==OFF) { add(box); add(jlabel); } else { add(jlabel); add(box); }
+      if (icon==ON || icon==OFF) { add(jbox); add(jlabel); } else { add(jlabel); add(jbox); }
       setAlignmentX(RIGHT_ALIGNMENT);
    }
 
@@ -91,14 +91,14 @@ public abstract class OurCheckbox extends JPanel {
 
    /** This method is called by Swing to enable/disable a component. */
    @Override public final void setEnabled(boolean enabled) {
-      if (box != null) box.setEnabled(enabled);
+      if (jbox != null) jbox.setEnabled(enabled);
       if (jlabel != null) jlabel.setEnabled(enabled);
    }
 
    /** This method is called by Swing to change its background color. */
    @Override public final void setBackground(Color color) {
       super.setBackground(color);
-      if (box != null) box.setBackground(color);
+      if (jbox != null) jbox.setBackground(color);
       if (jlabel != null) jlabel.setBackground(color);
    }
 }

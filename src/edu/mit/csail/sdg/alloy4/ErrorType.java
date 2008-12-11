@@ -22,7 +22,7 @@
 
 package edu.mit.csail.sdg.alloy4;
 
-/** Immutable; represents a type error that should be reported to the user. */
+/** Immutable; this represents a type error that should be reported to the user. */
 
 public final class ErrorType extends Err {
 
