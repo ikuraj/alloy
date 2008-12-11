@@ -49,6 +49,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
+import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.OurBorder;
 import edu.mit.csail.sdg.alloy4.OurCombobox;
@@ -188,14 +190,15 @@ public final class VizGraphPanel extends JPanel {
     * @param seeDot - true if we want to see the DOT source code, false if we want it rendered as a graph
     */
    public VizGraphPanel(VizState vizState, boolean seeDot) {
-      OurUtil.make(this, Color.BLACK, Color.WHITE, OurUtil.empty);
+      Border b = new EmptyBorder(0, 0, 0, 0);
+      OurUtil.make(this, Color.BLACK, Color.WHITE, b);
       this.seeDot = seeDot;
       this.vizState = vizState;
       setLayout(new GridLayout());
       setMaximumSize(new Dimension(Short.MAX_VALUE, Short.MAX_VALUE));
       navPanel = new JPanel();
       JScrollPane navscroll = OurUtil.scrollpane(navPanel);
-      graphPanel = OurUtil.make(new JPanel(), Color.BLACK, Color.WHITE, OurUtil.empty);
+      graphPanel = OurUtil.make(new JPanel(), Color.BLACK, Color.WHITE, b);
       graphPanel.addMouseListener(new MouseAdapter() {
          @Override public void mousePressed(MouseEvent ev) {
             // We let Ctrl+LeftClick bring up the popup menu, just like RightClick,

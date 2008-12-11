@@ -78,12 +78,12 @@ public final class OurBorder implements Border {
    /** This method is called by Swing to actually draw the borders. */
    public void paintBorder (Component component, Graphics graphics, int x, int y, int width, int height) {
       if (width<1 || height<1) return;
-      Color oldColor = graphics.getColor();
+      Color old = graphics.getColor();
       if (top   !=null) { graphics.setColor(top);    graphics.drawLine(x,         y,          x+width-1, y         ); }
       if (bottom!=null) { graphics.setColor(bottom); graphics.drawLine(x,         y+height-1, x+width-1, y+height-1); }
       if (left  !=null) { graphics.setColor(left);   graphics.drawLine(x,         y,          x,         y+height-1); }
       if (right !=null) { graphics.setColor(right);  graphics.drawLine(x+width-1, y,          x+width-1, y+height-1); }
-      graphics.setColor(oldColor);
+      graphics.setColor(old);
    }
 
    /** This method is called by Swing to find out whether this border object needs to fill in its own background. */

@@ -203,7 +203,7 @@ public final class VizGUI implements ComponentListener {
 
    /** Add a vertical divider to the toolbar. */
    private void addDivider() {
-      JPanel divider = OurUtil.makeBox(1, 40, Color.LIGHT_GRAY);
+      JPanel divider = OurUtil.makeH(new Dimension(1, 40), Color.LIGHT_GRAY);
       divider.setAlignmentY(0.5f);
       if (!Util.onMac()) toolbar.add(OurUtil.makeH(5,background)); else toolbar.add(OurUtil.makeH(5));
       toolbar.add(divider);
@@ -388,8 +388,9 @@ public final class VizGUI implements ComponentListener {
 
       // Create the toolbar
       projectionPopup = new JPopupMenu();
-      projectionButton = OurUtil.button("Projection: none", new ActionListener() {
-         public final void actionPerformed(ActionEvent e) {
+      projectionButton = new JButton("Projection: none");
+      projectionButton.addActionListener(new ActionListener() {
+         public void actionPerformed(ActionEvent e) {
             repopulateProjectionPopup();
             if (projectionPopup.getComponentCount()>0) projectionPopup.show(projectionButton, 10, 10);
          }

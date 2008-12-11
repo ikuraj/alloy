@@ -252,7 +252,6 @@ public final strictfp class OurPDFWriter {
       try {
          String space = "                    "; // reserve 20 bytes for the file size, which is far far more than enough
          final int fontID = 1, contentID = 2, pageID = 3, pagesID = 4, catalogID = 5;
-         final String fontType = "Type1", fontFamily = "Helvetica", fontEncoding = "WinAnsiEncoding";
          final long[] offset = new long[6];
          // Write %PDF-1.3, followed by a non-ASCII comment to force the PDF into binary mode
          out = new RandomAccessFile(filename, "rw");
@@ -262,7 +261,7 @@ public final strictfp class OurPDFWriter {
          long now = head.length;
          // Font
          offset[1] = now;
-         now += out(out, fontID + " 0 obj\n<<\n/Type /Font\n/Subtype /" + fontType + "\n/BaseFont /" + fontFamily + "\n/Encoding /" + fontEncoding + "\n>>\n" + "endobj\n\n");
+         now += out(out, fontID + " 0 obj\n<<\n/Type /Font\n/Subtype /Type1\n/BaseFont /Helvetica\n/Encoding /WinAnsiEncoding\n>>\n" + "endobj\n\n");
          // Content
          offset[2] = now;
          now += out(out, contentID + " 0 obj\n<< /Length " + space + (compressOrNot ? " /Filter /FlateDecode " : "") + ">>\n" + "stream\r\n");

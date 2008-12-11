@@ -219,7 +219,8 @@ public final class OurDialog {
    /** Display a simple non-modal window showing some text. */
    public static JFrame showtext(String title, String text) {
       JFrame window = new JFrame(title);
-      JButton done = OurUtil.button("Close", Runner.createDispose(window));
+      JButton done = new JButton("Close");
+      done.addActionListener(Runner.createDispose(window));
       JScrollPane scrollPane = OurUtil.scrollpane(OurUtil.textarea(text, 20, 60, false, false));
       window.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
       window.getContentPane().setLayout(new BorderLayout());

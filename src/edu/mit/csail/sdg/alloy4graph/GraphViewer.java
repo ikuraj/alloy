@@ -52,6 +52,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.JViewport;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import edu.mit.csail.sdg.alloy4.OurDialog;
@@ -59,7 +60,6 @@ import edu.mit.csail.sdg.alloy4.OurPDFWriter;
 import edu.mit.csail.sdg.alloy4.OurPNGWriter;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Util;
-import static edu.mit.csail.sdg.alloy4.OurUtil.empty;
 
 /** This class displays the graph.
  *
@@ -127,7 +127,7 @@ public final strictfp class GraphViewer extends JPanel {
 
     /** Construct a GraphViewer that displays the given graph. */
     public GraphViewer(final Graph graph) {
-        OurUtil.make(this, BLACK, WHITE, empty);
+        OurUtil.make(this, BLACK, WHITE, new EmptyBorder(0,0,0,0));
         setBorder(null);
         this.scale = graph.defaultScale;
         this.graph = graph;

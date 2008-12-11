@@ -138,7 +138,7 @@ public final class VizCustomizationPanel extends JPanel {
       else {
          // The following 2 lines make sure the panel doesn't get too small on Mac
          zoomPane.add(OurUtil.makeH(wcolor, new JLabel(" "), (Object)null));
-         zoomPane.add(OurUtil.makeBox(250, 200, wcolor, (Object)null));
+         zoomPane.add(OurUtil.makeH(new Dimension(250, 200), wcolor, (Object)null));
       }
       Dimension dim = zoomPane.getPreferredSize();
       if (divider!=null && divider.getDividerLocation()<dim.width) divider.setDividerLocation(dim.width);
@@ -471,7 +471,7 @@ public final class VizCustomizationPanel extends JPanel {
       JPanel constraint = vizState.constraint .pick(rel, "Influence layout",  "Whether this edge influences the graph layout");
       JPanel panel1 = OurUtil.makeVR(wcolor, visible, attr, constraint);
       JPanel panel2 = OurUtil.makeVR(wcolor, back, merge);
-      parent.add(makelabel(rel.toString()));
+      parent.add(makelabel("<html>&nbsp;" + Util.encode(rel.toString()) + "</html>"));
       parent.add(OurUtil.makeH(10, labelText, wcolor, 5, color, 5, style, 3, weightPanel, 2, null));
       parent.add(OurUtil.makeHT(wcolor, 10, panel1, 15, panel2, 2, null));
    }
@@ -514,7 +514,7 @@ public final class VizCustomizationPanel extends JPanel {
          public Icon do_action() { boolean x = vizState.hideMeta();  vizState.hideMeta(!x); remakeAll(); return (!x ? ON : OFF); }
       };
       parent.add(makelabel(" General Graph Settings:"));
-      parent.add(OurUtil.makeBox(6,6,wcolor));
+      parent.add(OurUtil.makeH(wcolor, new Dimension(6, 6)));
       parent.add(OurUtil.makeH(wcolor, 25, nLabel, 5, nodepal, 8, aLabel, 5, name, 2, null));
       parent.add(OurUtil.makeH(wcolor, 25, eLabel, 5, edgepal, 8, fLabel, 5, fontSize, 2, null));
       parent.add(OurUtil.makeH(wcolor, 25, pLabel, 5, priv,    2, null));

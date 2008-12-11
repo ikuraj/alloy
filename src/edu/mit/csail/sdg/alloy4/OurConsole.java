@@ -29,8 +29,8 @@ import java.awt.Font;
 import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
+import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
@@ -170,12 +170,11 @@ public final class OurConsole extends JScrollPane {
          x.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, Event.SHIFT_MASK), "alloy_cut");
       }
       // configure so that, upon receiving focus, we automatically focus and scroll to the sub-JTextPane
-      FocusListener focus = new FocusListener() {
+      FocusAdapter focus = new FocusAdapter() {
          public void focusGained(FocusEvent e) {
             sub.requestFocusInWindow();
             sub.scrollRectToVisible(new Rectangle(0, sub.getY(), 1, sub.getHeight()));
          }
-         public void focusLost(FocusEvent e) { }
       };
       addFocusListener(focus);
       sub.addFocusListener(focus);

@@ -40,6 +40,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 
 /** This class asks the user for permission to email a bug report when an uncaught exception occurs. */
@@ -229,7 +230,7 @@ public final class MailBug implements UncaughtExceptionHandler, Runnable {
       }
       final String yes = "Send the Bug Report", no = "Don't Send the Bug Report";
       final JTextField email = OurUtil.textfield("", 20, new LineBorder(Color.DARK_GRAY));
-      final JTextArea problem = OurUtil.textarea("", 50, 50, true, false, OurUtil.empty);
+      final JTextArea problem = OurUtil.textarea("", 50, 50, true, false, new EmptyBorder(0,0,0,0));
       final JScrollPane scroll = OurUtil.scrollpane(problem, new LineBorder(Color.DARK_GRAY), new Dimension(300, 200));
       for(Throwable ex2=ex; ex2!=null; ex2=ex2.getCause()) {
          if (ex2 instanceof StackOverflowError) {

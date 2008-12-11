@@ -103,13 +103,13 @@ public final class AlloyRelation extends AlloyElement {
 
    /** This value is used to display this type in the Visualizer's customization screen. */
    @Override public String toString() {
-      String answer="<html>";
-      boolean first=true;
+      String answer = "";
+      boolean first = true;
       for(AlloyType type: getTypes()) {
-         if (first) {first=false; answer=answer+getName()+" :  ";} else answer=answer+" -&gt; ";
+         if (first) {first=false; answer=answer+getName()+" :  ";} else answer=answer+" -> ";
          answer=answer+type.getName();
       }
-      return answer+"</html>";
+      return answer;
    }
 
    /** Two relations are equal if they have the same name, and the same list of types. */

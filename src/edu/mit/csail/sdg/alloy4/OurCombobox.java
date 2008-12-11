@@ -46,7 +46,7 @@ public class OurCombobox extends JComboBox {
    private static final long serialVersionUID = 0;
 
    /** This caches a preconstructed JLabel that is used for the rendering of each Combo value. */
-   private static JLabel renderer;
+   private static JLabel show;
 
    /** Subclass can override this method to provide the custom text for any given value (or "" if no text is needed) */
    public String do_getText(Object value) { return String.valueOf(value); }
@@ -82,12 +82,12 @@ public class OurCombobox extends JComboBox {
       setFont(OurUtil.getVizFont());
       setRenderer(new ListCellRenderer() {
          public Component getListCellRendererComponent(JList list, Object value, int i, boolean selected, boolean focused) {
-            if (renderer == null) renderer = OurUtil.label("", Color.BLACK, Color.WHITE, new EmptyBorder(0, 2, 0, 0));
-            renderer.setText(do_getText(value));
-            renderer.setIcon(do_getIcon(value));
-            renderer.setBackground(selected ? list.getSelectionBackground() : list.getBackground());
-            renderer.setForeground(selected ? list.getSelectionForeground() : list.getForeground());
-            return renderer;
+            if (show == null) show = OurUtil.label("", Color.BLACK, Color.WHITE, new EmptyBorder(0, 2, 0, 0));
+            show.setText(do_getText(value));
+            show.setIcon(do_getIcon(value));
+            show.setBackground(selected ? list.getSelectionBackground() : list.getBackground());
+            show.setForeground(selected ? list.getSelectionForeground() : list.getForeground());
+            return show;
          }
       });
       if (width>0 && height>0) { // Make some platform-specific adjustments which should make the combobox look nicer
@@ -96,9 +96,7 @@ public class OurCombobox extends JComboBox {
          setMaximumSize(new Dimension(width, height));
          if (!Util.onWindows() && !Util.onMac()) setBorder(new EmptyBorder(4, 3, 4, 0));
       }
-      if (initialValue!=null) {
-         setSelectedItem(initialValue);
-      }
+      if (initialValue!=null) { setSelectedItem(initialValue); }
       addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent e) { do_changed(getSelectedItem()); }
       });

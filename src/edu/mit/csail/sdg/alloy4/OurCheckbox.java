@@ -68,7 +68,7 @@ public abstract class OurCheckbox extends JPanel {
    /** Constructs a OurCheckbox object.
     * @param label - the label to display next to the checkbox
     * @param tooltip - the tool tip to show when the mouse hovers over this checkbox
-    * @param icon - the initial icon to display
+    * @param icon - the initial icon to display (should be one of ON/OFF/ALL_ON/ALL_OFF/INH_ON/INH_OFF)
     */
    public OurCheckbox(String label, String tooltip, Icon icon) {
       setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
