@@ -386,30 +386,40 @@ public final strictfp class GraphViewer extends JPanel {
     }
 
     /** Export the current drawing as a PDF file with the given image resolution. */
-    public void alloySaveAsPDF(String filename, int dpi) throws IOException, OutOfMemoryError {
-       double xwidth = dpi*8+(dpi/2); // Width is up to 8.5 inch
-       double xheight = dpi*11;       // Height is up to 11 inch
-       double scale1 = (xwidth-dpi)  / graph.getTotalWidth();  // We leave 0.5 inch on the left and right
-       double scale2 = (xheight-dpi) / graph.getTotalHeight(); // We leave 0.5 inch on the left and right
-       if (scale1<scale2) scale2=scale1; // Choose the scale such that the image does not exceed the page in either direction
-       OurPDFWriter x = new OurPDFWriter(dpi, scale2);
-       graph.draw(new Artist(x), scale2, null, false);
-       x.close(filename, true);
+    public void alloySaveAsPDF(String filename, int dpi) throws IOException {
+       try {
+          double xwidth = dpi*8L+(dpi/2L); // Width is up to 8.5 inch
+          double xheight = dpi*11L;        // Height is up to 11 inch
+          double scale1 = (xwidth-dpi)  / graph.getTotalWidth();  // We leave 0.5 inch on the left and right
+          double scale2 = (xheight-dpi) / graph.getTotalHeight(); // We leave 0.5 inch on the left and right
+          if (scale1<scale2) scale2=scale1; // Choose the scale such that the image does not exceed the page in either direction
+          OurPDFWriter x = new OurPDFWriter(dpi, scale2);
+          graph.draw(new Artist(x), scale2, null, false);
+          x.close(filename, true);
+       } catch(Throwable ex) {
+          if (ex instanceof IOException) throw (IOException)ex;
+          throw new IOException("Failure writing PDF to the file " + filename + " (" + ex + ")");
+       }
     }
 
     /** Export the current drawing as a PNG file with the given file name and image resolution. */
-    public void alloySaveAsPNG(String filename, double scale, double dpiX, double dpiY) throws IOException, OutOfMemoryError {
-       int width = (int) (graph.getTotalWidth()*scale);   if (width<10) width=10;
-       int height = (int) (graph.getTotalHeight()*scale); if (height<10) height=10;
-       BufferedImage bf = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-       Graphics2D gr = (Graphics2D) (bf.getGraphics());
-       gr.setColor(WHITE);
-       gr.fillRect(0, 0, width, height);
-       gr.setColor(BLACK);
-       gr.scale(scale,scale);
-       gr.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-       graph.draw(new Artist(gr), scale, null, false);
-       OurPNGWriter.writePNG(bf, filename, dpiX, dpiY);
+    public void alloySaveAsPNG(String filename, double scale, double dpiX, double dpiY) throws IOException {
+       try {
+          int width = (int) (graph.getTotalWidth()*scale);   if (width<10) width=10;
+          int height = (int) (graph.getTotalHeight()*scale); if (height<10) height=10;
+          BufferedImage bf = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+          Graphics2D gr = (Graphics2D) (bf.getGraphics());
+          gr.setColor(WHITE);
+          gr.fillRect(0, 0, width, height);
+          gr.setColor(BLACK);
+          gr.scale(scale,scale);
+          gr.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+          graph.draw(new Artist(gr), scale, null, false);
+          OurPNGWriter.writePNG(bf, filename, dpiX, dpiY);
+       } catch(Throwable ex) {
+          if (ex instanceof IOException) throw (IOException)ex;
+          throw new IOException("Failure writing PNG to the file " + filename + " (" + ex + ")");
+       }
     }
 
     /** Show the popup menu at location (x,y) */
