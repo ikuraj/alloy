@@ -26,7 +26,7 @@ package edu.mit.csail.sdg.alloy4;
 
 public interface Computer {
 
-   /** This method takes an input and produces a String output.
+   /** This method takes an Object input and produces a String output.
     * @throws Exception if an error occurred during the computation.
     */
    public String compute (Object input) throws Exception;

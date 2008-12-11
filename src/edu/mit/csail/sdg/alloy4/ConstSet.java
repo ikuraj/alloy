@@ -30,7 +30,7 @@ import java.util.LinkedHashSet;
 import java.util.Iterator;
 import java.io.Serializable;
 
-/** This implements an unmodifiable set (where comparison is based on hashCode() and equals()); null values are allowed.
+/** Immutable; this implements an unmodifiable set (where comparison is based on hashCode() and equals()); null values are allowed.
  *
  * @param <K> - the type of element
  */

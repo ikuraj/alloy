@@ -377,24 +377,24 @@ public final strictfp class GraphViewer extends JPanel {
              alloySaveAsPNG(filename.getAbsolutePath(), myScale, dpi, dpi);
           synchronized(GraphViewer.class) { oldDPI=dpi; }
           Util.setCurrentDirectory(filename.getParentFile());
-       } catch(IOException ex) {
-          OurDialog.alert(me, "An error has occured in writing the output file:\n"+ex, "Error");
        } catch(OutOfMemoryError ex) {
           System.gc();
           OurDialog.alert(me, "Insufficient memory to export a file of that size; please reduce the DPI and try again.", "Error");
+       } catch(Exception ex) {
+          OurDialog.alert(me, "An error has occured in writing the output file:\n" + ex, "Error");
        }
     }
 
     /** Export the current drawing as a PDF file with the given image resolution. */
-    public void alloySaveAsPDF(String filename, int dpi) throws IOException {
+    public void alloySaveAsPDF(String filename, int dpi) throws IOException, OutOfMemoryError {
        double xwidth = dpi*8+(dpi/2); // Width is up to 8.5 inch
        double xheight = dpi*11;       // Height is up to 11 inch
        double scale1 = (xwidth-dpi)  / graph.getTotalWidth();  // We leave 0.5 inch on the left and right
        double scale2 = (xheight-dpi) / graph.getTotalHeight(); // We leave 0.5 inch on the left and right
        if (scale1<scale2) scale2=scale1; // Choose the scale such that the image does not exceed the page in either direction
-       OurPDFWriter x = new OurPDFWriter(filename, dpi, scale2);
+       OurPDFWriter x = new OurPDFWriter(dpi, scale2);
        graph.draw(new Artist(x), scale2, null, false);
-       x.close();
+       x.close(filename);
     }
 
     /** Export the current drawing as a PNG file with the given file name and image resolution. */

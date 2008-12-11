@@ -124,10 +124,10 @@ public final class OurConsole extends JScrollPane {
       }
       do_add(-1, "\n", plain); // we must add a linebreak to ensure that subsequent text belong to a "different paragraph"
       // insert the divider and the sub JTextPane
-      final StyledDocument doc = main.getStyledDocument();
-      final JPanel divider = new JPanel(); divider.setBackground(Color.LIGHT_GRAY); divider.setPreferredSize(new Dimension(1,1));
-      final Style dividerStyle = doc.addStyle("divider", null); StyleConstants.setComponent(dividerStyle, divider);
-      final Style inputStyle   = doc.addStyle("input",   null); StyleConstants.setComponent(inputStyle, sub);
+      StyledDocument doc = main.getStyledDocument();
+      JPanel divider = new JPanel(); divider.setBackground(Color.LIGHT_GRAY); divider.setPreferredSize(new Dimension(1,1));
+      Style dividerStyle = doc.addStyle("divider", null); StyleConstants.setComponent(dividerStyle, divider);
+      Style inputStyle   = doc.addStyle("input",   null); StyleConstants.setComponent(inputStyle, sub);
       len = doc.getLength();
       do_add(-1, " \n", dividerStyle); // The space character won't be displayed; it will instead be drawn as a divider
       do_add(-1, " \n", inputStyle);   // The space character won't be displayed; it will instead display the input buffer
@@ -146,15 +146,15 @@ public final class OurConsole extends JScrollPane {
       });
       // now, create the paste/copy/cut actions
       AbstractAction alloy_paste = new AbstractAction("alloy_paste") {
-         private static final long serialVersionUID = 0;
+         static final long serialVersionUID = 0;
          public void actionPerformed(ActionEvent ev) { sub.paste(); }
       };
       AbstractAction alloy_copy = new AbstractAction("alloy_copy") {
-         private static final long serialVersionUID = 0;
+         static final long serialVersionUID = 0;
          public void actionPerformed(ActionEvent ev) { if (sub.getSelectionStart()!=sub.getSelectionEnd()) sub.copy(); else main.copy(); }
       };
       AbstractAction alloy_cut = new AbstractAction("alloy_cut") {
-         private static final long serialVersionUID = 0;
+         static final long serialVersionUID = 0;
          public void actionPerformed(ActionEvent ev) { if (sub.getSelectionStart()!=sub.getSelectionEnd()) sub.cut(); else main.copy(); }
       };
       // create the keyboard associations: ctrl-{c,v,x,insert} and shift-{insert,delete}

@@ -36,11 +36,11 @@ public final strictfp class OurPNGWriter {
    private OurPNGWriter () { }
 
    /** Writes the image as a PNG file with the given horizontal and vertical dots-per-inch. */
-   public static void writePNG (BufferedImage image, String filename, double dpiX, double dpiY) throws IOException {
+   public static void writePNG (BufferedImage image, String filename, double dpiX, double dpiY) throws IOException, OutOfMemoryError {
       try {
          ImageIO.write(image, "PNG", new File(filename)); // some versions of Java sometimes throws an exception during saving...
          setDPI(filename, dpiX, dpiY);
-      } catch(Throwable ex) {
+      } catch(Exception ex) {
          throw new IOException("Error writing the PNG file to " + filename);
       }
    }
@@ -100,15 +100,15 @@ public final strictfp class OurPNGWriter {
 
    /** Write a "pHYs" chunk into the given file with the given horizontal and vertical dots-per-inch. */
    private static void writeDPI (RandomAccessFile file, double dpiX, double dpiY) throws IOException {
-      int x = (int) (dpiX/0.0254d), y = (int) (dpiY/0.0254d); // Translate dots-per-inch into dots-per-meter
+      int x = (int) (dpiX/0.0254), y = (int) (dpiY/0.0254); // Translate dots-per-inch into dots-per-meter
       writeChunk(file, new int[] {'p', 'H', 'Y', 's', x>>>24, x>>>16, x>>>8, x, y>>>24, y>>>16, y>>>8, y, 1});
    }
 
    /** Write the given chunk into the given file;  Note: data.length must be at least 4. */
    private static void writeChunk (RandomAccessFile file, int[] data) throws IOException {
-      int crc = (-1), len = data.length-4;
+      int crc = (-1), len = data.length - 4;
       file.write((len>>>24)&255); file.write((len>>>16)&255); file.write((len>>>8)&255); file.write(len&255);
-      for(int i=0; i<data.length; i++) { int x=data[i]; crc=table[(crc ^ x) & 255] ^ (crc >>> 8); file.write(x & 255); }
+      for(int i=0; i<data.length; i++) { int x = data[i]; crc = table[(crc ^ x) & 255] ^ (crc >>> 8); file.write(x & 255); }
       crc = crc ^ (-1);
       file.write((crc>>>24)&255); file.write((crc>>>16)&255); file.write((crc>>>8)&255); file.write(crc&255);
    }

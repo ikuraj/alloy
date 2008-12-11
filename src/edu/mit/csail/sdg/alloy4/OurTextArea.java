@@ -79,7 +79,7 @@ public final class OurTextArea extends JTextPane {
    /** Constructs an antialias-capable JLabel */
    public static JLabel label(String label) {
       JLabel ans = new JLabel(label) {
-         private static final long serialVersionUID = 1L;
+         static final long serialVersionUID = 0;
          @Override public void paint(Graphics gr) {
             if (antiAlias && gr instanceof Graphics2D) ((Graphics2D)gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             super.paint(gr);
@@ -92,7 +92,7 @@ public final class OurTextArea extends JTextPane {
    /** Constructs an antialias-capable JTextPane */
    public static JTextPane pane() {
       JTextPane ans = new JTextPane() {
-         private static final long serialVersionUID = 1L;
+         static final long serialVersionUID = 0;
          @Override public void paint(Graphics gr) {
             if (antiAlias && gr instanceof Graphics2D) ((Graphics2D)gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             super.paint(gr);
@@ -110,7 +110,7 @@ public final class OurTextArea extends JTextPane {
       // Also, it tells the JTextPane to use our syntax-highlighting document object.
       final ViewFactory defaultFactory = (new StyledEditorKit()).getViewFactory();
       setEditorKit(new StyledEditorKit() {
-         private static final long serialVersionUID = 1L;
+         static final long serialVersionUID = 0;
          @Override public Document createDefaultDocument() { return new OurTextAreaDocument(); }
          @Override public final ViewFactory getViewFactory() {
             return new ViewFactory() {
@@ -133,15 +133,15 @@ public final class OurTextArea extends JTextPane {
       setBackground(Color.WHITE);
       setBorder(new EmptyBorder(1, 1, 1, 1));
       getActionMap().put("alloy_copy", new AbstractAction("alloy_copy") {
-         private static final long serialVersionUID = 1L;
+         static final long serialVersionUID = 0;
          public final void actionPerformed(ActionEvent e) { copy(); }
       });
       getActionMap().put("alloy_cut", new AbstractAction("alloy_cut") {
-         private static final long serialVersionUID = 1L;
+         static final long serialVersionUID = 0;
          public final void actionPerformed(ActionEvent e) { cut(); }
       });
       getActionMap().put("alloy_paste", new AbstractAction("alloy_paste") {
-         private static final long serialVersionUID = 1L;
+         static final long serialVersionUID = 0;
          public final void actionPerformed(ActionEvent e) { paste(); }
       });
       getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_MASK), "alloy_copy");

@@ -28,14 +28,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.ArrayList;
 
-/** This implements an unmodifiable list (where comparison is based on equals()); null values are allowed.
+/** Immutable; this implements an unmodifiable list (where comparison is based on equals()); null values are allowed.
  *
  * @param <T> - the type of element
  */
 
 public final class ConstList<T> extends AbstractList<T> implements Serializable {
 
-   /** This implements a modifiable list that can be used to construct a ConstList; null values are allowed.
+   /** Mutable; this implements a modifiable list that can be used to construct a ConstList; null values are allowed.
     *
     * @param <T> - the type of element
     */

@@ -73,7 +73,7 @@ public final class OurDialog {
     */
    public static char askSaveDiscardCancel(Frame parentFrame, String description) {
       int ans = JOptionPane.showOptionDialog(parentFrame,
-         new String[] {description+" has not been saved. Do you want to", "cancel the operation, close the file without saving, or save it and close?"},
+         new String[] {description + " has not been saved. Do you want to", "cancel the operation, close the file without saving, or save it and close?"},
          "Warning",
          JOptionPane.YES_NO_CANCEL_OPTION,
          JOptionPane.WARNING_MESSAGE,
@@ -90,7 +90,7 @@ public final class OurDialog {
     */
    public static boolean askOverwrite(Frame parentFrame, String filename) {
       int ans=JOptionPane.showOptionDialog(parentFrame,
-         new String[] {"The file \""+filename+"\"", "already exists. Do you wish to overwrite it?"},
+         new String[] {"The file \"" + filename + "\"", "already exists. Do you wish to overwrite it?"},
          "Warning: file already exists",
          JOptionPane.YES_NO_OPTION,
          JOptionPane.WARNING_MESSAGE,
@@ -106,17 +106,15 @@ public final class OurDialog {
 
    /** Returns true if a font with that name exists on the system. */
    public static boolean hasFont(String fontname) {
-      String[] f = allFonts;
-      if (f == null) allFonts = (f = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames());
-      for(int i=0; i<f.length; i++) if (fontname.compareToIgnoreCase(f[i])==0) return true;
+      if (allFonts == null) allFonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+      for(int i = 0; i < allFonts.length; i++) if (fontname.compareToIgnoreCase(allFonts[i]) == 0) return true;
       return false;
    }
 
    /** Asks the user to choose a font; returns "" if the user cancels the request. */
    public static String askFont(Frame parentFrame) {
-      String[] f = allFonts;
-      if (f==null) allFonts = (f = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames());
-      JComboBox jcombo = new OurCombobox(f);
+      if (allFonts == null) allFonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+      JComboBox jcombo = new OurCombobox(allFonts);
       int ans = JOptionPane.showOptionDialog(
          parentFrame,
          new Object[] {"Please choose the new font:", jcombo},
@@ -128,7 +126,7 @@ public final class OurDialog {
          "Cancel"
       );
       Object value = jcombo.getSelectedItem();
-      if (ans!=JOptionPane.YES_OPTION || !(value instanceof String)) return ""; else return (String)value;
+      if (ans != JOptionPane.YES_OPTION || !(value instanceof String)) return ""; else return (String)value;
    }
 
    /** True if we should use AWT (instead of Swing) to display the OPEN and SAVE dialog. */
@@ -156,7 +154,7 @@ public final class OurDialog {
             public boolean accept(File dir, String name) { return name.toLowerCase(Locale.US).endsWith(ext); }
          });
          open.setVisible(true); // This method blocks until the user either chooses something or cancels the dialog.
-         if (open.getFile()==null) return null;
+         if (open.getFile() == null) return null;
          ans = open.getDirectory() + File.separatorChar + open.getFile();
       } else {
          try {
@@ -164,10 +162,10 @@ public final class OurDialog {
             open.setDialogTitle(isOpen ? "Open..." : "Save...");
             open.setApproveButtonText(isOpen ? "Open" : "Save");
             if (ext.length()>0) open.setFileFilter(new FileFilter() {
-               public boolean accept(File f) { return !f.isFile() || f.getPath().toLowerCase(Locale.US).endsWith(ext); }
+               public boolean accept(File file) { return !file.isFile() || file.getPath().toLowerCase(Locale.US).endsWith(ext); }
                public String getDescription() { return description; }
             });
-            if (open.showOpenDialog(parentFrame)!=JFileChooser.APPROVE_OPTION || open.getSelectedFile()==null) return null;
+            if (open.showOpenDialog(parentFrame) != JFileChooser.APPROVE_OPTION || open.getSelectedFile() == null) return null;
             ans = open.getSelectedFile().getPath();
          } catch(Exception ex) {
             // Some combination of Windows version and JDK version will trigger this failure.
@@ -184,15 +182,14 @@ public final class OurDialog {
       return new File(Util.canon(ans));
    }
 
-   /** Display "msg" in a dialogbox, and ask the user to choose yes versus no (default==no). */
+   /** Display "msg" in a modal dialog window, and ask the user to choose "yes" versus "no" (default is "no"). */
    public static boolean yesno(Frame parentFrame, String msg, String yes, String no) {
       return JOptionPane.YES_OPTION == JOptionPane.showOptionDialog(
-         parentFrame, msg, "Question", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
-         null, new Object[]{yes, no}, no
+         parentFrame, msg, "Question", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new Object[]{yes, no}, no
       );
    }
 
-   /** Display "msg" in a dialogbox, and ask the user to choose "Yes" versus "No" (default==no). */
+   /** Display "msg" in a modal dialog window, and ask the user to choose "Yes" versus "No" (default is "no"). */
    public static boolean yesno(Frame parentFrame, String msg) {
       return yesno(parentFrame, msg, "Yes", "No");
    }
@@ -201,15 +198,10 @@ public final class OurDialog {
    public static boolean getInput(Frame parentFrame, String title, Object... objects) {
       // If there is a JTextField or a JTextArea here, then let the first JTextField or JTextArea be the initially focused widget
       Object main = "Ok";
-      for(Object obj: objects) if (obj instanceof JTextField || obj instanceof JTextArea) { main=obj; break; }
+      for(Object obj: objects) if (obj instanceof JTextField || obj instanceof JTextArea) { main = obj; break; }
       // Construct the dialog panel
       final JOptionPane pane = new JOptionPane(
-         objects,
-         JOptionPane.QUESTION_MESSAGE,
-         JOptionPane.YES_NO_OPTION,
-         null,
-         new Object[]{"Ok", "Cancel"},
-         main
+         objects, JOptionPane.QUESTION_MESSAGE, JOptionPane.YES_NO_OPTION, null, new Object[]{"Ok", "Cancel"}, main
       );
       final JDialog dialog = pane.createDialog(parentFrame, title);
       // For each JTextField and JCheckBox, add a KeyListener that detects VK_ENTER and treat it as if the user clicked OK
@@ -224,10 +216,10 @@ public final class OurDialog {
       return pane.getValue() == "Ok";
    }
 
-   /** Display a simple window showing some text. */
+   /** Display a simple non-modal window showing some text. */
    public static JFrame showtext(String title, String text) {
-      final JFrame window = new JFrame(title);
-      final JButton done = OurUtil.button("Close", Runner.createDispose(window));
+      JFrame window = new JFrame(title);
+      JButton done = OurUtil.button("Close", Runner.createDispose(window));
       JScrollPane scrollPane = OurUtil.scrollpane(OurUtil.textarea(text, 20, 60, false, false));
       window.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
       window.getContentPane().setLayout(new BorderLayout());

@@ -158,7 +158,7 @@ public final class OurTabbedEditor extends JPanel {
    //=====================================================================//
 
    /** This silences javac's warning about missing serialVersionUID. */
-   private static final long serialVersionUID = 1L;
+   private static final long serialVersionUID = 0;
 
    /** Background color for the list of tabs. */
    private static final Color GRAY = new Color(0.9f, 0.9f, 0.9f);
@@ -512,11 +512,11 @@ public final class OurTabbedEditor extends JPanel {
       // Make the JTextArea
       final OurTextArea text = new OurTextArea(syntaxHighlighting, Util.convertLineBreak(fileContent), fontFamily, fontSize, tabSize);
       text.getActionMap().put("alloy_next", new AbstractAction("alloy_next") {
-         private static final long serialVersionUID = 1L;
+         static final long serialVersionUID = 0;
          public final void actionPerformed(ActionEvent e) { do_next(); }
       });
       text.getActionMap().put("alloy_prev", new AbstractAction("alloy_prev") {
-         private static final long serialVersionUID = 1L;
+         static final long serialVersionUID = 0;
          public final void actionPerformed(ActionEvent e) { do_prev(); }
       });
       text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_UP,   InputEvent.CTRL_MASK), "alloy_prev");

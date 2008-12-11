@@ -28,59 +28,16 @@ import java.awt.Shape;
 import java.awt.geom.Line2D;
 import java.awt.geom.PathIterator;
 import java.awt.geom.QuadCurve2D;
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.RandomAccessFile;
 
 /** Graphical convenience methods for producing PDF files.
  *
- * <p> This implementation explicitly generates a very simple 8.5 inch by 11 inch one-page PDF
- * which consists of a single stream of graphical operations.
- * Hopefully this class will no longer be needed in the future,
- * once Java comes with better PDF support.
+ * <p> This implementation explicitly generates a very simple 8.5 inch by 11 inch one-page PDF consisting of graphical operations.
+ * Hopefully this class will no longer be needed in the future once Java comes with better PDF support.
  */
 
 public final strictfp class OurPDFWriter {
-
-   /** Nonnull if a file is currently open for us to write into. */
-   private OutputStream out;
-
-   /** Nonnull if an IOException has occurred. */
-   private IOException err = null;
-
-   /** This maps each PDF Object ID to its exact offset in the file. */
-   private final long[] offset = new long[7];
-
-   /** This is the ID of the "Font" PDF Object. */
-   private static final int fontID = 1;
-
-   /** This is the ID of the "Content" PDF Object. */
-   private static final int contentID = 2;
-
-   /** This is the ID of the "ContentSize" PDF Object. */
-   private static final int contentSizeID = 3;
-
-   /** This is the ID of the "Page" PDF Object. */
-   private static final int pageID = 4;
-
-   /** This is the ID of the "Pages" PDF Object. */
-   private static final int pagesID = 5;
-
-   /** This is the ID of the "Catalog" PDF Object. */
-   private static final int catalogID = 6;
-
-   /** The default font type. */
-   private static final String fontType = "Type1";
-
-   /** The default font family. */
-   private static final String fontFamily = "Helvetica";
-
-   /** The default font encoding. */
-   private static final String fontEncoding = "WinAnsiEncoding";
-
-   /** This stores the exact offset of the start of the content stream. */
-   private final long startOfContent;
 
    /** The page width (in terms of dots). */
    private final long width;
@@ -88,191 +45,130 @@ public final strictfp class OurPDFWriter {
    /** The page height (in terms of dots). */
    private final long height;
 
-   /** The number of bytes written into the file thus far. */
-   private long now = 0;
+   /** Latest color (-1 if none has been explicitly set so far) */
+   private int color = -1;
 
-   /** Write the PDF header into the file, then begins a Contents stream; (if the file already exists, it will be overwritten).
+   /** Latest line style (0=normal, 1=bold, 2=dotted, 3=dashed) */
+   private int line = 0;
+
+   /** The buffer that will store the list of graphical operations issued so far. */
+   private final ByteBuffer buf = new ByteBuffer();
+
+   /** Begin a blank PDF file with the given dots-per-inch and the given scale.
     * @throws IllegalArgumentException if dpi is less than 50 or is greater than 3000
-    * @throws IOException if an error occurred in opening or writing to the file
     */
-   public OurPDFWriter(String filename, int dpi, double scale) throws IOException {
-      boolean ok = false;
+   public OurPDFWriter(int dpi, double scale) {
       if (dpi<50 || dpi>3000) throw new IllegalArgumentException("The DPI must be between 50 and 3000");
       width = dpi*8 + (dpi/2); // "8.5 inches"
       height = dpi*11;         // "11 inches"
-      try {
-         // Write %PDF-1.3, followed by a non-ASCII comment to force the PDF into binary mode
-         out = new BufferedOutputStream(new FileOutputStream(filename));
-         out.write(new byte[]{'%', 'P', 'D', 'F', '-', '1', '.', '3', 10, '%', -127, 10, 10});
-         now = 13;
-         // Write out the default font choices
-         offset[fontID] = now;
-         write(fontID + " 0 obj\n<<\n/Type /Font\n/Subtype /" + fontType + "\n/BaseFont /" + fontFamily + "\n/Encoding /" + fontEncoding + "\n>>\n" + "endobj\n\n");
-         // Opens the CONTENT object
-         offset[contentID] = now;
-         write(contentID + " 0 obj\n<< /Length " + contentSizeID + " 0 R>>\n" + "stream\n");
-         startOfContent = now;
-         // Write the default settings, and add a default transformation that flips (0,0) into the top-left corner of the page, then scale the page
-         write("q\n" + "1 J\n" + "1 j\n" + "[] 0 d\n" + "1 w\n" + "1 0 0 -1 0 ").writes(height).write("cm\n");
-         writes(scale).write("0 0 ").writes(scale).writes(dpi/2d).writes(dpi/2d).write("cm\n");
-         ok = true;
-      } finally {
-         if (!ok) Util.close(out); // open files are a scarce resource, so try to close it at all cost
-      }
+      // Write the default settings, and add a default transformation that flips (0, 0) into the top-left corner of the page, then scale the page
+      buf.write("q\n" + "1 J\n" + "1 j\n" + "[] 0 d\n" + "1 w\n" + "1 0 0 -1 0 ").write(height).write("cm\n");
+      buf.write(scale).write("0 0 ").write(scale).write(dpi/2.0).write(dpi/2.0).write("cm\n");
    }
 
-   /** Writes the String into the current Contents stream object, then return the OurPDFWriter object itself as the return value.
-    * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
-    */
-   private OurPDFWriter write(String string) {
-      if (err==null && out!=null) {
-         try { byte[] data = string.getBytes("UTF-8"); now += data.length; out.write(data); } catch(IOException ex) { err = ex; }
-      }
-      return this;
-   }
-
-   /** Writes the number into the current Contents stream object, write a space character, then return the OurPDFWriter object itself as the return value.
-    * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
-    */
-   private OurPDFWriter writes(long x)  { return write(Long.toString(x)).write(" "); }
-
-   /** Writes the number into the current Contents stream object, write a space character, then return the OurPDFWriter object itself as the return value.
-    * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
-    */
-   private OurPDFWriter writes(double x) {
-      // These extreme values shouldn't happen, but we want to protect against them
-      x = x * 1000000;
-      if (Double.isNaN(x))             return write("0 ");
-      if (x==Double.POSITIVE_INFINITY) return write("32767 ");  // this is the maximum requirement stated in PDF Spec 1.3
-      if (x==Double.NEGATIVE_INFINITY) return write("-32767 "); // this is the minimum requirement stated in PDF Spec 1.3
-      // Now, regular doubles... we only want up to 6 digits after the decimal point
-      long num = (long)x;
-      if (num>32767000000L) return write("32767 "); else if (num<(-32767000000L)) return write("-32767 ");
-      String sign = "";
-      String str = Long.toString(num);
-      if (str.charAt(0)=='-') { str = str.substring(1); sign = "-"; }
-      while(str.length()<6) str = "0" + str;
-      return write(sign).write(str.substring(0, str.length()-6)).write(".").write(str.substring(str.length()-6)).write(" ");
-   }
-
-   /** Changes the color for subsequent graphical drawing.
-    * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
-    */
+   /** Changes the color for subsequent graphical drawing. */
    public OurPDFWriter setColor(Color color) {
-      int rgb = color.getRGB(), r = (rgb>>16)&0xFF, g = (rgb>>8)&0xFF, b = (rgb&0xFF);
-      writes(r/255d).writes(g/255d).writes(b/255d).write("RG\n");
-      writes(r/255d).writes(g/255d).writes(b/255d).write("rg\n");
+      int rgb = color.getRGB() & 0xFFFFFF, r = (rgb>>16)&0xFF, g = (rgb>>8)&0xFF, b = (rgb&0xFF);
+      if (this.color == rgb) return this; // no need to change
+      buf.write(r/255.0).write(g/255.0).write(b/255.0).write("RG\n");
+      buf.write(r/255.0).write(g/255.0).write(b/255.0).write("rg\n");
+      this.color = rgb;
       return this;
    }
 
-   /** Changes the line style to be bold.
-    * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
-    */
-   public OurPDFWriter setBoldLine()  { return write("2 w [] 0 d\n"); }
+   /** Changes the line style to be normal. */
+   public OurPDFWriter setNormalLine()  { if (line!=0) buf.write("1 w [] 0 d\n"); line=0; return this; }
 
-   /** Changes the line style to be dotted.
-    * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
-    */
-   public OurPDFWriter setDottedLine()  { return write("1 w [1 3] 0 d\n"); }
+   /** Changes the line style to be bold. */
+   public OurPDFWriter setBoldLine()  { if (line!=1) buf.write("2 w [] 0 d\n"); line=1; return this; }
 
-   /** Changes the line style to be dashed.
-    * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
-    */
-   public OurPDFWriter setDashedLine()  { return write("1 w [6 3] 0 d\n"); }
+   /** Changes the line style to be dotted. */
+   public OurPDFWriter setDottedLine()  { if (line!=2) buf.write("1 w [1 3] 0 d\n"); line=2; return this; }
 
-   /** Changes the line style to be normal.
-    * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
-    */
-   public OurPDFWriter setNormalLine()  { return write("1 w [] 0 d\n"); }
+   /** Changes the line style to be dashed. */
+   public OurPDFWriter setDashedLine()  { if (line!=3) buf.write("1 w [6 3] 0 d\n"); line=3; return this; }
 
-   /** Shifts the coordinate space by the given amount.
-    * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
-    */
-   public OurPDFWriter shiftCoordinateSpace(int x, int y)  { return write("1 0 0 1 ").writes(x).writes(y).write("cm\n"); }
+   /** Shifts the coordinate space by the given amount. */
+   public OurPDFWriter shiftCoordinateSpace(int x, int y)  { buf.write("1 0 0 1 ").write(x).write(y).write("cm\n"); return this; }
 
-   /** Draws a circle of the given radius, centered at (0,0).
-    * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
-    */
+   /** Draws a circle of the given radius, centered at (0, 0). */
    public OurPDFWriter drawCircle(int radius, boolean fillOrNot) {
-      double k = (0.55238d * radius); // Approximate a circle using 4 cubic bezier curves
-      writes( radius).write("0 m ");
-      writes( radius).writes(      k).writes(      k).writes( radius).write("0 ")    .writes( radius).write("c ");
-      writes(     -k).writes( radius).writes(-radius).writes(      k).writes(-radius).write("0 c ");
-      writes(-radius).writes(     -k).writes(     -k).writes(-radius).write("0 ")    .writes(-radius).write("c ");
-      writes(      k).writes(-radius).writes( radius).writes(     -k).writes(radius) .write(fillOrNot ? "0 c f\n" : "0 c S\n");
+      double k = (0.55238 * radius); // Approximate a circle using 4 cubic bezier curves
+      buf.write( radius).write("0 m ");
+      buf.write( radius).write(      k).write(      k).write( radius).write("0 ")   .write( radius).write("c ");
+      buf.write(     -k).write( radius).write(-radius).write(      k).write(-radius).write("0 c ");
+      buf.write(-radius).write(     -k).write(     -k).write(-radius).write("0 ")   .write(-radius).write("c ");
+      buf.write(      k).write(-radius).write( radius).write(     -k).write(radius) .write(fillOrNot ? "0 c f\n" : "0 c S\n");
       return this;
    }
 
-   /** Draws a line from (x1,y1) to (x2,y2).
-    * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
-    */
-   public OurPDFWriter drawLine(int x1, int y1, int x2, int y2)  { return writes(x1).writes(y1).write("m ").writes(x2).writes(y2).write("l S\n"); }
+   /** Draws a line from (x1, y1) to (x2, y2). */
+   public OurPDFWriter drawLine(int x1, int y1, int x2, int y2) {
+      buf.write(x1).write(y1).write("m ").write(x2).write(y2).write("l S\n");
+      return this;
+   }
 
-   /** Draws a shape.
-    * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
-    */
+   /** Draws a shape. */
    public OurPDFWriter drawShape(Shape shape, boolean fillOrNot) {
       if (shape instanceof Line2D.Double) {
          Line2D.Double obj = (Line2D.Double)shape;
-         writes(obj.x1).writes(obj.y1).write("m ").writes(obj.x2).writes(obj.y2).write(fillOrNot ? "l f\n" : "l S\n");
-      } else if (shape instanceof QuadCurve2D.Double) {
-         // Convert the quadratic bezier curve into a cubic bezier curve
+         buf.write(obj.x1).write(obj.y1).write("m ").write(obj.x2).write(obj.y2).write("l ");
+      } else if (shape instanceof QuadCurve2D.Double) { // Convert quadratic bezier into cubic bezier using de Casteljau algorithm
          QuadCurve2D.Double obj = (QuadCurve2D.Double)shape;
-         double px = obj.x1 + (obj.ctrlx - obj.x1)*(2d/3d), qx = px + (obj.x2 - obj.x1)/3d;
-         double py = obj.y1 + (obj.ctrly - obj.y1)*(2d/3d), qy = py + (obj.y2 - obj.y1)/3d;
-         writes(obj.x1).writes(obj.y1).write("m ").writes(px).writes(py).writes(qx).writes(qy).writes(obj.x2).writes(obj.y2).write(fillOrNot ? "c f\n" : "c S\n");
+         double px = obj.x1 + (obj.ctrlx - obj.x1)*(2.0/3.0), qx = px + (obj.x2 - obj.x1)/3.0;
+         double py = obj.y1 + (obj.ctrly - obj.y1)*(2.0/3.0), qy = py + (obj.y2 - obj.y1)/3.0;
+         buf.write(obj.x1).write(obj.y1).write("m ").write(px).write(py).write(qx).write(qy).write(obj.x2).write(obj.y2).write("c ");
       } else if (shape instanceof Polygon) {
          Polygon obj = (Polygon)shape;
-         for(int i=0; i<obj.npoints; i++) writes(obj.xpoints[i]).writes(obj.ypoints[i]).write(i==0 ? "m\n" : "l\n");
-         write(fillOrNot ? "h f\n" : "h S\n");
+         for(int i=0; i<obj.npoints; i++) buf.write(obj.xpoints[i]).write(obj.ypoints[i]).write(i==0 ? "m\n" : "l\n");
+         buf.write("h ");
       } else {
          double[] pt = new double[6];
          double moveX = 0, moveY = 0, nowX = 0, nowY = 0;
-         for(PathIterator it = shape.getPathIterator(null); !it.isDone(); it.next()) {
-            switch(it.currentSegment(pt)) {
-               case PathIterator.SEG_MOVETO:
-                  nowX = moveX = pt[0]; nowY = moveY = pt[1];
-                  writes(nowX).writes(nowY).write("m\n");
-                  break;
-               case PathIterator.SEG_CLOSE:
-                  nowX = moveX; nowY = moveY; write("h\n");
-                  break;
-               case PathIterator.SEG_LINETO:
-                  nowX = pt[0]; nowY = pt[1];
-                  writes(nowX).writes(nowY).write("l\n");
-                  break;
-               case PathIterator.SEG_QUADTO:
-                  double px = nowX + (pt[0] - nowX)*(2d/3d), qx = px + (pt[2] - nowX)/3d;
-                  double py = nowY + (pt[1] - nowY)*(2d/3d), qy = py + (pt[3] - nowY)/3d;
-                  nowX = pt[2]; nowY = pt[3];
-                  writes(px).writes(py).writes(qx).writes(qy).writes(nowX).writes(nowY).write("c\n");
-                  break;
-               case PathIterator.SEG_CUBICTO:
-                  nowX = pt[4]; nowY = pt[5];
-                  writes(pt[0]).writes(pt[1]).writes(pt[2]).writes(pt[3]).writes(nowX).writes(nowY).write("c\n");
-                  break;
-            }
+         for(PathIterator it = shape.getPathIterator(null); !it.isDone(); it.next()) switch(it.currentSegment(pt)) {
+            case PathIterator.SEG_MOVETO:
+               nowX = moveX = pt[0]; nowY = moveY = pt[1];
+               buf.write(nowX).write(nowY).write("m\n");
+               break;
+            case PathIterator.SEG_CLOSE:
+               nowX = moveX; nowY = moveY;
+               buf.write("h\n");
+               break;
+            case PathIterator.SEG_LINETO:
+               nowX = pt[0]; nowY = pt[1];
+               buf.write(nowX).write(nowY).write("l\n");
+               break;
+            case PathIterator.SEG_QUADTO: // Convert quadratic bezier into cubic bezier using de Casteljau algorithm
+               double px = nowX + (pt[0] - nowX)*(2.0/3.0), qx = px + (pt[2] - nowX)/3.0;
+               double py = nowY + (pt[1] - nowY)*(2.0/3.0), qy = py + (pt[3] - nowY)/3.0;
+               nowX = pt[2]; nowY = pt[3];
+               buf.write(px).write(py).write(qx).write(qy).write(nowX).write(nowY).write("c\n");
+               break;
+            case PathIterator.SEG_CUBICTO:
+               nowX = pt[4]; nowY = pt[5];
+               buf.write(pt[0]).write(pt[1]).write(pt[2]).write(pt[3]).write(nowX).write(nowY).write("c\n");
+               break;
          }
-         write(fillOrNot ? "f\n" : "S\n");
       }
+      buf.write(fillOrNot ? "f\n" : "S\n");
       return this;
    }
 
    /*  PDF File Structure Summary:
     *  ===========================
     *
-    *  START_OF_FILE ideally should consist of the following 13 characters
-    *  ===================================================================
+    *  START_OF_FILE ideally should consist of the following 13 bytes
+    *  ==============================================================
     *
     *  "%PDF-1.3" 10 "%" -127 10 10
     *
     *  Now comes one or more objects.
-    *  One simple single-page arrangement is to have exactly 6 objects in this order: FONT, CONTENT, CONTENTSIZE, PAGE, PAGES, and CATALOG.
+    *  One simple single-page arrangement is to have exactly 5 objects in this order: FONT, CONTENT, PAGE, PAGES, and CATALOG.
     *
     *  Font Object
     *  ===========
     *
-    *  1 0 obj\n                    // "1" is because this is the first object
+    *  1 0 obj\n         // "1" is because this is the first object
     *  <<\n
     *  /Type /Font\n
     *  /Subtype /Type1\n
@@ -284,10 +180,10 @@ public final strictfp class OurPDFWriter {
     *  Content Object
     *  ==============
     *
-    *  2 0 obj\n                    // "2" is because this is the second object
-    *  << /Length 3 0 R>>\n         // "3" is because we will store the streamLength into object3
-    *  stream\n
-    *  $streamContent               // $streamContent is a stream of zero or more graphical operators such as drawLine or drawCircle
+    *  2 0 obj\n                                    // "2" is because this is the second object
+    *  << /Length 12345 /Filter /FlateDecode >>\n   // Suppose the $streamContent occupies 12345 bytes exactly, and is compressed by FLATE
+    *  stream\r\n
+    *  $streamContent                               // $streamContent is a stream of zero or more graphical operations
     *  endstream\n
     *  endobj\n\n
     *
@@ -317,20 +213,13 @@ public final strictfp class OurPDFWriter {
     *  $R $G $B rg             --> sets the fill   color (where 0 <= $R <= 1, etc)
     *  Q                       --> restores the current graphics state
     *
-    *  ContentSize Object
-    *  ==================
-    *
-    *  3 0 obj\n                    // "3" is because this is the third object
-    *  $len\n                       // $len is the number of bytes inside "$streamContent" above
-    *  endobj\n\n
-    *
     *  Page Object
     *  ===========
     *
-    *  4 0 obj\n                    // "4" is because this is the fourth object
+    *  3 0 obj\n                    // "3" is because this is the third object
     *  <<\n
     *  /Type /Page\n
-    *  /Parent 5 0 R\n              // "5" is because the Pages object is object5
+    *  /Parent 4 0 R\n              // "4" is because the Pages object is object5
     *  /Contents 2 0 R\n            // "2" is because the Content object is object2
     *  >>\n
     *  endobj\n\n
@@ -338,87 +227,101 @@ public final strictfp class OurPDFWriter {
     *  Pages Object
     *  ============
     *
-    *  5 0 obj\n                    // "5" is because this is the fifth object
+    *  4 0 obj\n                    // "4" is because this is the fourth object
     *  <<\n
     *  /Type /Pages\n
     *  /Count 1\n                                 // "1" is because we have assumed only a single page
-    *  /Kids [4 0 R]\n                            // "4" is because the only page we have is object4
+    *  /Kids [3 0 R]\n                            // "3" is because the only page we have is object3
     *  /MediaBox [0 0 $w $h]\n                    // $w is 8.5*DPI and $h is 11*DPI (since we are assuming 8.5in x 11in page)
-    *  /Resources << /Font << /F1 1 0 R >> >>\n   // "1" is because our only font is object1
+    *  /Resources << /Font << /F1 1 0 R >> >>\n   // "1" is because our only font is object #1
     *  >>\n
     *  endobj\n\n
     *
     *  Catalog Object
     *  ==============
     *
-    *  6 0 obj\n                    // "6" is because this is the sixth object
+    *  5 0 obj\n                    // "5" is because this is the fifth object
     *  <<\n
     *  /Type /Catalog\n
-    *  /Pages 5 0 R\n               // "5" is because the PAGES object is object5
+    *  /Pages 4 0 R\n               // "4" is because the PAGES object is object4
     *  >>\n
     *  endobj\n\n
     *
-    *  END_OF_FILE format (assuming we have obj1 obj2 obj3 obj4 obj5 obj6 where obj6 is the "PDF Catalog")
-    *  ===================================================================================================
+    *  END_OF_FILE format (assuming we have obj1 obj2 obj3 obj4 obj5 where obj5 is the "PDF Catalog")
+    *  ==============================================================================================
     *
     *  xref\n
-    *  0 7\n                   // 7 is because it's the number of objects plus 1
+    *  0 6\n                   // 6 is because it's the number of objects plus 1
     *  0000000000 65535 f\r\n
     *  $offset1 00000 n\r\n    // $offset1 is the byte offset of the start of obj1, left-padded-with-zero until you get exactly 10 digits
     *  $offset2 00000 n\r\n    // $offset2 is the byte offset of the start of obj2, left-padded-with-zero until you get exactly 10 digits
     *  $offset3 00000 n\r\n    // $offset3 is the byte offset of the start of obj3, left-padded-with-zero until you get exactly 10 digits
     *  $offset4 00000 n\r\n    // $offset4 is the byte offset of the start of obj4, left-padded-with-zero until you get exactly 10 digits
     *  $offset5 00000 n\r\n    // $offset5 is the byte offset of the start of obj5, left-padded-with-zero until you get exactly 10 digits
-    *  $offset6 00000 n\r\n    // $offset6 is the byte offset of the start of obj6, left-padded-with-zero until you get exactly 10 digits
     *  trailer\n
     *  <<\n
-    *  /Size 7\n               // 7 is because it's the number of objects plus 1
-    *  /Root 6 0 R\n           // 6 is because it's the Catalog Object's object ID
+    *  /Size 6\n               // 6 is because it's the number of objects plus 1
+    *  /Root 5 0 R\n           // 5 is because it's the Catalog Object's object ID
     *  >>\n
     *  startxref\n
     *  $xref\n                 // $xref is the byte offset of the start of this entire "xref" paragraph
     *  %%EOF\n
     */
 
-   /** Closes the content stream, write the PDF end-of-file, then flushes and closes the file.
-    * @throws IOException if an error occurred in writing or closing the file
-    */
-   public void close() throws IOException {
-      if (err==null && out!=null) try {
-         // Closes the CONTENT object
-         final long len = now - startOfContent;
-         write("endstream\n" + "endobj\n\n");
-         // Write CONTENTSIZE object
-         offset[contentSizeID] = now;
-         write(contentSizeID + " 0 obj\n").write(len + "\n" + "endobj\n\n");
-         // Write PAGE object
-         offset[pageID] = now;
-         write(pageID + " 0 obj\n<<\n/Type /Page\n/Parent " + pagesID + " 0 R\n/Contents " + contentID + " 0 R\n>>\n" + "endobj\n\n");
-         // Write PAGES object
-         offset[pagesID] = now;
-         write(pagesID + " 0 obj\n<<\n/Type /Pages\n/Count 1\n/Kids [" + pageID + " 0 R]\n");
-         write("/MediaBox [0 0 ").writes(width).write(height + "]\n/Resources << /Font << /F1 " + fontID + " 0 R >> >>\n>>\n" + "endobj\n\n");
-         // Write CATALOG object
-         offset[catalogID] = now;
-         write(catalogID + " 0 obj\n<<\n/Type /Catalog\n/Pages " + pagesID + " 0 R\n>>\n" + "endobj\n\n");
-         // Write XREF
-         final long xref = now;
-         write("xref\n0 " + offset.length + "\n");
-         for(int i=0; i<offset.length; i++) {
-            String a = Long.toString(offset[i]);
-            while(a.length()<10) a = "0" + a; // must be exactly 10 characters long
-            if (i==0) write(a).write(" 65535 f\r\n"); else write(a).write(" 00000 n\r\n");
+   /** Helper method that writes the given String to the output file, then return the number of bytes written. */
+   private static int out(RandomAccessFile file, String string) throws IOException {
+      byte[] array = string.getBytes("UTF-8");
+      file.write(array);
+      return array.length;
+   }
+
+   /** Close this PDF object and write it to the given output file (which is overwritten if it already exists) */
+   public void close(String filename) throws IOException {
+      RandomAccessFile out = null;
+      try {
+         String space = "                    "; // reserve 20 bytes for the file size, which is far far more than enough
+         final int fontID = 1, contentID = 2, pageID = 3, pagesID = 4, catalogID = 5;
+         final String fontType = "Type1", fontFamily = "Helvetica", fontEncoding = "WinAnsiEncoding";
+         final long[] offset = new long[6];
+         // Write %PDF-1.3, followed by a non-ASCII comment to force the PDF into binary mode
+         out = new RandomAccessFile(filename, "rw");
+         out.setLength(0);
+         byte[] head = new byte[]{'%', 'P', 'D', 'F', '-', '1', '.', '3', 10, '%', -127, 10, 10};
+         out.write(head);
+         long now = head.length;
+         // Font
+         offset[1] = now;
+         now += out(out, fontID + " 0 obj\n<<\n/Type /Font\n/Subtype /" + fontType + "\n/BaseFont /" + fontFamily + "\n/Encoding /" + fontEncoding + "\n>>\n" + "endobj\n\n");
+         // Content
+         offset[2] = now;
+         now += out(out, contentID + " 0 obj\n<< /Length " + space + " /Filter /FlateDecode >>\n" + "stream\r\n");
+         long ct = buf.dumpFlate(out);
+         now += ct + out(out, "endstream\n" + "endobj\n\n");
+         // Page
+         offset[3] = now;
+         now += out(out, pageID + " 0 obj\n<<\n/Type /Page\n/Parent " + pagesID + " 0 R\n/Contents " + contentID + " 0 R\n>>\n" + "endobj\n\n");
+         // Pages
+         offset[4] = now;
+         now += out(out, pagesID + " 0 obj\n<<\n/Type /Pages\n/Count 1\n/Kids [" + pageID + " 0 R]\n" + "/MediaBox [0 0 " + width + " " + height + "]\n/Resources << /Font << /F1 " + fontID + " 0 R >> >>\n>>\n" + "endobj\n\n");
+         // Catalog
+         offset[5] = now;
+         now += out(out, catalogID + " 0 obj\n<<\n/Type /Catalog\n/Pages " + pagesID + " 0 R\n>>\n" + "endobj\n\n");
+         // Xref
+         String xr = "xref\n0 " + offset.length + "\n";
+         for(int i = 0; i < offset.length; i++) {
+            String txt = Long.toString(offset[i]);
+            while(txt.length() < 10) txt = "0" + txt; // must be exactly 10 characters long
+            if (i==0) xr = xr + txt + " 65535 f\r\n"; else xr = xr + txt + " 00000 n\r\n";
          }
-         // Write TRAILER
-         write("trailer\n<<\n/Size " + offset.length + "\n/Root " + catalogID + " 0 R\n>>\n" + "startxref\n").write(xref + "\n%%EOF\n");
-         out.flush();
+         // Trailer
+         xr = xr + "trailer\n<<\n/Size " + offset.length + "\n/Root " + catalogID + " 0 R\n>>\n" + "startxref\n" + now + "\n%%EOF\n";
+         out(out, xr);
+         out.seek(offset[2]);
+         out(out, contentID + " 0 obj\n<< /Length " + ct); // move the file pointer back so we can write out the real Content Size
          out.close();
          out = null;
-      } catch(IOException ex) {
-         err = ex;
+      } finally {
+         Util.close(out); // try to close the file at all cost
       }
-      Util.close(out); // Always try to close the file, since open files are a scarce system resource
-      out = null;
-      if (err!=null) throw err; // If any errors occurred during writing or closing the file, then throw the exception
    }
 }
