@@ -25,9 +25,7 @@ package edu.mit.csail.sdg.alloy4;
 import java.awt.Color;
 import java.awt.Polygon;
 import java.awt.Shape;
-import java.awt.geom.Line2D;
 import java.awt.geom.PathIterator;
-import java.awt.geom.QuadCurve2D;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -69,10 +67,9 @@ public final strictfp class OurPDFWriter {
    /** Changes the color for subsequent graphical drawing. */
    public OurPDFWriter setColor(Color color) {
       int rgb = color.getRGB() & 0xFFFFFF, r = (rgb>>16)&0xFF, g = (rgb>>8)&0xFF, b = (rgb&0xFF);
-      if (this.color == rgb) return this; // no need to change
+      if (this.color == rgb) return this; else this.color = rgb; // no need to change
       buf.write(r/255.0).write(g/255.0).write(b/255.0).write("RG\n");
       buf.write(r/255.0).write(g/255.0).write(b/255.0).write("rg\n");
-      this.color = rgb;
       return this;
    }
 
@@ -91,6 +88,9 @@ public final strictfp class OurPDFWriter {
    /** Shifts the coordinate space by the given amount. */
    public OurPDFWriter shiftCoordinateSpace(int x, int y)  { buf.write("1 0 0 1 ").write(x).write(y).write("cm\n"); return this; }
 
+   /** Draws a line from (x1, y1) to (x2, y2). */
+   public OurPDFWriter drawLine(int x1, int y1, int x2, int y2) { buf.write(x1).write(y1).write("m ").write(x2).write(y2).write("l S\n"); return this; }
+
    /** Draws a circle of the given radius, centered at (0, 0). */
    public OurPDFWriter drawCircle(int radius, boolean fillOrNot) {
       double k = (0.55238 * radius); // Approximate a circle using 4 cubic bezier curves
@@ -102,52 +102,27 @@ public final strictfp class OurPDFWriter {
       return this;
    }
 
-   /** Draws a line from (x1, y1) to (x2, y2). */
-   public OurPDFWriter drawLine(int x1, int y1, int x2, int y2) {
-      buf.write(x1).write(y1).write("m ").write(x2).write(y2).write("l S\n");
-      return this;
-   }
-
    /** Draws a shape. */
    public OurPDFWriter drawShape(Shape shape, boolean fillOrNot) {
-      if (shape instanceof Line2D.Double) {
-         Line2D.Double obj = (Line2D.Double)shape;
-         buf.write(obj.x1).write(obj.y1).write("m ").write(obj.x2).write(obj.y2).write("l ");
-      } else if (shape instanceof QuadCurve2D.Double) { // Convert quadratic bezier into cubic bezier using de Casteljau algorithm
-         QuadCurve2D.Double obj = (QuadCurve2D.Double)shape;
-         double px = obj.x1 + (obj.ctrlx - obj.x1)*(2.0/3.0), qx = px + (obj.x2 - obj.x1)/3.0;
-         double py = obj.y1 + (obj.ctrly - obj.y1)*(2.0/3.0), qy = py + (obj.y2 - obj.y1)/3.0;
-         buf.write(obj.x1).write(obj.y1).write("m ").write(px).write(py).write(qx).write(qy).write(obj.x2).write(obj.y2).write("c ");
-      } else if (shape instanceof Polygon) {
+      if (shape instanceof Polygon) {
          Polygon obj = (Polygon)shape;
-         for(int i=0; i<obj.npoints; i++) buf.write(obj.xpoints[i]).write(obj.ypoints[i]).write(i==0 ? "m\n" : "l\n");
-         buf.write("h ");
+         for(int i = 0; i < obj.npoints; i++) buf.write(obj.xpoints[i]).write(obj.ypoints[i]).write(i==0 ? "m\n" : "l\n");
+         buf.write("h\n");
       } else {
-         double[] pt = new double[6];
-         double moveX = 0, moveY = 0, nowX = 0, nowY = 0;
+         double moveX = 0, moveY = 0, nowX = 0, nowY = 0, pt[] = new double[6];
          for(PathIterator it = shape.getPathIterator(null); !it.isDone(); it.next()) switch(it.currentSegment(pt)) {
             case PathIterator.SEG_MOVETO:
-               nowX = moveX = pt[0]; nowY = moveY = pt[1];
-               buf.write(nowX).write(nowY).write("m\n");
-               break;
+               nowX = moveX = pt[0]; nowY = moveY = pt[1]; buf.write(nowX).write(nowY).write("m\n"); break;
             case PathIterator.SEG_CLOSE:
-               nowX = moveX; nowY = moveY;
-               buf.write("h\n");
-               break;
+               nowX = moveX; nowY = moveY; buf.write("h\n"); break;
             case PathIterator.SEG_LINETO:
-               nowX = pt[0]; nowY = pt[1];
-               buf.write(nowX).write(nowY).write("l\n");
-               break;
+               nowX = pt[0]; nowY = pt[1]; buf.write(nowX).write(nowY).write("l\n"); break;
+            case PathIterator.SEG_CUBICTO:
+               nowX = pt[4]; nowY = pt[5]; buf.write(pt[0]).write(pt[1]).write(pt[2]).write(pt[3]).write(nowX).write(nowY).write("c\n"); break;
             case PathIterator.SEG_QUADTO: // Convert quadratic bezier into cubic bezier using de Casteljau algorithm
                double px = nowX + (pt[0] - nowX)*(2.0/3.0), qx = px + (pt[2] - nowX)/3.0;
                double py = nowY + (pt[1] - nowY)*(2.0/3.0), qy = py + (pt[3] - nowY)/3.0;
-               nowX = pt[2]; nowY = pt[3];
-               buf.write(px).write(py).write(qx).write(qy).write(nowX).write(nowY).write("c\n");
-               break;
-            case PathIterator.SEG_CUBICTO:
-               nowX = pt[4]; nowY = pt[5];
-               buf.write(pt[0]).write(pt[1]).write(pt[2]).write(pt[3]).write(nowX).write(nowY).write("c\n");
-               break;
+               nowX = pt[2]; nowY = pt[3]; buf.write(px).write(py).write(qx).write(qy).write(nowX).write(nowY).write("c\n"); break;
          }
       }
       buf.write(fillOrNot ? "f\n" : "S\n");
@@ -157,18 +132,14 @@ public final strictfp class OurPDFWriter {
    /*  PDF File Structure Summary:
     *  ===========================
     *
-    *  START_OF_FILE ideally should consist of the following 13 bytes
-    *  ==============================================================
-    *
-    *  "%PDF-1.3" 10 "%" -127 10 10
-    *
+    *  File should ideally start with the following 13 bytes:  "%PDF-1.3" 10 "%" -127 10 10
     *  Now comes one or more objects.
     *  One simple single-page arrangement is to have exactly 5 objects in this order: FONT, CONTENT, PAGE, PAGES, and CATALOG.
     *
     *  Font Object
     *  ===========
     *
-    *  1 0 obj\n         // "1" is because this is the first object
+    *  1 0 obj\n   // "1" is because this is the first object
     *  <<\n
     *  /Type /Font\n
     *  /Subtype /Type1\n
@@ -181,7 +152,7 @@ public final strictfp class OurPDFWriter {
     *  ==============
     *
     *  2 0 obj\n                                    // "2" is because this is the second object
-    *  << /Length 12345 /Filter /FlateDecode >>\n   // Suppose the $streamContent occupies 12345 bytes exactly, and is compressed by FLATE
+    *  << /Length 12345 /Filter /FlateDecode >>\n   // Suppose the $streamContent occupies 12345 bytes exactly after DEFLATE compression
     *  stream\r\n
     *  $streamContent                               // $streamContent is a stream of zero or more graphical operations
     *  endstream\n
@@ -322,8 +293,7 @@ public final strictfp class OurPDFWriter {
          out = null;
       } catch(Throwable ex) {
          Util.close(out);
-         if (ex instanceof IOException) throw (IOException)ex;
-         throw new IOException("Error writing the PDF file to " + filename + " (" + ex + ")");
+         if (ex instanceof IOException) throw (IOException)ex; else throw new IOException("Error writing the PDF file to " + filename + " (" + ex + ")");
       }
    }
 }
