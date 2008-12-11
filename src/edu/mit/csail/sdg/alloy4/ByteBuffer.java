@@ -81,24 +81,20 @@ public final class ByteBuffer {
    /** Write the given number using floating point representation into this byte buffer (truncated to the range -32767..+32767), followed by a space. */
    public strictfp ByteBuffer write(double x) {
       // These extreme values shouldn't happen, but we want to protect against them
-      x = x * 1000000;
-      if (Double.isNaN(x))             return write("0 ");
-      if (x==Double.POSITIVE_INFINITY) return write("32767 ");  // this is the maximum requirement stated in PDF Spec 1.3
-      if (x==Double.NEGATIVE_INFINITY) return write("-32767 "); // this is the minimum requirement stated in PDF Spec 1.3
+      if (Double.isNaN(x)) return write("0 ");
+      long num = (long)(x * 1000000);
+      if (x>=32767 || num>=32767000000L) return write("32767 "); else if (x<=-32767 || num<=(-32767000000L)) return write("-32767 ");
       // Now, regular doubles... let's allow up to 6 digits after the decimal point
-      long num = (long)x;
-      if (num>32767000000L) return write("32767 "); else if (num<(-32767000000L)) return write("-32767 ");
-      String sign = "";
+      if (num<0) { w('-'); num = -num; }
       String str = Long.toString(num);
-      if (str.charAt(0)=='-') { str = str.substring(1); sign = "-"; }
-      while(str.length()<6) str = "0" + str;
-      return write(sign).write(str.substring(0, str.length()-6)).write(".").write(str.substring(str.length()-6)).write(" ");
+      int len = str.length();
+      if (len<=6) { w('.'); while(len<6) { w('0'); len++; } write(str).w(' '); return this; }
+      return write(str.substring(0, str.length()-6)).w('.').write(str.substring(str.length()-6)).w(' ');
    }
 
    /** Write the current ByteBuffer content into the given output file using the Flate compression algorithm (see RFC1951), then return the number of bytes written. */
    public long dumpFlate(RandomAccessFile os) throws IOException {
-      Deflater zip = new Deflater();
-      zip.setLevel(Deflater.BEST_COMPRESSION);
+      Deflater zip = new Deflater(Deflater.BEST_COMPRESSION);
       byte[] output = new byte[4096];
       int i = 0;    // when negative, that means we have told the Deflater that no more input would be coming
       long sum = 0; // the number of bytes written out so far
