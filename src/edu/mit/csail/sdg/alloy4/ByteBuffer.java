@@ -73,12 +73,12 @@ public final class ByteBuffer {
       return this;
    }
 
-   /** Write the given number using decimal representation into this byte buffer */
+   /** Write the given number using decimal representation into this byte buffer, followed by a space. */
    public ByteBuffer write(long x)  {
       return write(Long.toString(x)).write(" ");
    }
 
-   /** Write the given number using floating point representation into this byte buffer (truncated to the range -32767..+32767) */
+   /** Write the given number using floating point representation into this byte buffer (truncated to the range -32767..+32767), followed by a space. */
    public strictfp ByteBuffer write(double x) {
       // These extreme values shouldn't happen, but we want to protect against them
       x = x * 1000000;
