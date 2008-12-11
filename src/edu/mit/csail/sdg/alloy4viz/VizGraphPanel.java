@@ -100,7 +100,7 @@ public final class VizGraphPanel extends JPanel {
       /** The type being projected. */
       private final AlloyType type;
       /** The list of atoms; can be an empty list if there are no atoms in this type to be projected. */
-      private final ConstList<AlloyAtom> atoms;
+      private final List<AlloyAtom> atoms;
       /** The list of atom names; atomnames.empty() iff atoms.isEmpty() */
       private final String[] atomnames;
       /** The combo box showing the possible atoms to choose from. */
@@ -108,11 +108,11 @@ public final class VizGraphPanel extends JPanel {
       /** True if this TypePanel object does not need to be rebuilt. */
       private boolean upToDate(AlloyType type, List<AlloyAtom> atoms) {
          if (!this.type.equals(type)) return false;
-         atoms=new ArrayList<AlloyAtom>(atoms);
+         atoms = new ArrayList<AlloyAtom>(atoms);
          Collections.sort(atoms);
          if (!this.atoms.equals(atoms)) return false;
          for(int i=0; i<this.atoms.size(); i++) {
-            String n=this.atoms.get(i).getVizName(vizState,true);
+            String n = this.atoms.get(i).getVizName(vizState,true);
             if (!atomnames[i].equals(n)) return false;
          }
          return true;

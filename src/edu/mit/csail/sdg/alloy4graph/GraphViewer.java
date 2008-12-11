@@ -394,7 +394,7 @@ public final strictfp class GraphViewer extends JPanel {
        if (scale1<scale2) scale2=scale1; // Choose the scale such that the image does not exceed the page in either direction
        OurPDFWriter x = new OurPDFWriter(dpi, scale2);
        graph.draw(new Artist(x), scale2, null, false);
-       x.close(filename);
+       x.close(filename, true);
     }
 
     /** Export the current drawing as a PNG file with the given file name and image resolution. */

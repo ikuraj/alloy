@@ -732,7 +732,7 @@ public final class SimInstance extends VisitReturn<Object> {
         if (b instanceof ExprUnary) {
             // Handles possible "unary" multiplicity
             ExprUnary y = (ExprUnary)b;
-            if      (y.op==ExprUnary.Op.EXACTLYOF) { b = y.sub.deNOP(); return a.equals(b); }
+            if      (y.op==ExprUnary.Op.EXACTLYOF) { b = y.sub.deNOP(); return a.equals(cset(b)); }
             else if (y.op==ExprUnary.Op.ONEOF)     { b = y.sub.deNOP(); if (!(a.longsize()==1)) return false; }
             else if (y.op==ExprUnary.Op.LONEOF)    { b = y.sub.deNOP(); if (!(a.longsize()<=1)) return false; }
             else if (y.op==ExprUnary.Op.SOMEOF)    { b = y.sub.deNOP(); if (!(a.longsize()>=1)) return false; }

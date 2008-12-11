@@ -1,3 +1,25 @@
+/*
+ * Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 package edu.mit.csail.sdg.alloy4;
 
 import java.io.IOException;
@@ -7,7 +29,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.Deflater;
 
-/** Mutable; implements a growable array of bytes. */
+/** Mutable; implements a growable array of bytes.
+ *
+ * For writing large amount of data, ByteBuffer is more efficient than Java's ByteArrayOutputStream
+ * because the ByteArrayOutputStream will keep resizing and copying contents every time the array needs to grow.
+ */
 
 public final class ByteBuffer {
 
@@ -53,7 +79,7 @@ public final class ByteBuffer {
    }
 
    /** Write the given number using floating point representation into this byte buffer (truncated to the range -32767..+32767) */
-   public ByteBuffer write(double x) {
+   public strictfp ByteBuffer write(double x) {
       // These extreme values shouldn't happen, but we want to protect against them
       x = x * 1000000;
       if (Double.isNaN(x))             return write("0 ");

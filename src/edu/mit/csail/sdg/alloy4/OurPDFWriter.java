@@ -59,8 +59,8 @@ public final strictfp class OurPDFWriter {
     */
    public OurPDFWriter(int dpi, double scale) {
       if (dpi<50 || dpi>3000) throw new IllegalArgumentException("The DPI must be between 50 and 3000");
-      width = dpi*8 + (dpi/2); // "8.5 inches"
-      height = dpi*11;         // "11 inches"
+      width = dpi*8L + (dpi/2L); // "8.5 inches"
+      height = dpi*11L;          // "11 inches"
       // Write the default settings, and add a default transformation that flips (0, 0) into the top-left corner of the page, then scale the page
       buf.write("q\n" + "1 J\n" + "1 j\n" + "[] 0 d\n" + "1 w\n" + "1 0 0 -1 0 ").write(height).write("cm\n");
       buf.write(scale).write("0 0 ").write(scale).write(dpi/2.0).write(dpi/2.0).write("cm\n");
@@ -276,7 +276,7 @@ public final strictfp class OurPDFWriter {
    }
 
    /** Close this PDF object and write it to the given output file (which is overwritten if it already exists) */
-   public void close(String filename) throws IOException {
+   public void close(String filename, boolean compressOrNot) throws IOException {
       RandomAccessFile out = null;
       try {
          String space = "                    "; // reserve 20 bytes for the file size, which is far far more than enough
@@ -294,8 +294,8 @@ public final strictfp class OurPDFWriter {
          now += out(out, fontID + " 0 obj\n<<\n/Type /Font\n/Subtype /" + fontType + "\n/BaseFont /" + fontFamily + "\n/Encoding /" + fontEncoding + "\n>>\n" + "endobj\n\n");
          // Content
          offset[2] = now;
-         now += out(out, contentID + " 0 obj\n<< /Length " + space + " /Filter /FlateDecode >>\n" + "stream\r\n");
-         long ct = buf.dumpFlate(out);
+         now += out(out, contentID + " 0 obj\n<< /Length " + space + (compressOrNot ? " /Filter /FlateDecode " : "") + ">>\n" + "stream\r\n");
+         long ct = compressOrNot ? buf.dumpFlate(out) : buf.dump(out);
          now += ct + out(out, "endstream\n" + "endobj\n\n");
          // Page
          offset[3] = now;
