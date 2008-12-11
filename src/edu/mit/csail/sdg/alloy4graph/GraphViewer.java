@@ -377,10 +377,7 @@ public final strictfp class GraphViewer extends JPanel {
              alloySaveAsPNG(filename.getAbsolutePath(), myScale, dpi, dpi);
           synchronized(GraphViewer.class) { oldDPI=dpi; }
           Util.setCurrentDirectory(filename.getParentFile());
-       } catch(OutOfMemoryError ex) {
-          System.gc();
-          OurDialog.alert(me, "Insufficient memory to export a file of that size; please reduce the DPI and try again.", "Error");
-       } catch(Exception ex) {
+       } catch(Throwable ex) {
           OurDialog.alert(me, "An error has occured in writing the output file:\n" + ex, "Error");
        }
     }
@@ -398,7 +395,7 @@ public final strictfp class GraphViewer extends JPanel {
           x.close(filename, true);
        } catch(Throwable ex) {
           if (ex instanceof IOException) throw (IOException)ex;
-          throw new IOException("Failure writing PDF to the file " + filename + " (" + ex + ")");
+          throw new IOException("Failure writing the PDF file to " + filename + " (" + ex + ")");
        }
     }
 
@@ -418,7 +415,7 @@ public final strictfp class GraphViewer extends JPanel {
           OurPNGWriter.writePNG(bf, filename, dpiX, dpiY);
        } catch(Throwable ex) {
           if (ex instanceof IOException) throw (IOException)ex;
-          throw new IOException("Failure writing PNG to the file " + filename + " (" + ex + ")");
+          throw new IOException("Failure writing the PNG file to " + filename + " (" + ex + ")");
        }
     }
 

@@ -36,12 +36,13 @@ public final strictfp class OurPNGWriter {
    private OurPNGWriter () { }
 
    /** Writes the image as a PNG file with the given horizontal and vertical dots-per-inch. */
-   public static void writePNG (BufferedImage image, String filename, double dpiX, double dpiY) throws IOException, OutOfMemoryError {
+   public static void writePNG (BufferedImage image, String filename, double dpiX, double dpiY) throws IOException {
       try {
          ImageIO.write(image, "PNG", new File(filename)); // some versions of Java sometimes throws an exception during saving...
          setDPI(filename, dpiX, dpiY);
-      } catch(Exception ex) {
-         throw new IOException("Error writing the PNG file to " + filename);
+      } catch(Throwable ex) {
+         if (ex instanceof IOException) throw (IOException)ex;
+         throw new IOException("Error writing the PNG file to " + filename + " (" + ex + ")");
       }
    }
 

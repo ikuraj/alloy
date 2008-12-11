@@ -320,8 +320,10 @@ public final strictfp class OurPDFWriter {
          out(out, contentID + " 0 obj\n<< /Length " + ct); // move the file pointer back so we can write out the real Content Size
          out.close();
          out = null;
-      } finally {
-         Util.close(out); // try to close the file at all cost
+      } catch(Throwable ex) {
+         Util.close(out);
+         if (ex instanceof IOException) throw (IOException)ex;
+         throw new IOException("Error writing the PDF file to " + filename + " (" + ex + ")");
       }
    }
 }
