@@ -390,9 +390,9 @@ public final strictfp class GraphViewer extends JPanel {
           double scale1 = (xwidth-dpi)  / graph.getTotalWidth();  // We leave 0.5 inch on the left and right
           double scale2 = (xheight-dpi) / graph.getTotalHeight(); // We leave 0.5 inch on the left and right
           if (scale1<scale2) scale2=scale1; // Choose the scale such that the image does not exceed the page in either direction
-          OurPDFWriter x = new OurPDFWriter(dpi, scale2);
+          OurPDFWriter x = new OurPDFWriter(filename, dpi, scale2);
           graph.draw(new Artist(x), scale2, null, false);
-          x.close(filename, true);
+          x.close();
        } catch(Throwable ex) {
           if (ex instanceof IOException) throw (IOException)ex;
           throw new IOException("Failure writing the PDF file to " + filename + " (" + ex + ")");

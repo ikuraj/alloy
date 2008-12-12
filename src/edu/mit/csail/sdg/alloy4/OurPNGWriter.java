@@ -79,7 +79,7 @@ public final strictfp class OurPNGWriter {
          long total = f.length(), pos = 8;
          // Jump to the appropriate place for inserting the pHYs chunk, then insert it
          while(true) {
-            if (pos>=total) throw new IOException("PNG is missing the IDAT chunk.");
+            if (pos >= total) throw new IOException("PNG is missing the IDAT chunk.");
             f.seek(pos);
             int a1=f.read(), a2=f.read(), a3=f.read(), a4=f.read(), b1=f.read(), b2=f.read(), b3=f.read(), b4=f.read();
             if (a1<0 || a2<0 || a3<0 || a4<0 || b1<0 || b2<0 || b3<0 || b4<0) throw new IOException("PNG is missing the IDAT chunk.");

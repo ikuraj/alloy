@@ -37,6 +37,9 @@ import java.io.RandomAccessFile;
 
 public final strictfp class OurPDFWriter {
 
+   /** The filename. */
+   private final String filename;
+
    /** The page width (in terms of dots). */
    private final long width;
 
@@ -49,14 +52,15 @@ public final strictfp class OurPDFWriter {
    /** Latest line style (0=normal, 1=bold, 2=dotted, 3=dashed) */
    private int line = 0;
 
-   /** The buffer that will store the list of graphical operations issued so far. */
-   private final ByteBuffer buf = new ByteBuffer();
+   /** The buffer that will store the list of graphical operations issued so far (null if close() has been called successfully) */
+   private ByteBuffer buf = new ByteBuffer();
 
-   /** Begin a blank PDF file with the given dots-per-inch and the given scale.
+   /** Begin a blank PDF file with the given dots-per-inch and the given scale (the given file, if existed, will be overwritten)
     * @throws IllegalArgumentException if dpi is less than 50 or is greater than 3000
     */
-   public OurPDFWriter(int dpi, double scale) {
+   public OurPDFWriter(String filename, int dpi, double scale) {
       if (dpi<50 || dpi>3000) throw new IllegalArgumentException("The DPI must be between 50 and 3000");
+      this.filename = filename;
       width = dpi*8L + (dpi/2L); // "8.5 inches"
       height = dpi*11L;          // "11 inches"
       // Write the default settings, and add a default transformation that flips (0, 0) into the top-left corner of the page, then scale the page
@@ -136,27 +140,15 @@ public final strictfp class OurPDFWriter {
     *  Now comes one or more objects.
     *  One simple single-page arrangement is to have exactly 5 objects in this order: FONT, CONTENT, PAGE, PAGES, and CATALOG.
     *
-    *  Font Object
-    *  ===========
+    *  Font Object (1 because FONT is #1)
+    *  ==================================
     *
-    *  1 0 obj\n   // "1" is because this is the first object
-    *  <<\n
-    *  /Type /Font\n
-    *  /Subtype /Type1\n
-    *  /BaseFont /Helvetica\n
-    *  /Encoding /WinAnsiEncoding\n
-    *  >>\n
-    *  endobj\n\n
+    *  1 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >> endobj\n\n
     *
-    *  Content Object
-    *  ==============
+    *  Content Object (2 because CONTENT is #2) (${LEN} is the number of bytes in ${CONTENT} when compressed)
+    *  ======================================================================================================
     *
-    *  2 0 obj\n                                    // "2" is because this is the second object
-    *  << /Length 12345 /Filter /FlateDecode >>\n   // Suppose the $streamContent occupies 12345 bytes exactly after DEFLATE compression
-    *  stream\r\n
-    *  $streamContent                               // $streamContent is a stream of zero or more graphical operations
-    *  endstream\n
-    *  endobj\n\n
+    *  2 0 obj << /Length ${LEN} /Filter /FlateDecode >> stream\r\n${CONTENT}endstream endobj\n\n
     *
     *  Here is a quick summary of various PDF Graphics operations
     *  ==========================================================
@@ -184,39 +176,20 @@ public final strictfp class OurPDFWriter {
     *  $R $G $B rg             --> sets the fill   color (where 0 <= $R <= 1, etc)
     *  Q                       --> restores the current graphics state
     *
-    *  Page Object
-    *  ===========
+    *  Page Object (3 because PAGE is #3) (4 beacuse PAGES is #4) (2 because CONTENTS is #2)
+    *  =====================================================================================
     *
-    *  3 0 obj\n                    // "3" is because this is the third object
-    *  <<\n
-    *  /Type /Page\n
-    *  /Parent 4 0 R\n              // "4" is because the Pages object is object5
-    *  /Contents 2 0 R\n            // "2" is because the Content object is object2
-    *  >>\n
-    *  endobj\n\n
+    *  3 0 obj << /Type /Page /Parent 4 0 R /Contents 2 0 R >> endobj\n\n
     *
-    *  Pages Object
-    *  ============
+    *  Pages Object (4 because PAGES is #4) (3 because PAGE is #3) (${W} is 8.5*DPI, ${H} is 11*DPI) (1 because FONT is #1)
+    *  ====================================================================================================================
     *
-    *  4 0 obj\n                    // "4" is because this is the fourth object
-    *  <<\n
-    *  /Type /Pages\n
-    *  /Count 1\n                                 // "1" is because we have assumed only a single page
-    *  /Kids [3 0 R]\n                            // "3" is because the only page we have is object3
-    *  /MediaBox [0 0 $w $h]\n                    // $w is 8.5*DPI and $h is 11*DPI (since we are assuming 8.5in x 11in page)
-    *  /Resources << /Font << /F1 1 0 R >> >>\n   // "1" is because our only font is object #1
-    *  >>\n
-    *  endobj\n\n
+    *  4 0 obj << /Type /Pages /Count 1 /Kids [3 0 R] /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 1 0 R >> >> >> endobj\n\n
     *
-    *  Catalog Object
-    *  ==============
+    *  Catalog Object (5 because CATALOG is #5) (4 because PAGES is #4)
+    *  ================================================================
     *
-    *  5 0 obj\n                    // "5" is because this is the fifth object
-    *  <<\n
-    *  /Type /Catalog\n
-    *  /Pages 4 0 R\n               // "4" is because the PAGES object is object4
-    *  >>\n
-    *  endobj\n\n
+    *  5 0 obj << /Type /Catalog /Pages 4 0 R >> endobj\n\n
     *
     *  END_OF_FILE format (assuming we have obj1 obj2 obj3 obj4 obj5 where obj5 is the "PDF Catalog")
     *  ==============================================================================================
@@ -224,11 +197,11 @@ public final strictfp class OurPDFWriter {
     *  xref\n
     *  0 6\n                   // 6 is because it's the number of objects plus 1
     *  0000000000 65535 f\r\n
-    *  $offset1 00000 n\r\n    // $offset1 is the byte offset of the start of obj1, left-padded-with-zero until you get exactly 10 digits
-    *  $offset2 00000 n\r\n    // $offset2 is the byte offset of the start of obj2, left-padded-with-zero until you get exactly 10 digits
-    *  $offset3 00000 n\r\n    // $offset3 is the byte offset of the start of obj3, left-padded-with-zero until you get exactly 10 digits
-    *  $offset4 00000 n\r\n    // $offset4 is the byte offset of the start of obj4, left-padded-with-zero until you get exactly 10 digits
-    *  $offset5 00000 n\r\n    // $offset5 is the byte offset of the start of obj5, left-padded-with-zero until you get exactly 10 digits
+    *  ${offset1} 00000 n\r\n  // ${offset1} is byte offset of start of obj1, left-padded-with-zero until you get exactly 10 digits
+    *  ${offset2} 00000 n\r\n  // ${offset2} is byte offset of start of obj2, left-padded-with-zero until you get exactly 10 digits
+    *  ${offset3} 00000 n\r\n  // ${offset3} is byte offset of start of obj3, left-padded-with-zero until you get exactly 10 digits
+    *  ${offset4} 00000 n\r\n  // ${offset4} is byte offset of start of obj4, left-padded-with-zero until you get exactly 10 digits
+    *  ${offset5} 00000 n\r\n  // ${offset5} is byte offset of start of obj5, left-padded-with-zero until you get exactly 10 digits
     *  trailer\n
     *  <<\n
     *  /Size 6\n               // 6 is because it's the number of objects plus 1
@@ -246,8 +219,10 @@ public final strictfp class OurPDFWriter {
       return array.length;
    }
 
-   /** Close this PDF object and write it to the given output file (which is overwritten if it already exists) */
-   public void close(String filename, boolean compressOrNot) throws IOException {
+   /** Close and save this PDF object. */
+   public void close() throws IOException {
+      if (buf == null) return; // already closed
+      final boolean compressOrNot = true;
       RandomAccessFile out = null;
       try {
          String space = "                    "; // reserve 20 bytes for the file size, which is far far more than enough
@@ -260,21 +235,21 @@ public final strictfp class OurPDFWriter {
          long now = head.length;
          // Font
          offset[1] = now;
-         now += out(out, fontID + " 0 obj\n<<\n/Type /Font\n/Subtype /Type1\n/BaseFont /Helvetica\n/Encoding /WinAnsiEncoding\n>>\n" + "endobj\n\n");
+         now += out(out, fontID + " 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >> endobj\n\n");
          // Content
          offset[2] = now;
-         now += out(out, contentID + " 0 obj\n<< /Length " + space + (compressOrNot ? " /Filter /FlateDecode " : "") + ">>\n" + "stream\r\n");
+         now += out(out, contentID + " 0 obj << /Length " + space + (compressOrNot ? " /Filter /FlateDecode" : "") + " >> stream\r\n");
          long ct = compressOrNot ? buf.dumpFlate(out) : buf.dump(out);
-         now += ct + out(out, "endstream\n" + "endobj\n\n");
+         now += ct + out(out, "endstream endobj\n\n");
          // Page
          offset[3] = now;
-         now += out(out, pageID + " 0 obj\n<<\n/Type /Page\n/Parent " + pagesID + " 0 R\n/Contents " + contentID + " 0 R\n>>\n" + "endobj\n\n");
+         now += out(out, pageID + " 0 obj << /Type /Page /Parent " + pagesID + " 0 R /Contents " + contentID + " 0 R >> endobj\n\n");
          // Pages
          offset[4] = now;
-         now += out(out, pagesID + " 0 obj\n<<\n/Type /Pages\n/Count 1\n/Kids [" + pageID + " 0 R]\n" + "/MediaBox [0 0 " + width + " " + height + "]\n/Resources << /Font << /F1 " + fontID + " 0 R >> >>\n>>\n" + "endobj\n\n");
+         now += out(out, pagesID + " 0 obj << /Type /Pages /Count 1 /Kids [" + pageID + " 0 R] /MediaBox [0 0 " + width + " " + height + "] /Resources << /Font << /F1 " + fontID + " 0 R >> >> >> endobj\n\n");
          // Catalog
          offset[5] = now;
-         now += out(out, catalogID + " 0 obj\n<<\n/Type /Catalog\n/Pages " + pagesID + " 0 R\n>>\n" + "endobj\n\n");
+         now += out(out, catalogID + " 0 obj << /Type /Catalog /Pages " + pagesID + " 0 R >> endobj\n\n");
          // Xref
          String xr = "xref\n0 " + offset.length + "\n";
          for(int i = 0; i < offset.length; i++) {
@@ -286,9 +261,9 @@ public final strictfp class OurPDFWriter {
          xr = xr + "trailer\n<<\n/Size " + offset.length + "\n/Root " + catalogID + " 0 R\n>>\n" + "startxref\n" + now + "\n%%EOF\n";
          out(out, xr);
          out.seek(offset[2]);
-         out(out, contentID + " 0 obj\n<< /Length " + ct); // move the file pointer back so we can write out the real Content Size
+         out(out, contentID + " 0 obj << /Length " + ct); // move the file pointer back so we can write out the real Content Size
          out.close();
-         out = null;
+         buf = null; // only set buf to null if the file was saved successfully and no exception was thrown
       } catch(Throwable ex) {
          Util.close(out);
          if (ex instanceof IOException) throw (IOException)ex;
