@@ -147,6 +147,7 @@ public final class SimpleCLI {
     }
 
     public static void main(String[] args) throws Exception {
+        final boolean sat4j = "yes".equals(System.getProperty("sat4j"));
         final boolean minisat = "yes".equals(System.getProperty("minisat"));
         SatSolver solver = A4Options.SatSolver.make("mem", "mem", "/zweb/sat/mem");
         final SimpleReporter rep = new SimpleReporter();
@@ -210,7 +211,7 @@ public final class SimpleCLI {
                 A4Options options = new A4Options();
                 options.originalFilename = filename;
                 options.solverDirectory = "/zweb/zweb/tmp/alloy4/x86-freebsd";
-                options.solver = minisat ? A4Options.SatSolver.MiniSatJNI : solver;
+                options.solver = sat4j ? A4Options.SatSolver.SAT4J : (minisat ? A4Options.SatSolver.MiniSatJNI : solver);
                 for (int i=0; i<cmds.size(); i++) {
                     Command c = cmds.get(i);
                     if (db) {
