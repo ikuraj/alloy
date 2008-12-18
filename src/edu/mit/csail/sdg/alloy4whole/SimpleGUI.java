@@ -1,23 +1,16 @@
-/*
- * Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
+ * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
+ * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package edu.mit.csail.sdg.alloy4whole;
@@ -102,17 +95,16 @@ import javax.swing.border.LineBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
-import javax.swing.text.BadLocationException;
 import javax.swing.text.html.HTMLDocument;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import edu.mit.csail.sdg.alloy4.Err;
+import edu.mit.csail.sdg.alloy4compiler.ast.Browsable;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
-import edu.mit.csail.sdg.alloy4compiler.parser.DebugTree;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.sim.SimInstance;
 import edu.mit.csail.sdg.alloy4compiler.sim.SimTuple;
@@ -127,13 +119,16 @@ import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.Computer;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorType;
+import edu.mit.csail.sdg.alloy4.Listener;
 import edu.mit.csail.sdg.alloy4.MailBug;
 import edu.mit.csail.sdg.alloy4.MacUtil;
+import edu.mit.csail.sdg.alloy4.OurAntiAlias;
 import edu.mit.csail.sdg.alloy4.OurBorder;
 import edu.mit.csail.sdg.alloy4.OurCombobox;
 import edu.mit.csail.sdg.alloy4.OurDialog;
-import edu.mit.csail.sdg.alloy4.OurTabbedEditor;
-import edu.mit.csail.sdg.alloy4.OurTextArea;
+import edu.mit.csail.sdg.alloy4.OurTabbedSyntaxWidget;
+import edu.mit.csail.sdg.alloy4.OurSyntaxWidget;
+import edu.mit.csail.sdg.alloy4.OurTree;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
@@ -161,7 +156,7 @@ import edu.mit.csail.sdg.alloy4whole.SimpleReporter.SimpleTask2;
  * <br> (2) the run() method in the instance watcher (in constructor) is launched from a fresh thread
  */
 
-public final class SimpleGUI implements ComponentListener {
+public final class SimpleGUI implements ComponentListener, Listener {
 
     /** The latest welcome screen; each time we update the welcome screen, we increment this number. */
     private static final int welcomeLevel = 2;
@@ -311,7 +306,7 @@ public final class SimpleGUI implements ComponentListener {
     private boolean lastFocusIsOnEditor = true;
 
     /** The text editor. */
-    private OurTabbedEditor text;
+    private OurTabbedSyntaxWidget text;
 
     /** The "message panel" on the right. */
     private SwingLogPanel log;
@@ -398,19 +393,15 @@ public final class SimpleGUI implements ComponentListener {
         if (wrap) return wrapMe();
         commands=null;
         if (text==null) return null; // If this was called prior to the "text" being fully initialized
-        if (Util.onMac()) frame.getRootPane().putClientProperty("windowModified", Boolean.valueOf(text.do_modified()));
-        if (text.do_isFile()) frame.setTitle(text.do_getFilename()); else frame.setTitle("Alloy Analyzer "+Version.version());
-        toolbar.setBorder(new OurBorder(false, false, text.do_getTabCount()<=1, false));
-        try {
-            int c=text.do_text().getCaretPosition();
-            int y=text.do_text().do_getLineOfOffset(c)+1;
-            int x=c-text.do_text().do_getLineStartOffset(y-1)+1;
-            status.setText("<html>&nbsp; Line "+y+", Column "+x
-                    +(text.do_modified()?" <b style=\"color:#B43333;\">[modified]</b></html>":"</html>"));
-        } catch(BadLocationException ex) {
-            status.setText("<html>&nbsp; Line ?, Column ?"
-                    +(text.do_modified()?" <b style=\"color:#B43333;\">[modified]</b></html>":"</html>"));
-        }
+        OurSyntaxWidget t = text.get();
+        if (Util.onMac()) frame.getRootPane().putClientProperty("windowModified", Boolean.valueOf(t.modified()));
+        if (t.isFile()) frame.setTitle(t.getFilename()); else frame.setTitle("Alloy Analyzer "+Version.version());
+        toolbar.setBorder(new OurBorder(false, false, text.count()<=1, false));
+        int c = t.getCaret();
+        int y = t.getLineOfOffset(c)+1;
+        int x = c - t.getLineStartOffset(y-1)+1;
+        status.setText("<html>&nbsp; Line "+y+", Column "+x
+              +(t.modified()?" <b style=\"color:#B43333;\">[modified]</b></html>":"</html>"));
         return null;
     }
 
@@ -703,7 +694,7 @@ public final class SimpleGUI implements ComponentListener {
 
     /** This method performs File->New. */
     private Runner doNew() {
-        if (!wrap) { text.do_newTab(); notifyChange(); doShow(); }
+        if (!wrap) { text.newtab(); notifyChange(); doShow(); }
         return wrapMe();
     }
 
@@ -730,7 +721,7 @@ public final class SimpleGUI implements ComponentListener {
 
     /** This method performs File->ReloadAll. */
     private Runner doReloadAll() {
-        if (!wrap) { for(int i=0; i<text.do_getTabCount(); i++) if (!text.do_refresh(i)) break; }
+        if (!wrap) text.reloadAll();
         return wrapMe();
     }
 
@@ -743,7 +734,7 @@ public final class SimpleGUI implements ComponentListener {
     /** This method performs File->Save. */
     private Runner doSave() {
         if (!wrap) {
-           String ans = text.do_save(false);
+           String ans = text.save(false);
            if (ans==null) return null;
            notifyChange();
            addHistory(ans);
@@ -755,7 +746,7 @@ public final class SimpleGUI implements ComponentListener {
     /** This method performs File->SaveAs. */
     private Runner doSaveAs() {
         if (!wrap) {
-           String ans = text.do_save(true);
+           String ans = text.save(true);
            if (ans==null) return null;
            notifyChange();
            addHistory(ans);
@@ -778,13 +769,13 @@ public final class SimpleGUI implements ComponentListener {
 
     /** This method performs File->Close. */
     private Runner doClose() {
-        if (!wrap) text.do_close();
+        if (!wrap) text.close();
         return wrapMe();
     }
 
     /** This method performs File->Quit. */
     private Runner doQuit() {
-        if (!wrap) if (text.do_closeAll()) {
+        if (!wrap) if (text.closeAll()) {
             try { WorkerEngine.stop(); } finally { System.exit(0); }
         }
         return wrapMe();
@@ -797,8 +788,8 @@ public final class SimpleGUI implements ComponentListener {
         if (wrap) return wrapMe();
         try {
             wrap = true;
-            boolean canUndo = text.do_text().do_canUndo();
-            boolean canRedo = text.do_text().do_canRedo();
+            boolean canUndo = text.get().canUndo();
+            boolean canRedo = text.get().canRedo();
             editmenu.removeAll();
             OurUtil.makeMenuItem(editmenu, "Undo", VK_Z, VK_Z, doUndo(), canUndo);
             if (Util.onMac())
@@ -811,8 +802,8 @@ public final class SimpleGUI implements ComponentListener {
             OurUtil.makeMenuItem(editmenu, "Paste", VK_V, VK_V, doPaste());
             editmenu.addSeparator();
             OurUtil.makeMenuItem(editmenu, "Go To..."      , VK_T,         VK_T,         doGoto());
-            OurUtil.makeMenuItem(editmenu, "Previous File" , VK_PAGE_UP,   VK_PAGE_UP,   doGotoPrevFile(), text.do_getTabCount()>1);
-            OurUtil.makeMenuItem(editmenu, "Next File"     , VK_PAGE_DOWN, VK_PAGE_DOWN, doGotoNextFile(), text.do_getTabCount()>1);
+            OurUtil.makeMenuItem(editmenu, "Previous File" , VK_PAGE_UP,   VK_PAGE_UP,   doGotoPrevFile(), text.count()>1);
+            OurUtil.makeMenuItem(editmenu, "Next File"     , VK_PAGE_DOWN, VK_PAGE_DOWN, doGotoNextFile(), text.count()>1);
             editmenu.addSeparator();
             OurUtil.makeMenuItem(editmenu, "Find...",   VK_F, VK_F, doFind());
             OurUtil.makeMenuItem(editmenu, "Find Next", VK_G, VK_G, doFindNext());
@@ -824,31 +815,31 @@ public final class SimpleGUI implements ComponentListener {
 
     /** This method performs Edit->Undo. */
     private Runner doUndo() {
-        if (!wrap) text.do_text().do_undo();
+        if (!wrap) text.get().undo();
         return wrapMe();
     }
 
     /** This method performs Edit->Redo. */
     private Runner doRedo() {
-        if (!wrap) text.do_text().do_redo();
+        if (!wrap) text.get().redo();
         return wrapMe();
     }
 
     /** This method performs Edit->Copy. */
     private Runner doCopy() {
-        if (!wrap) { if (lastFocusIsOnEditor) text.do_text().copy(); else log.copy(); }
+        if (!wrap) { if (lastFocusIsOnEditor) text.get().copy(); else log.copy(); }
         return wrapMe();
     }
 
     /** This method performs Edit->Cut. */
     private Runner doCut() {
-        if (!wrap && lastFocusIsOnEditor) text.do_text().cut();
+        if (!wrap && lastFocusIsOnEditor) text.get().cut();
         return wrapMe();
     }
 
     /** This method performs Edit->Paste. */
     private Runner doPaste() {
-        if (!wrap && lastFocusIsOnEditor) text.do_text().paste();
+        if (!wrap && lastFocusIsOnEditor) text.get().paste();
         return wrapMe();
     }
 
@@ -874,9 +865,9 @@ public final class SimpleGUI implements ComponentListener {
     private Runner doFindNext() {
         if (wrap) return wrapMe();
         if (lastFind.length()==0) return null;
-        OurTextArea t = text.do_text();
+        OurSyntaxWidget t = text.get();
         String all = t.getText();
-        int i = Util.indexOf(all, lastFind, t.getCaretPosition()+(lastFindForward?0:-1),lastFindForward,lastFindCaseSensitive);
+        int i = Util.indexOf(all, lastFind, t.getCaret()+(lastFindForward?0:-1),lastFindForward,lastFindCaseSensitive);
         if (i<0) {
             i=Util.indexOf(all, lastFind, lastFindForward?0:(all.length()-1), lastFindForward, lastFindCaseSensitive);
             if (i<0) { log.logRed("The specified search string cannot be found."); return null; }
@@ -884,11 +875,7 @@ public final class SimpleGUI implements ComponentListener {
         } else {
             log.clearError();
         }
-        if (lastFindForward) {
-            t.setCaretPosition(i); t.moveCaretPosition(i+lastFind.length());
-        } else {
-            t.setCaretPosition(i+lastFind.length()); t.moveCaretPosition(i);
-        }
+        if (lastFindForward) t.moveCaret(i, i+lastFind.length()); else t.moveCaret(i+lastFind.length(), i);
         t.requestFocusInWindow();
         return null;
     }
@@ -900,18 +887,17 @@ public final class SimpleGUI implements ComponentListener {
         JTextField x = OurUtil.textfield("", 10);
         if (!OurDialog.getInput(frame,"Go To","Line Number:", y, "Column Number (optional):", x)) return null;
         try {
-            OurTextArea t = text.do_text();
-            int xx = 1, yy = Integer.parseInt(y.getText()), lineCount = t.do_getLineCount();
+            OurSyntaxWidget t = text.get();
+            int xx = 1, yy = Integer.parseInt(y.getText()), lineCount = t.getLineCount();
             if (yy<1) return null;
             if (yy>lineCount) {log.logRed("This file only has "+lineCount+" line(s)."); return null;}
             if (x.getText().length()!=0) xx=Integer.parseInt(x.getText());
             if (xx<1) {log.logRed("If the column number is specified, it must be 1 or greater."); return null;}
-            int caret = t.do_getLineStartOffset(yy-1);
-            int len = (yy==lineCount ? t.getText().length()+1 : t.do_getLineStartOffset(yy)) - caret;
+            int caret = t.getLineStartOffset(yy-1);
+            int len = (yy==lineCount ? t.getText().length()+1 : t.getLineStartOffset(yy)) - caret;
             if (xx>len) xx=len;
             if (xx<1) xx=1;
-            t.setSelectionStart(caret+xx-1);
-            t.setSelectionEnd(caret+xx-1);
+            t.moveCaret(caret+xx-1, caret+xx-1);
             t.requestFocusInWindow();
         } catch(NumberFormatException ex) {
             log.logRed("The number must be 1 or greater.");
@@ -923,12 +909,12 @@ public final class SimpleGUI implements ComponentListener {
 
     /** This method performs Edit->GotoPrevFile. */
     private Runner doGotoPrevFile() {
-        if (wrap) return wrapMe(); else {text.do_prev(); return null;}
+        if (wrap) return wrapMe(); else {text.prev(); return null;}
     }
 
     /** This method performs Edit->GotoNextFile. */
     private Runner doGotoNextFile() {
-        if (wrap) return wrapMe(); else {text.do_next(); return null;}
+        if (wrap) return wrapMe(); else {text.next(); return null;}
     }
 
     //===============================================================================================================//
@@ -954,13 +940,13 @@ public final class SimpleGUI implements ComponentListener {
         List<Command> cp = commands;
         if (cp==null) {
             try {
-                cp=CompUtil.parseOneModule_fromString(text.do_text().getText());
+                cp=CompUtil.parseOneModule_fromString(text.get().getText());
             }
             catch(Err e) {
                 commands = null;
                 runmenu.getItem(0).setEnabled(false);
                 runmenu.getItem(3).setEnabled(false);
-                text.do_highlight(new Pos(text.do_getFilename(), e.pos.x, e.pos.y, e.pos.x2, e.pos.y2));
+                text.shade(new Pos(text.get().getFilename(), e.pos.x, e.pos.y, e.pos.x2, e.pos.y2));
                 if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG)
                     log.logRed("Fatal Exception!" + e.dump() + "\n\n");
                 else
@@ -976,7 +962,7 @@ public final class SimpleGUI implements ComponentListener {
             }
             commands=cp;
         }
-        text.do_removeAllHighlights();
+        text.clearShade();
         log.clearError(); // To clear any residual error message
         if (cp==null) { runmenu.getItem(0).setEnabled(false); runmenu.getItem(3).setEnabled(false); return null; }
         if (cp.size()==0) { runmenu.getItem(0).setEnabled(false); return null; }
@@ -1031,11 +1017,11 @@ public final class SimpleGUI implements ComponentListener {
         opt.unrolls = Version.experimental ? Unrolls.get() : (-1);
         opt.skolemDepth = SkolemDepth.get();
         opt.coreMinimization = CoreMinimization.get();
-        opt.originalFilename = Util.canon(text.do_getFilename());
+        opt.originalFilename = Util.canon(text.get().getFilename());
         opt.solver = SatSolver.get();
         task.bundleIndex = i;
         task.bundleWarningNonFatal = WarningNonfatal.get();
-        task.map = text.do_takeSnapshot();
+        task.map = text.takeSnapshot();
         task.options = opt.dup();
         task.resolutionMode = (Version.experimental && ImplicitThis.get()) ? 2 : 1;
         task.tempdir = maketemp();
@@ -1110,14 +1096,14 @@ public final class SimpleGUI implements ComponentListener {
                 A4Options opt = new A4Options();
                 opt.tempDirectory = alloyHome() + fs + "tmp";
                 opt.solverDirectory = alloyHome() + fs + "binary";
-                opt.originalFilename = Util.canon(text.do_getFilename());
-                world = CompUtil.parseEverything_fromFile(A4Reporter.NOP, text.do_takeSnapshot(), opt.originalFilename, resolutionMode);
+                opt.originalFilename = Util.canon(text.get().getFilename());
+                world = CompUtil.parseEverything_fromFile(A4Reporter.NOP, text.takeSnapshot(), opt.originalFilename, resolutionMode);
             } catch(Err er) {
-                text.do_highlight(er.pos);
+                text.shade(er.pos);
                 log.logRed(er.toString()+"\n\n");
                 return null;
             }
-            DebugTree.show(world, text);
+            world.showAsTree(this);
         }
         return null;
     }
@@ -1167,13 +1153,13 @@ public final class SimpleGUI implements ComponentListener {
                 OurUtil.makeMenuItem(w, "Zoom",           doZoom(),     iconNo);
             }
             w.addSeparator();
-            List<String> filenames=text.do_getFilenames();
-            for(int i=0; i<filenames.size(); i++) {
-                String f=filenames.get(i);
-                JMenuItem it = new JMenuItem("Model: "+slightlyShorterFilename(f)+(text.do_modified(i) ? " *" : ""), null);
-                it.setIcon((f.equals(text.do_getFilename()) && !isViz) ? iconYes : iconNo);
-                it.addActionListener(f.equals(text.do_getFilename()) ? doShow() : doOpenFile(f));
+            int i = 0;
+            for(String f: text.getFilenames()) {
+                JMenuItem it = new JMenuItem("Model: "+slightlyShorterFilename(f)+(text.modified(i) ? " *" : ""), null);
+                it.setIcon((f.equals(text.get().getFilename()) && !isViz) ? iconYes : iconNo);
+                it.addActionListener(f.equals(text.get().getFilename()) ? doShow() : doOpenFile(f));
                 w.add(it);
+                i++;
             }
             if (viz!=null) for(String f:viz.getInstances()) {
                 JMenuItem it = new JMenuItem("Instance: "+viz.getInstanceTitle(f), null);
@@ -1201,7 +1187,7 @@ public final class SimpleGUI implements ComponentListener {
     private Runner doShow() {
         if (wrap) return wrapMe();
         OurUtil.show(frame);
-        text.do_text().requestFocusInWindow();
+        text.get().requestFocusInWindow();
         return null;
     }
 
@@ -1330,12 +1316,12 @@ public final class SimpleGUI implements ComponentListener {
     private Runner doOptFontname() {
         if (wrap) return wrapMe();
         int size=FontSize.get();
-        String family=OurDialog.askFont(frame);
-        if (family.length()>0) {
-           FontName.set(family);
-           text.do_setFont(family, size);
-           status.setFont(new Font(family, Font.PLAIN, size));
-           log.setFontName(family);
+        String f = OurDialog.askFont(frame);
+        if (f.length()>0) {
+           FontName.set(f);
+           text.setFont(f, size, TabSize.get());
+           status.setFont(new Font(f, Font.PLAIN, size));
+           log.setFontName(f);
         }
         return null;
     }
@@ -1345,9 +1331,9 @@ public final class SimpleGUI implements ComponentListener {
         if (wrap) return wrapMe(size);
         int n=size;
         FontSize.set(n);
-        String family=FontName.get();
-        text.do_setFont(family, n);
-        status.setFont(new Font(family, Font.PLAIN, n));
+        String f = FontName.get();
+        text.setFont(f, n, TabSize.get());
+        status.setFont(new Font(f, Font.PLAIN, n));
         log.setFontSize(n);
         viz.doSetFontSize(n);
         return null;
@@ -1355,7 +1341,7 @@ public final class SimpleGUI implements ComponentListener {
 
     /** This method changes the tab size. */
     private Runner doOptTabsize(Integer size) {
-        if (!wrap) { TabSize.set(size.intValue()); text.do_setTabSize(size.intValue()); }
+        if (!wrap) { TabSize.set(size.intValue()); text.setFont(FontName.get(), FontSize.get(), size.intValue()); }
         return wrapMe(size);
     }
 
@@ -1379,7 +1365,7 @@ public final class SimpleGUI implements ComponentListener {
 
     /** This method toggles the "antialias" checkbox. */
     private Runner doOptAntiAlias() {
-        if (!wrap) { boolean newValue = !AntiAlias.get(); AntiAlias.set(newValue); OurTextArea.enableAntiAlias(newValue); }
+        if (!wrap) { boolean newValue = !AntiAlias.get(); AntiAlias.set(newValue); OurAntiAlias.enableAntiAlias(newValue); }
         return wrapMe();
     }
 
@@ -1405,7 +1391,7 @@ public final class SimpleGUI implements ComponentListener {
     private Runner doOptSyntaxHighlighting() {
         if (!wrap) {
             boolean flag = SyntaxDisabled.get();
-            text.do_syntaxHighlighting(flag);
+            text.enableSyntax(flag);
             SyntaxDisabled.set(!flag);
         }
         return wrapMe();
@@ -1546,7 +1532,7 @@ public final class SimpleGUI implements ComponentListener {
     @SuppressWarnings("unchecked")
     Runner doVisualize(String arg) {
         if (wrap) return wrapMe(arg);
-        text.do_removeAllHighlights();
+        text.clearShade();
         if (arg.startsWith("MSG: ")) { // MSG: message
             OurDialog.showtext("Detailed Message", arg.substring(5));
         }
@@ -1568,10 +1554,10 @@ public final class SimpleGUI implements ComponentListener {
                 Util.close(ois);
                 Util.close(is);
             }
-            text.do_removeAllHighlights();
-            text.do_highlight(hCore.b, subCoreColor, false);
-            text.do_highlight(hCore.a, coreColor, false);
-            if (false) text.do_highlight(lCore, coreColor, false); // we are currently not highlighting the lowlevel core
+            text.clearShade();
+            text.shade(hCore.b, subCoreColor, false);
+            text.shade(hCore.a, coreColor, false);
+            if (false) text.shade(lCore, coreColor, false); // we are currently not highlighting the lowlevel core
         }
         if (arg.startsWith("POS: ")) { // POS: x1 y1 x2 y2 filename
             Scanner s=new Scanner(arg.substring(5));
@@ -1579,7 +1565,7 @@ public final class SimpleGUI implements ComponentListener {
             String f=s.nextLine();
             if (f.length()>0 && f.charAt(0)==' ') f=f.substring(1); // Get rid of the space after Y2
             Pos p=new Pos(Util.canon(f), x1, y1, x2, y2);
-            text.do_highlight(p);
+            text.shade(p);
         }
         if (arg.startsWith("CNF: ")) { // CNF: filename
             String filename=Util.canon(arg.substring(5));
@@ -1596,10 +1582,10 @@ public final class SimpleGUI implements ComponentListener {
     private Runner doOpenFile(String arg) {
         if (wrap) return wrapMe(arg);
         String f=Util.canon(arg);
-        if (!text.do_newTab(f)) return null;
-        if (text.do_isFile()) addHistory(f);
+        if (!text.newtab(f)) return null;
+        if (text.get().isFile()) addHistory(f);
         doShow();
-        text.do_text().requestFocusInWindow();
+        text.get().requestFocusInWindow();
         log.clearError();
         return null;
     }
@@ -1899,18 +1885,16 @@ public final class SimpleGUI implements ComponentListener {
         }
 
         // Choose the antiAlias setting
-        OurTextArea.enableAntiAlias(AntiAlias.get());
+        OurAntiAlias.enableAntiAlias(AntiAlias.get());
 
         // Create the message area
         logpane = OurUtil.scrollpane(null);
         log = new SwingLogPanel(logpane, fontName, fontSize, background, Color.BLACK, new Color(.7f,.2f,.2f), this);
 
         // Create the text area
-        wrap = true;
-        Runner chg = notifyChange(), focus = notifyFocusGained();
-        wrap = false;
-        text = new OurTabbedEditor(chg, focus, frame, fontName, fontSize, TabSize.get());
-        text.do_syntaxHighlighting(! SyntaxDisabled.get());
+        text = new OurTabbedSyntaxWidget(fontName, fontSize, TabSize.get());
+        text.listeners.add(this);
+        text.enableSyntax(! SyntaxDisabled.get());
 
         // Add everything to the frame, then display the frame
         Container all=frame.getContentPane();
@@ -1919,10 +1903,10 @@ public final class SimpleGUI implements ComponentListener {
         JPanel lefthalf=new JPanel();
         lefthalf.setLayout(new BorderLayout());
         lefthalf.add(toolbar, BorderLayout.NORTH);
-        lefthalf.add(text, BorderLayout.CENTER);
+        text.addTo(lefthalf, BorderLayout.CENTER);
         splitpane = OurUtil.splitpane(JSplitPane.HORIZONTAL_SPLIT, lefthalf, logpane, width/2);
         splitpane.setResizeWeight(0.5D);
-        status = OurUtil.make(OurTextArea.label(" "), new Font(fontName, Font.PLAIN, fontSize), Color.BLACK, background);
+        status = OurUtil.make(OurAntiAlias.label(" "), new Font(fontName, Font.PLAIN, fontSize), Color.BLACK, background);
         status.setBorder(new OurBorder(true,false,false,false));
         all.add(splitpane, BorderLayout.CENTER);
         all.add(status, BorderLayout.SOUTH);
@@ -2008,6 +1992,7 @@ public final class SimpleGUI implements ComponentListener {
 
         // Update the title and status bar
         notifyChange();
+        text.get().requestFocusInWindow();
 
         // Launch the welcome screen if needed
         if (!"yes".equals(System.getProperty("debug")) && Welcome.get() < welcomeLevel) {
@@ -2056,4 +2041,23 @@ public final class SimpleGUI implements ComponentListener {
         });
         t.start();
     }
+
+    /** {@inheritDoc} */
+   public boolean do_action(Object sender, Enum<? extends Enum<?>> e) {
+      if (e instanceof OurTabbedSyntaxWidget.Event) switch((OurTabbedSyntaxWidget.Event)e) {
+         case FOCUSED: notifyFocusGained(); break;
+         case STATUS_CHANGE: notifyChange(); break;
+      }
+      return true;
+   }
+
+   /** {@inheritDoc} */
+   public boolean do_action(Object sender, Enum<? extends Enum<?>> e, Object arg) {
+      if (e==OurTree.Event.SELECT && arg instanceof Browsable) {
+        Pos p = ((Browsable)arg).pos();
+        if (p==Pos.UNKNOWN) p = ((Browsable)arg).span();
+        text.shade(p);
+      }
+      return true;
+   }
 }

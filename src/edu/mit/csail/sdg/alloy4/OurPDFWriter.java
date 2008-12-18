@@ -1,23 +1,16 @@
-/*
- * Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
+ * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
+ * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package edu.mit.csail.sdg.alloy4;
@@ -46,7 +39,7 @@ public final strictfp class OurPDFWriter {
    /** The page height (in terms of dots). */
    private final long height;
 
-   /** Latest color (-1 if none has been explicitly set so far) */
+   /** Latest color expressed as RGB (-1 if none has been explicitly set so far) */
    private int color = -1;
 
    /** Latest line style (0=normal, 1=bold, 2=dotted, 3=dashed) */
@@ -63,7 +56,7 @@ public final strictfp class OurPDFWriter {
       this.filename = filename;
       width = dpi*8L + (dpi/2L); // "8.5 inches"
       height = dpi*11L;          // "11 inches"
-      // Write the default settings, and add a default transformation that flips (0, 0) into the top-left corner of the page, then scale the page
+      // Write the default settings, and flip (0, 0) into the top-left corner of the page, then scale the page
       buf.write("q\n" + "1 J\n" + "1 j\n" + "[] 0 d\n" + "1 w\n" + "1 0 0 -1 0 ").writes(height).write("cm\n");
       buf.writes(scale).write("0 0 ").writes(scale).writes(dpi/2.0).writes(dpi/2.0).write("cm\n");
    }
@@ -93,7 +86,9 @@ public final strictfp class OurPDFWriter {
    public OurPDFWriter shiftCoordinateSpace(int x, int y)  { buf.write("1 0 0 1 ").writes(x).writes(y).write("cm\n"); return this; }
 
    /** Draws a line from (x1, y1) to (x2, y2). */
-   public OurPDFWriter drawLine(int x1, int y1, int x2, int y2) { buf.writes(x1).writes(y1).write("m ").writes(x2).writes(y2).write("l S\n"); return this; }
+   public OurPDFWriter drawLine(int x1, int y1, int x2, int y2) {
+      buf.writes(x1).writes(y1).write("m ").writes(x2).writes(y2).write("l S\n"); return this;
+   }
 
    /** Draws a circle of the given radius, centered at (0, 0). */
    public OurPDFWriter drawCircle(int radius, boolean fillOrNot) {
@@ -122,11 +117,13 @@ public final strictfp class OurPDFWriter {
             case PathIterator.SEG_LINETO:
                nowX = pt[0]; nowY = pt[1]; buf.writes(nowX).writes(nowY).write("l\n"); break;
             case PathIterator.SEG_CUBICTO:
-               nowX = pt[4]; nowY = pt[5]; buf.writes(pt[0]).writes(pt[1]).writes(pt[2]).writes(pt[3]).writes(nowX).writes(nowY).write("c\n"); break;
+               nowX = pt[4]; nowY = pt[5];
+               buf.writes(pt[0]).writes(pt[1]).writes(pt[2]).writes(pt[3]).writes(nowX).writes(nowY).write("c\n"); break;
             case PathIterator.SEG_QUADTO: // Convert quadratic bezier into cubic bezier using de Casteljau algorithm
                double px = nowX + (pt[0] - nowX)*(2.0/3.0), qx = px + (pt[2] - nowX)/3.0;
                double py = nowY + (pt[1] - nowY)*(2.0/3.0), qy = py + (pt[3] - nowY)/3.0;
-               nowX = pt[2]; nowY = pt[3]; buf.writes(px).writes(py).writes(qx).writes(qy).writes(nowX).writes(nowY).write("c\n"); break;
+               nowX = pt[2]; nowY = pt[3];
+               buf.writes(px).writes(py).writes(qx).writes(qy).writes(nowX).writes(nowY).write("c\n"); break;
          }
       }
       buf.write(fillOrNot ? "f\n" : "S\n");
@@ -235,10 +232,12 @@ public final strictfp class OurPDFWriter {
          long now = head.length;
          // Font
          offset[1] = now;
-         now += out(out, fontID + " 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >> endobj\n\n");
+         now += out(out, fontID + " 0 obj << /Type /Font /Subtype /Type1 /BaseFont"
+               + " /Helvetica /Encoding /WinAnsiEncoding >> endobj\n\n");
          // Content
          offset[2] = now;
-         now += out(out, contentID + " 0 obj << /Length " + space + (compressOrNot ? " /Filter /FlateDecode" : "") + " >> stream\r\n");
+         now += out(out, contentID + " 0 obj << /Length " + space
+               + (compressOrNot ? " /Filter /FlateDecode" : "") + " >> stream\r\n");
          long ct = compressOrNot ? buf.dumpFlate(out) : buf.dump(out);
          now += ct + out(out, "endstream endobj\n\n");
          // Page
@@ -246,7 +245,8 @@ public final strictfp class OurPDFWriter {
          now += out(out, pageID + " 0 obj << /Type /Page /Parent " + pagesID + " 0 R /Contents " + contentID + " 0 R >> endobj\n\n");
          // Pages
          offset[4] = now;
-         now += out(out, pagesID + " 0 obj << /Type /Pages /Count 1 /Kids [" + pageID + " 0 R] /MediaBox [0 0 " + width + " " + height + "] /Resources << /Font << /F1 " + fontID + " 0 R >> >> >> endobj\n\n");
+         now += out(out, pagesID + " 0 obj << /Type /Pages /Count 1 /Kids [" + pageID + " 0 R] /MediaBox [0 0 "
+               + width + " " + height + "] /Resources << /Font << /F1 " + fontID + " 0 R >> >> >> endobj\n\n");
          // Catalog
          offset[5] = now;
          now += out(out, catalogID + " 0 obj << /Type /Catalog /Pages " + pagesID + " 0 R >> endobj\n\n");

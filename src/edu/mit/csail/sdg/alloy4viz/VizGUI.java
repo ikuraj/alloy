@@ -1,23 +1,16 @@
-/*
- * Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
+ * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
+ * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package edu.mit.csail.sdg.alloy4viz;
@@ -83,10 +76,10 @@ public final class VizGUI implements ComponentListener {
    private static final Color background = new Color(0.9f, 0.9f, 0.9f);
 
    /** The icon for a "checked" menu item. */
-   private static final Icon iconYes=OurUtil.loadIcon("images/menu1.gif");
+   private static final Icon iconYes = OurUtil.loadIcon("images/menu1.gif");
 
    /** The icon for an "unchecked" menu item. */
-   private static final Icon iconNo=OurUtil.loadIcon("images/menu0.gif");
+   private static final Icon iconNo = OurUtil.loadIcon("images/menu0.gif");
 
    /** Whether the JVM should shutdown after the last file is closed. */
    private final boolean standalone;
@@ -908,7 +901,7 @@ public final class VizGUI implements ComponentListener {
 
    /** This method displays an alert message. */
    public void doAlert(String message) {
-      OurDialog.alert(frame, message, "Alloy 4");
+      OurDialog.alert(frame, message);
    }
 
    /** This method attempts to derive the next satisfying instance. */
@@ -916,17 +909,11 @@ public final class VizGUI implements ComponentListener {
       if (wrap) return wrapMe();
       if (settingsOpen!=0) return null;
       if (xmlFileName.length()==0) {
-         OurDialog.alert(frame,"Cannot display the next solution since "
-               +"no instance is currently loaded.", "Error");
+         OurDialog.alert(frame,"Cannot display the next solution since no instance is currently loaded.");
       } else if (enumerator==null) {
-         OurDialog.alert(frame,"Cannot display the next solution since "
-               +"the analysis engine is not loaded with the visualizer.", "Error");
+         OurDialog.alert(frame,"Cannot display the next solution since the analysis engine is not loaded with the visualizer.");
       } else {
-         try {
-            enumerator.compute(xmlFileName);
-         } catch(Throwable ex) {
-            OurDialog.alert(frame, ex.getMessage(), "Error");
-         }
+         try { enumerator.compute(xmlFileName); } catch(Throwable ex) { OurDialog.alert(frame, ex.getMessage()); }
       }
       return null;
    }

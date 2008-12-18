@@ -1,23 +1,16 @@
-/*
- * Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
+ * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
+ * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package edu.mit.csail.sdg.alloy4;
@@ -105,7 +98,7 @@ public final class Util {
       private final int def;
       /** If min>n, we return min; else if n>max, we return max; otherwise we return n. */
       private int bound (int n) { return n<min ? min : (n>max? max : n); }
-      /** Constructs a new IntPref object with the given id; you must ensure max >= min, but def does not have to be between min..max */
+      /** Make a new IntPref object with the given id; you must ensure max >= min, but def does not have to be between min..max */
       public IntPref (String id, int min, int def, int max) {this.id=id; this.min=min; this.def=def; this.max=max;}
       /** Sets the value for this preference. */
       public void set (int value) { Preferences.userNodeForPackage(Util.class).putInt(id, bound(value)); }
@@ -183,7 +176,7 @@ public final class Util {
       };
    }
 
-   /** Helper method that converts Windows/Mac/Unix linebreaks into "\n", and replace non-tab non-linebreak control characters into space characters. */
+   /** Converts Windows/Mac/Unix linebreaks into '\n', and replace non-tab non-linebreak control characters into space. */
    public static String convertLineBreak(String input) {
       return input.replace("\r\n","\n").replace('\r','\n').replaceAll("[\000-\010\013\014\016-\037]"," ");
    }
@@ -415,7 +408,8 @@ public final class Util {
 
    /** Copy file.content[from...f.length-1] into file.content[to...], then truncate the file after that point.
     * <p> If (from &gt; to), this means we simply delete the portion of the file beginning at "to" and up to but excluding "from".
-    * <p> If (from &lt; to), this means we insert (to-from) number of ARBITRARY bytes into the "from" location and shift the original file content accordingly.
+    * <p> If (from &lt; to), this means we insert (to-from) number of ARBITRARY bytes into the "from" location
+    *     and shift the original file content accordingly.
     * <p> Note: after this operation, the file's current position will be moved to the start of the file.
     * @throws IOException if (from &lt; 0) || (to &lt; 0) || (from &gt;= file.length())
     */
@@ -432,12 +426,14 @@ public final class Util {
          }
       } else {
          file.seek(total);
-         for(long todo=to-from; todo>0;) { if (todo>=buf.length) {file.write(buf); todo=todo-buf.length;} else {file.write(buf, 0, (int)todo); break;} }
+         for(long todo=to-from; todo>0;) {
+            if (todo >= buf.length) {file.write(buf); todo = todo - buf.length;} else {file.write(buf, 0, (int)todo); break;}
+         }
          for(long todo=total-from; todo>0; total=total-res, todo=todo-res) {
             if (todo > buf.length) res=buf.length; else res=(int)todo;
-            file.seek(total-res);
-            for(int done=0; done < res;) { int r=file.read(buf, done, res-done); if (r<=0) throw new IOException(); else done=done+r; }
-            file.seek(total-res+(to-from));
+            file.seek(total - res);
+            for(int done=0; done<res;) { int r=file.read(buf, done, res-done); if (r<=0) throw new IOException(); else done += r; }
+            file.seek(total - res + (to - from));
             file.write(buf, 0, res);
          }
       }
@@ -581,10 +577,14 @@ public final class Util {
    }
 
    /** Returns true iff running on Windows **/
-   public static boolean onWindows()  { return System.getProperty("os.name").toLowerCase(Locale.US).startsWith("windows"); };
+   public static boolean onWindows() {
+      return System.getProperty("os.name").toLowerCase(Locale.US).startsWith("windows");
+   };
 
    /** Returns true iff running on Mac OS X. **/
-   public static boolean onMac()  { return System.getProperty("mrj.version")!=null || System.getProperty("os.name").toLowerCase(Locale.US).startsWith("mac "); }
+   public static boolean onMac() {
+      return System.getProperty("mrj.version")!=null || System.getProperty("os.name").toLowerCase(Locale.US).startsWith("mac ");
+   }
 
    /** Returns the substring after the last "/" */
    public static String tail(String string)  { int i=string.lastIndexOf('/'); return (i<0) ? string : string.substring(i+1); }

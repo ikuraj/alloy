@@ -1,23 +1,16 @@
-/*
- * Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
+ * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
+ * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package edu.mit.csail.sdg.alloy4graph;
@@ -352,7 +345,7 @@ public final strictfp class GraphViewer extends JPanel {
                    continue;
           } else if (b3.isSelected()) {
              try { dpi=Double.parseDouble(dp1.getText()); } catch(NumberFormatException ex) { dpi=(-1); }
-             if (dpi<50 || dpi>3000) { OurDialog.alert(me, "The DPI must be between 50 and 3000.", "Error"); continue; }
+             if (dpi<50 || dpi>3000) { OurDialog.alert(me, "The DPI must be between 50 and 3000."); continue; }
              myScale=0; // This field is unused for PDF generation
           } else {
              dpi=300;
@@ -378,7 +371,7 @@ public final strictfp class GraphViewer extends JPanel {
           synchronized(GraphViewer.class) { oldDPI=dpi; }
           Util.setCurrentDirectory(filename.getParentFile());
        } catch(Throwable ex) {
-          OurDialog.alert(me, "An error has occured in writing the output file:\n" + ex, "Error");
+          OurDialog.alert(me, "An error has occured in writing the output file:\n" + ex);
        }
     }
 

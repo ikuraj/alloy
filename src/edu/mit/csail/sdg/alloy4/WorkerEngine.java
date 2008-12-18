@@ -1,23 +1,16 @@
-/*
- * Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
+ * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
+ * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package edu.mit.csail.sdg.alloy4;
@@ -59,7 +52,8 @@ public final class WorkerEngine {
 
    /** This defines an interface for receiving results from a subprocess. */
    public interface WorkerCallback {
-      /** The task would send zero or more non-null Objects to this handler (the objects will be serialized by the sub JVM and deserialized in the parent JVM). */
+      /** The task would send zero or more non-null Objects to this handler
+       * (the objects will be serialized by the sub JVM and deserialized in the parent JVM). */
       public void callback(Object msg);
       /** If the task completed successfully, this method will be called. */
       public void done();
@@ -67,29 +61,35 @@ public final class WorkerEngine {
       public void fail();
    }
 
-   /** This wraps the given InputStream such that the resulting object's "close()" method does nothing; if stream==null, we get an InputStream that always returns EOF. */
+   /** This wraps the given InputStream such that the resulting object's "close()" method does nothing;
+    * if stream==null, we get an InputStream that always returns EOF. */
    private static InputStream wrap(final InputStream stream) {
       return new InputStream() {
-         public int read()                           throws IOException { if (stream==null) return -1; else return stream.read(); }
-         public int read(byte b[], int off, int len) throws IOException { if (len==0) return 0; else if (stream==null) return -1; else return stream.read(b, off, len); }
-         public long skip(long n)                    throws IOException { if (stream==null) return 0; else return stream.skip(n); }
+         public int read(byte b[], int off, int len) throws IOException {
+            if (len==0) return 0; else if (stream==null) return -1; else return stream.read(b, off, len);
+         }
+         public int  read()       throws IOException { if (stream==null) return -1; else return stream.read(); }
+         public long skip(long n) throws IOException { if (stream==null) return 0; else return stream.skip(n); }
       };
    }
 
-   /** This wraps the given OutputStream such that the resulting object's "close()" method simply calls "flush()"; if stream==null, we get an OutputStream that ignores all writes. */
+   /** This wraps the given OutputStream such that the resulting object's "close()" method simply calls "flush()";
+    * if stream==null, we get an OutputStream that ignores all writes. */
    private static OutputStream wrap(final OutputStream stream) {
       return new OutputStream() {
          public void write(int b)                      throws IOException { if (stream!=null) stream.write(b); }
          public void write(byte b[], int off, int len) throws IOException { if (stream!=null) stream.write(b, off, len); }
          public void flush()                           throws IOException { if (stream!=null) stream.flush(); }
-         public void close()                           throws IOException { if (stream!=null) stream.flush(); } // we intentionally DON'T close the file
+         public void close()                           throws IOException { if (stream!=null) stream.flush(); }
+         // The close() method above INTENTIONALLY does not actually close the file
       };
    }
 
    /** If nonnull, it is the latest sub JVM. */
    private static Process latest_sub = null;
 
-   /** If nonnull, it is the latest worker thread talking to the sub JVM. (If latest_sub==null, then we guarantee latest_manager is also null) */
+   /** If nonnull, it is the latest worker thread talking to the sub JVM.
+    * (If latest_sub==null, then we guarantee latest_manager is also null) */
    private static Thread latest_manager = null;
 
    /** Constructor is private since this class does not need to be instantiated. */
@@ -114,27 +114,35 @@ public final class WorkerEngine {
     */
    public static void runLocally(final WorkerTask task, final WorkerCallback callback) throws Exception {
       synchronized(WorkerEngine.class) {
-         if (latest_manager!=null && latest_manager.isAlive()) throw new IOException("Subprocess still performing the previous task.");
+         if (latest_manager!=null && latest_manager.isAlive()) throw new IOException("Subprocess still performing the last task.");
          try { task.run(callback); callback.done(); } catch(Throwable ex) { callback.callback(ex); callback.fail(); }
       }
    }
 
-   /** This issues a new task to the subprocess; if subprocess hasn't been constructed yet or has terminated abnormally, this method will launch a new subprocess.
+   /** This issues a new task to the subprocess;
+    * if subprocess hasn't been constructed yet or has terminated abnormally, this method will launch a new subprocess.
     * @param task - the task that we want the subprocess to execute
-    * @param newmem - the amount of memory (in megabytes) we want the subprocess to have (if the subproces has not terminated, then this parameter is ignored)
-    * @param newstack - the amount of stack (in kilobytes) we want the subprocess to have (if the subproces has not terminated, then this parameter is ignored)
+    * @param newmem - the amount of memory (in megabytes) we want the subprocess to have
+    *                 (if the subproces has not terminated, then this parameter is ignored)
+    * @param newstack - the amount of stack (in kilobytes) we want the subprocess to have
+    *                   (if the subproces has not terminated, then this parameter is ignored)
     * @param jniPath - if nonnull and nonempty, then it specifies the subprocess's default JNI library location
-    * @param classPath - if nonnull and nonempty, then it specifies the subprocess's default CLASSPATH, else we'll use System.getProperty("java.class.path")
+    * @param classPath - if nonnull and nonempty, then it specifies the subprocess's default CLASSPATH,
+    *                    else we'll use System.getProperty("java.class.path")
     * @param callback - the handler that will receive outputs from the task
     * @throws IOException - if a previous task is still busy executing
     * @throws IOException - if an error occurred in launching a sub JVM or talking to it
     */
-   public static void run(final WorkerTask task, int newmem, int newstack, final String jniPath, String classPath, final WorkerCallback callback) throws IOException {
+   public static void run
+   (final WorkerTask task, int newmem, int newstack, String jniPath, String classPath, final WorkerCallback callback)
+   throws IOException {
       if (classPath==null || classPath.length()==0) classPath = System.getProperty("java.class.path");
       synchronized(WorkerEngine.class) {
          final Process sub;
-         if (latest_manager!=null && latest_manager.isAlive()) throw new IOException("Subprocess still performing the previous task.");
-         try { if (latest_sub!=null) latest_sub.exitValue(); latest_manager=null; latest_sub=null; } catch(IllegalThreadStateException ex) { }
+         if (latest_manager!=null && latest_manager.isAlive()) throw new IOException("Subprocess still performing the last task.");
+         try {
+            if (latest_sub!=null) latest_sub.exitValue(); latest_manager=null; latest_sub=null;
+         } catch(IllegalThreadStateException ex) { }
          if (latest_sub==null) {
             String java = "java", javahome = System.getProperty("java.home");
             if (javahome!=null && javahome.length()>0) {
@@ -189,7 +197,9 @@ public final class WorkerEngine {
                      sub.destroy(); Util.close(sub2main);
                      synchronized(WorkerEngine.class) { if (latest_sub != sub) return; callback.fail(); return; }
                   }
-                  synchronized(WorkerEngine.class) { if (latest_sub != sub) return; if (x==null) {callback.done(); return;} else callback.callback(x); }
+                  synchronized(WorkerEngine.class) {
+                     if (latest_sub != sub) return; if (x==null) {callback.done(); return;} else callback.callback(x);
+                  }
                }
             }
          });
@@ -204,7 +214,8 @@ public final class WorkerEngine {
     * (since we assume the parent process will notice it and react accordingly)
     */
    public static void main(String[] args) {
-      // To prevent people from accidentally invoking this class, or invoking it from an incompatible version, we add a simple sanity check on the command line arguments
+      // To prevent people from accidentally invoking this class, or invoking it from an incompatible version,
+      // we add a simple sanity check on the command line arguments
       if (args.length!=2) halt("#args should be 2 but instead is "+args.length, 1);
       if (!args[0].equals(Version.buildDate())) halt("BuildDate mismatch: "+args[0]+" != "+Version.buildDate(), 1);
       if (!args[1].equals("" + Version.buildNumber())) halt("BuildNumber mismatch: "+args[1]+" != "+Version.buildNumber(), 1);
@@ -212,7 +223,8 @@ public final class WorkerEngine {
       Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
          public void uncaughtException(Thread t, Throwable e) { halt("UncaughtException: "+e, 1); }
       });
-      // Redirect System.in, System.out, System.err to no-op (so that if a task tries to read/write to System.in/out/err, those reads and writes won't mess up the ObjectInputStream/ObjectOutputStream)
+      // Redirect System.in, System.out, System.err to no-op (so that if a task tries to read/write to System.in/out/err,
+      // those reads and writes won't mess up the ObjectInputStream/ObjectOutputStream)
       System.setIn(wrap((InputStream)null));
       System.setOut(new PrintStream(wrap((OutputStream)null)));
       System.setErr(new PrintStream(wrap((OutputStream)null)));
@@ -240,8 +252,8 @@ public final class WorkerEngine {
          // This way, if the parent process terminates, then this subprocess should see it almost immediately
          // (since the inter-process pipe will be broken) and will terminate (regardless of the status of the worker thread)
          if (t!=null && t.isAlive()) {
-            // We only get here if the previous subtask has informed the parent that the job is done,
-            // and that the parent then issued another job.  So we wait up to 5 seconds for the worker thread to confirm its termination.
+            // We only get here if the previous subtask has informed the parent that the job is done, and that the parent
+            // then issued another job.  So we wait up to 5 seconds for the worker thread to confirm its termination.
             // If 5 seconds is up, then we assume something terrible has happened.
             try {t.join(5000); if (t.isAlive()) halt("Timeout", 1);} catch (Throwable ex) {halt("Timeout: "+ex, 1);}
          }
@@ -253,7 +265,7 @@ public final class WorkerEngine {
                   x = new ObjectOutputStream(wrap(out));
                   final ObjectOutputStream xx = x;
                   WorkerCallback y = new WorkerCallback() {
-                     public void callback(Object msg) { try { xx.writeObject(msg); } catch(IOException ex) { halt("Callback: "+ex, 1); } }
+                     public void callback(Object x) { try {xx.writeObject(x);} catch(IOException ex) {halt("Callback: "+ex, 1);} }
                      public void done() { }
                      public void fail() { }
                   };
@@ -263,14 +275,14 @@ public final class WorkerEngine {
                } catch(Throwable ex) {
                   e=ex;
                }
-               for(Throwable ex=e; ex!=null; ex=ex.getCause()) if (ex instanceof OutOfMemoryError || ex instanceof StackOverflowError) {
-                  try { System.gc(); x.writeObject(ex); x.flush(); } catch(Throwable ex2) { } finally { halt("Error: "+e, 2); }
+               for(Throwable t=e; t!=null; t=t.getCause()) if (t instanceof OutOfMemoryError || t instanceof StackOverflowError) {
+                  try { System.gc(); x.writeObject(t); x.flush(); } catch(Throwable ex2) { } finally { halt("Error: "+e, 2); }
                }
                if (e instanceof Err) {
-                  try { System.gc(); x.writeObject(e); x.writeObject(null); x.flush(); } catch(Throwable ex2) { halt("Error: "+e, 1); }
+                  try { System.gc(); x.writeObject(e); x.writeObject(null); x.flush(); } catch(Throwable t) { halt("Error: "+e, 1); }
                }
                if (e!=null) {
-                  try { System.gc(); x.writeObject(e); x.flush(); } catch(Throwable ex2) { } finally { halt("Error: "+e, 1); }
+                  try { System.gc(); x.writeObject(e); x.flush(); } catch(Throwable t) { } finally { halt("Error: "+e, 1); }
                }
                Util.close(x); // avoid memory leaks
             }

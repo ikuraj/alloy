@@ -1,23 +1,16 @@
-/*
- * Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
+ * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
+ * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package edu.mit.csail.sdg.alloy4whole;
@@ -47,7 +40,7 @@ import javax.swing.text.StyledDocument;
 import javax.swing.text.StyledEditorKit;
 import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
-import edu.mit.csail.sdg.alloy4.OurTextArea;
+import edu.mit.csail.sdg.alloy4.OurAntiAlias;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 
 /** This helper method is used by SimpleGUI; only the AWT Event Thread may call methods in this class. */
@@ -118,7 +111,7 @@ final class SwingLogPanel {
 
     /** Constructs a new JTextPane logger, and put it inside an existing JScrollPane.
      * @param parent - the existing JScrollPane to insert the JTextPane into
-     * @param fontName - the font family to use
+     * @param fontName - the font name to use
      * @param fontSize - the font size to use
      * @param background - the background color to use
      * @param regular - the color to use for regular messages
@@ -132,7 +125,7 @@ final class SwingLogPanel {
         this.handler = handler;
         this.fontName = fontName;
         this.fontSize = fontSize;
-        this.log = OurUtil.make(OurTextArea.pane(), Color.BLACK, background, new EmptyBorder(1,1,1,1), new Font(fontName, Font.PLAIN, fontSize));
+        this.log = OurUtil.make(OurAntiAlias.pane(), Color.BLACK, background, new EmptyBorder(1,1,1,1), new Font(fontName, Font.PLAIN, fontSize));
         // This customized StyledEditorKit prevents line-wrapping up to 30000 pixels wide.
         // 30000 is a good number; value higher than about 32768 will cause errors.
         this.log.setEditorKit(new StyledEditorKit() {
@@ -190,7 +183,7 @@ final class SwingLogPanel {
         clearError();
         StyledDocument doc = log.getStyledDocument();
         Style linkStyle = doc.addStyle("link", styleRegular);
-        final JLabel label = OurUtil.make(OurTextArea.label(link), new Font(fontName, Font.BOLD, fontSize), linkColor);
+        final JLabel label = OurUtil.make(OurAntiAlias.label(link), new Font(fontName, Font.BOLD, fontSize), linkColor);
         label.setAlignmentY(0.8f);
         label.setMaximumSize(label.getPreferredSize());
         label.addMouseListener(new MouseListener(){

@@ -1,23 +1,16 @@
-/*
- * Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
+ * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
+ * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package edu.mit.csail.sdg.alloy4;
@@ -43,6 +36,10 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.filechooser.FileFilter;
+import static javax.swing.JOptionPane.YES_NO_OPTION;
+import static javax.swing.JOptionPane.YES_NO_CANCEL_OPTION;
+import static javax.swing.JOptionPane.WARNING_MESSAGE;
+import static javax.swing.JOptionPane.QUESTION_MESSAGE;
 
 /** Graphical dialog methods for asking the user some questions.
  *
@@ -55,8 +52,8 @@ public final class OurDialog {
    private OurDialog() { }
 
    /** Popup the given error message. */
-   public static void alert(Frame parentFrame, Object message, String title) {
-      JOptionPane.showMessageDialog(parentFrame, message, title, JOptionPane.PLAIN_MESSAGE);
+   public static void alert(Frame parentFrame, Object message) {
+      JOptionPane.showMessageDialog(parentFrame, message, "Error", JOptionPane.PLAIN_MESSAGE);
    }
 
    /** Popup the given error message, then terminate the program. */
@@ -73,10 +70,13 @@ public final class OurDialog {
     */
    public static char askSaveDiscardCancel(Frame parentFrame, String description) {
       int ans = JOptionPane.showOptionDialog(parentFrame,
-         new String[] {description + " has not been saved. Do you want to", "cancel the operation, close the file without saving, or save it and close?"},
+         new String[] {
+            description + " has not been saved. Do you want to",
+            "cancel the operation, close the file without saving, or save it and close?"
+         },
          "Warning",
-         JOptionPane.YES_NO_CANCEL_OPTION,
-         JOptionPane.WARNING_MESSAGE,
+         YES_NO_CANCEL_OPTION,
+         WARNING_MESSAGE,
          null,
          new Object[] {"Save", "Don't Save", "Cancel"},
          "Cancel"
@@ -90,13 +90,13 @@ public final class OurDialog {
     */
    public static boolean askOverwrite(Frame parentFrame, String filename) {
       int ans=JOptionPane.showOptionDialog(parentFrame,
-         new String[] {"The file \"" + filename + "\"", "already exists. Do you wish to overwrite it?"},
-         "Warning: file already exists",
-         JOptionPane.YES_NO_OPTION,
-         JOptionPane.WARNING_MESSAGE,
-         null,
-         new Object[] {"Overwrite", "Cancel"},
-         "Cancel"
+            new String[] {"The file \"" + filename + "\"", "already exists. Do you wish to overwrite it?"},
+            "Warning: file already exists",
+            YES_NO_OPTION,
+            WARNING_MESSAGE,
+            null,
+            new Object[] {"Overwrite", "Cancel"},
+            "Cancel"
       );
       return ans == JOptionPane.YES_OPTION;
    }
@@ -116,14 +116,14 @@ public final class OurDialog {
       if (allFonts == null) allFonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
       JComboBox jcombo = new OurCombobox(allFonts);
       int ans = JOptionPane.showOptionDialog(
-         parentFrame,
-         new Object[] {"Please choose the new font:", jcombo},
-         "Font",
-         JOptionPane.YES_NO_OPTION,
-         JOptionPane.WARNING_MESSAGE,
-         null,
-         new Object[] {"Ok", "Cancel"},
-         "Cancel"
+            parentFrame,
+            new Object[] {"Please choose the new font:", jcombo},
+            "Font",
+            YES_NO_OPTION,
+            WARNING_MESSAGE,
+            null,
+            new Object[] {"Ok", "Cancel"},
+            "Cancel"
       );
       Object value = jcombo.getSelectedItem();
       if (ans != JOptionPane.YES_OPTION || !(value instanceof String)) return ""; else return (String)value;
@@ -185,7 +185,7 @@ public final class OurDialog {
    /** Display "msg" in a modal dialog window, and ask the user to choose "yes" versus "no" (default is "no"). */
    public static boolean yesno(Frame parentFrame, String msg, String yes, String no) {
       return JOptionPane.YES_OPTION == JOptionPane.showOptionDialog(
-         parentFrame, msg, "Question", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new Object[]{yes, no}, no
+            parentFrame, msg, "Question", YES_NO_OPTION, WARNING_MESSAGE, null, new Object[]{yes, no}, no
       );
    }
 
@@ -200,9 +200,7 @@ public final class OurDialog {
       Object main = "Ok";
       for(Object obj: objects) if (obj instanceof JTextField || obj instanceof JTextArea) { main = obj; break; }
       // Construct the dialog panel
-      final JOptionPane pane = new JOptionPane(
-         objects, JOptionPane.QUESTION_MESSAGE, JOptionPane.YES_NO_OPTION, null, new Object[]{"Ok", "Cancel"}, main
-      );
+      final JOptionPane pane = new JOptionPane(objects, QUESTION_MESSAGE, YES_NO_OPTION, null, new Object[]{"Ok", "Cancel"}, main);
       final JDialog dialog = pane.createDialog(parentFrame, title);
       // For each JTextField and JCheckBox, add a KeyListener that detects VK_ENTER and treat it as if the user clicked OK
       for(Object obj: objects) if (obj instanceof JTextField || obj instanceof JCheckBox) {

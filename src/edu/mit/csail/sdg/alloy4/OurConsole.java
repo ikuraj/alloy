@@ -1,23 +1,16 @@
-/*
- * Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
+ * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
+ * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package edu.mit.csail.sdg.alloy4;
@@ -49,6 +42,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Caret;
+import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
@@ -73,16 +67,16 @@ public final class OurConsole extends JScrollPane {
    private static final long serialVersionUID = 0;
 
    /** The style for default text. */
-   private final SimpleAttributeSet plain;
+   private final AttributeSet plain = style("Verdana", 14, false, Color.BLACK, 0);
 
    /** The style for bold text. */
-   private final SimpleAttributeSet bold;
+   private final AttributeSet bold = style("Verdana", 14, true, Color.BLACK, 0);
 
    /** The style for successful result. */
-   private final SimpleAttributeSet good;
+   private final AttributeSet good = style("Verdana", 14, false, Color.BLUE, 15);
 
    /** The style for failed result. */
-   private final SimpleAttributeSet bad;
+   private final AttributeSet bad = style("Verdana", 14, false, Color.RED, 15);
 
    /** The number of characters that currently exist above the horizontal divider bar.
     * (The interactive console is composed of a JTextPane which contains 0 or more input/output pairs, followed
@@ -102,6 +96,17 @@ public final class OurConsole extends JScrollPane {
    /** The position in this.history that is currently showing. */
    private int browse = 0;
 
+   /** Helper method that construct a mutable style with the given font name, font size, boldness, color, and left indentation. */
+   static MutableAttributeSet style(String fontName, int fontSize, boolean boldness, Color color, int leftIndent) {
+      MutableAttributeSet s = new SimpleAttributeSet();
+      StyleConstants.setFontFamily(s, fontName);
+      StyleConstants.setFontSize(s, fontSize);
+      StyleConstants.setBold(s, boldness);
+      StyleConstants.setForeground(s, color);
+      StyleConstants.setLeftIndent(s, leftIndent);
+      return s;
+   }
+
    /** Construct a JScrollPane that allows the user to interactively type in commands and see replies.
     *
     * @param computer - this object is used to evaluate the user input
@@ -112,13 +117,8 @@ public final class OurConsole extends JScrollPane {
    public OurConsole(final Computer computer, final Object... initialMessages) {
       super(VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED);
       setViewportView(main);
-      // construct the various styles
-      StyleConstants.setFontFamily(plain = new SimpleAttributeSet(), "Verdana"); StyleConstants.setFontSize(plain, 14);
-      StyleConstants.setBold(bold = new SimpleAttributeSet(plain), true);
-      StyleConstants.setForeground(good = new SimpleAttributeSet(plain), Color.BLUE); StyleConstants.setLeftIndent(good, 15);
-      StyleConstants.setForeground(bad = new SimpleAttributeSet(plain), Color.RED); StyleConstants.setLeftIndent(bad, 15);
       // show the initial message
-      SimpleAttributeSet st = plain;
+      AttributeSet st = plain;
       for(Object x: initialMessages) {
          if (x instanceof Boolean) st = (Boolean.TRUE.equals(x) ? bold : plain); else do_add(-1, x.toString(), st);
       }
@@ -147,15 +147,19 @@ public final class OurConsole extends JScrollPane {
       // now, create the paste/copy/cut actions
       AbstractAction alloy_paste = new AbstractAction("alloy_paste") {
          static final long serialVersionUID = 0;
-         public void actionPerformed(ActionEvent ev) { sub.paste(); }
+         public void actionPerformed(ActionEvent x) { sub.paste(); }
       };
       AbstractAction alloy_copy = new AbstractAction("alloy_copy") {
          static final long serialVersionUID = 0;
-         public void actionPerformed(ActionEvent ev) { if (sub.getSelectionStart()!=sub.getSelectionEnd()) sub.copy(); else main.copy(); }
+         public void actionPerformed(ActionEvent x) {
+            if (sub.getSelectionStart()!=sub.getSelectionEnd()) sub.copy(); else main.copy();
+         }
       };
       AbstractAction alloy_cut = new AbstractAction("alloy_cut") {
          static final long serialVersionUID = 0;
-         public void actionPerformed(ActionEvent ev) { if (sub.getSelectionStart()!=sub.getSelectionEnd()) sub.cut(); else main.copy(); }
+         public void actionPerformed(ActionEvent x) {
+            if (sub.getSelectionStart()!=sub.getSelectionEnd()) sub.cut(); else main.copy();
+         }
       };
       // create the keyboard associations: ctrl-{c,v,x,insert} and shift-{insert,delete}
       for(JTextPane x: Arrays.asList(main, sub)) {

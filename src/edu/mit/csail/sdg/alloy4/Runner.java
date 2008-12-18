@@ -1,38 +1,35 @@
-/*
- * Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
+ * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
+ * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package edu.mit.csail.sdg.alloy4;
 
 import java.awt.Window;
 import java.awt.event.ActionEvent;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.WindowListener;
 import java.awt.event.WindowEvent;
 import javax.swing.AbstractAction;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
-/** This class converts a Runnable into an AbstractAction, WindowListener, and MenuListener also. */
+/** This class converts a Runnable into an AbstractAction, WindowListener, CaretListener, and MenuListener also. */
 
-public abstract class Runner extends AbstractAction implements Runnable, WindowListener, MenuListener {
+public abstract class Runner extends AbstractAction implements Runnable, WindowListener, MenuListener, CaretListener, FocusListener {
 
    /** This silences javac's warning about missing serialVersionUID. */
    private static final long serialVersionUID = 1L;
@@ -57,6 +54,15 @@ public abstract class Runner extends AbstractAction implements Runnable, WindowL
 
    /** This method is defined in javax.swing.event.MenuListener; (this implementation does nothing) */
    public final void menuCanceled(MenuEvent e) { }
+
+   /** This method is defined in java.awt.event.CaretListener; (this implementation calls this.run()) */
+   public final void caretUpdate(CaretEvent e) { run(); }
+
+   /** This method is defined in java.awt.event.FocusListener; (this implementation calls this.run()) */
+   public final void focusGained(FocusEvent e) { run(); }
+
+   /** This method is defined in java.awt.event.FocusListener; (this implementation does nothing) */
+   public final void focusLost(FocusEvent e) { }
 
    /** This method is defined in java.awt.event.WindowListener; (this implementation calls this.run()) */
    public final void windowClosing(WindowEvent e) { run(); }

@@ -1,23 +1,16 @@
-/*
- * Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
+ * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
+ * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package edu.mit.csail.sdg.alloy4;
@@ -47,53 +40,57 @@ public final class ConstList<T> extends AbstractList<T> implements Serializable 
       /** Nonnull iff this list is no longer modifiable. */
       private ConstList<T> clist;
 
-      /** Construct a new empty modifiable TempList. */
-      public TempList()                                      { list = new ArrayList<T>(); }
+      /** Construct an empty TempList. */
+      public TempList()  { list = new ArrayList<T>(); }
 
-      /** Construct a new empty modifiable TempList with an initial capacity of n (if n<=0, the created list will be given a default initial capacity) */
-      public TempList(int n)                                 { list = new ArrayList<T>(n>=0 ? n : 16); }
+      /** Construct an empty TempList with initial capacity of n (if n<=0, the list will be given a default initial capacity) */
+      public TempList(int n)  { list = new ArrayList<T>(n>=0 ? n : 16); }
 
-      /** Construct a new modifiable TempList with the initial content being n references to the given elem (if n<=0, the created list is empty) */
-      public TempList(int n, T elem)                         { list = new ArrayList<T>(n>0 ? n : 0); while(n>0) { list.add(elem); n--; } }
+      /** Construct a new TempList whose initial content is n references to the given elem (if n<=0, the created list is empty) */
+      public TempList(int n, T elem)  { list = new ArrayList<T>(n>0 ? n : 0); while(n>0) { list.add(elem); n--; } }
 
-      /** Construct a new modifiable TempList with the initial content equal to the given collection. */
-      public TempList(Collection<? extends T> all)           { list = new ArrayList<T>(all); }
+      /** Construct a new TempList whose initial content is equal to the given collection. */
+      public TempList(Collection<? extends T> all)  { list = new ArrayList<T>(all); }
 
-      /** Construct a new modifiable TempList with the initial content equal to the given array. */
-      public TempList(T... elements)                         { list = new ArrayList<T>(elements.length); for(int i=0; i<elements.length; i++) list.add(elements[i]); }
+      /** Construct a new TempList whose initial content is equal to the given array. */
+      public TempList(T... all)  { list = new ArrayList<T>(all.length); for(int i=0; i<all.length; i++) list.add(all[i]); }
 
       /** Returns a String representation. */
-      @Override public String toString()                     { return list.toString(); }
+      @Override public String toString()  { return list.toString(); }
+
+      /** Throws an exception if the list is now unmodifiable. */
+      private void chk()  { if (clist!=null) throw new UnsupportedOperationException(); }
 
       /** Returns the size of the list. */
-      public int size()                                      { return list.size(); }
+      public int size()  { return list.size(); }
 
       /** Returns true if the element is in the list. */
-      public boolean contains(Object elem)                   { return list.contains(elem); }
+      public boolean contains(Object elem)  { return list.contains(elem); }
 
       /** Returns the i-th element. */
-      public T get(int index)                                { return list.get(index); }
+      public T get(int index)  { return list.get(index); }
 
       /** Removes then returns the i-th element. */
-      public T remove(int index)                             { if (clist!=null) throw new UnsupportedOperationException(); else return list.remove(index); }
+      public T remove(int index)  { chk(); return list.remove(index); }
 
       /** Removes every element. */
-      public void clear()                                    { if (clist!=null) throw new UnsupportedOperationException(); else list.clear(); }
+      public void clear()  { chk(); list.clear(); }
 
       /** Appends the given element to the list, then return itself. */
-      public TempList<T> add(T elem)                         { if (clist!=null) throw new UnsupportedOperationException(); else { list.add(elem); return this; } }
+      public TempList<T> add(T elem)  { chk(); list.add(elem); return this; }
 
       /** Appends the elements in the given collection to the list, then return itself. */
-      public TempList<T> addAll(Collection<? extends T> all) { if (clist!=null) throw new UnsupportedOperationException(); else { list.addAll(all); return this; } }
+      public TempList<T> addAll(Collection<? extends T> all)  { chk(); list.addAll(all); return this; }
 
       /** Appends the elements in the given collection to the list, then return itself. */
-      public TempList<T> addAll(Iterable<? extends T> all)   { if (clist!=null) throw new UnsupportedOperationException(); else { for(T x: all) list.add(x); return this; } }
+      public TempList<T> addAll(Iterable<? extends T> all)  { chk(); for(T x: all) list.add(x); return this; }
 
       /** Change the i-th element to be the given element, then return itself. */
-      public TempList<T> set(int index, T elem)              { if (clist!=null) throw new UnsupportedOperationException(); else { list.set(index, elem); return this; } }
+      public TempList<T> set(int index, T elem)  { chk(); list.set(index, elem); return this; }
 
       /** Turns this TempList unmodifiable, then construct a ConstList backed by this TempList. */
-      public ConstList<T> makeConst()                        { if (clist!=null) return clist; else if (list.isEmpty()) return clist = make(); else return clist = new ConstList<T>(list); }
+      @SuppressWarnings("unchecked")
+      public ConstList<T> makeConst() { if (clist==null) clist=(list.isEmpty() ? emptylist : new ConstList<T>(list)); return clist; }
    }
 
    /** This ensures the class can be serialized reliably. */
@@ -103,7 +100,8 @@ public final class ConstList<T> extends AbstractList<T> implements Serializable 
    private final List<T> list;
 
    /** This caches an unmodifiable empty list. */
-   private static final ConstList<Object> emptylist = new ConstList<Object>(new ArrayList<Object>(0));
+   @SuppressWarnings("unchecked")
+   private static final ConstList emptylist = new ConstList(new ArrayList<Object>(0));
 
    /** Construct a ConstList with the given list as its backing store. */
    private ConstList(List<T> list) {

@@ -1,23 +1,16 @@
-/*
- * Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
+ * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
+ * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package edu.mit.csail.sdg.alloy4;
@@ -36,6 +29,8 @@ import java.net.URLConnection;
 import java.awt.Color;
 import java.awt.Dimension;
 import javax.swing.JOptionPane;
+import static javax.swing.JOptionPane.ERROR_MESSAGE;
+import static javax.swing.JOptionPane.YES_OPTION;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -175,7 +170,8 @@ public final class MailBug implements UncaughtExceptionHandler, Runnable {
       String result = readAll(ALLOY_NOW + "?buildnum=" + Version.buildNumber() + "&builddate=" + Version.buildDate(), "", "");
       if (!result.startsWith("Alloy Build ")) return;
       // Now that we know we're online, try to remove the old ill-conceived "Java WebStart" versions of Alloy4 BETA1..BETA7
-      Subprocess.exec(20000, new String[]{"javaws", "-silent", "-offline", "-uninstall", "http://alloy.mit.edu/alloy4/download/alloy4.jnlp"});
+      Subprocess.exec(20000, new String[]{
+            "javaws", "-silent", "-offline", "-uninstall", "http://alloy.mit.edu/alloy4/download/alloy4.jnlp"});
       // Now parse the result
       int num = 0;
       boolean found = false;
@@ -193,8 +189,10 @@ public final class MailBug implements UncaughtExceptionHandler, Runnable {
    private static void sendCrashReport (Thread thread, Throwable ex, String email, String problem) {
       try {
          final String report = prepareCrashReport(thread, ex, email, problem);
-         final String alt = "Sorry. An error has occurred in posting the bug report.\nPlease email this report to alloy@mit.edu directly.\n\n" + dump(ex);
-         final JTextArea status = OurUtil.textarea("Sending the bug report... please wait...", 10, 40, false, true, new LineBorder(Color.GRAY));
+         final String alt = "Sorry. An error has occurred in posting the bug report.\n"
+            + "Please email this report to alloy@mit.edu directly.\n\n" + dump(ex);
+         final JTextArea status = OurUtil.textarea("Sending the bug report... please wait...",
+               10, 40, false, true, new LineBorder(Color.GRAY));
          new Thread(new Runnable() {
             public void run() {
                final String output = readAll(ALLOY_URL, report, alt);
@@ -206,7 +204,7 @@ public final class MailBug implements UncaughtExceptionHandler, Runnable {
                });
             }
          }).start();
-         JOptionPane.showMessageDialog(null, new Object[] {status}, "Sending the bug report... please wait...", JOptionPane.ERROR_MESSAGE);
+         JOptionPane.showMessageDialog(null, new Object[] {status}, "Sending the bug report... please wait...", ERROR_MESSAGE);
          System.exit(1);
       } catch(Throwable exception) {
          System.exit(1);
@@ -242,7 +240,7 @@ public final class MailBug implements UncaughtExceptionHandler, Runnable {
                   "And try increasing Options->Stack.",
                   " ",
                   "There is no way for Alloy to continue execution, so pressing OK will shut down Alloy."
-            }, "Fatal Error", JOptionPane.ERROR_MESSAGE);
+            }, "Fatal Error", ERROR_MESSAGE);
             System.exit(1);
          }
          if (ex2 instanceof OutOfMemoryError) {
@@ -254,7 +252,7 @@ public final class MailBug implements UncaughtExceptionHandler, Runnable {
                   "And try increasing Options->Memory.",
                   " ",
                   "There is no way for Alloy to continue execution, so pressing OK will shut down Alloy."
-            }, "Fatal Error", JOptionPane.ERROR_MESSAGE);
+            }, "Fatal Error", ERROR_MESSAGE);
             System.exit(1);
          }
       }
@@ -269,7 +267,7 @@ public final class MailBug implements UncaughtExceptionHandler, Runnable {
                "as the problem may have already been fixed.",
                " ",
                "There is no way for Alloy to continue execution, so pressing OK will shut down Alloy."
-         }, "Fatal Error", JOptionPane.ERROR_MESSAGE);
+         }, "Fatal Error", ERROR_MESSAGE);
       } else {
          if (JOptionPane.showOptionDialog(null, new Object[] {
                "Sorry. A fatal internal error has occurred.",
@@ -284,7 +282,7 @@ public final class MailBug implements UncaughtExceptionHandler, Runnable {
                OurUtil.makeHT("Email:", 5, email, null),
                OurUtil.makeHT("Problem:", 5, scroll, null)
          }, "Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
-         null, new Object[]{yes, no}, no) == JOptionPane.YES_OPTION) { sendCrashReport(thread, ex, email.getText(), problem.getText()); return; }
+         null, new Object[]{yes, no}, no) == YES_OPTION) { sendCrashReport(thread, ex, email.getText(), problem.getText()); return; }
       }
       System.exit(1);
    }

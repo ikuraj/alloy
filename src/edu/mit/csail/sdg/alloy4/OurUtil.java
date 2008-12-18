@@ -1,23 +1,16 @@
-/*
- * Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
+ * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
+ * merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
+ * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package edu.mit.csail.sdg.alloy4;
@@ -31,7 +24,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -50,7 +42,6 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JSplitPane;
 import javax.swing.KeyStroke;
-import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
@@ -67,12 +58,12 @@ public final class OurUtil {
    private OurUtil() { }
 
    /** Assign the given attributes to the given JComponent, then return the JComponent again.
-    * <p> If Font x is given in the list, we call obj.setFont(x0
-    * <p> If String x is given in the list, we call obj.setToolTipText(x)
-    * <p> If Border x is given in the list, we call obj.setBorder(x)
-    * <p> If Dimension x is given in the list, we call obj.setPreferredSize(x)
-    * <p> If Color x is given in the list, and it's the first color, we call obj.setForeground(x)
-    * <p> If Color x is given in the list, and it's not the first color, we call obj.setBackground(x) then obj.setOpaque(true)
+    * <p> If <b>Font</b>      x is given in the list, we call obj.setFont(x)
+    * <p> If <b>String</b>    x is given in the list, we call obj.setToolTipText(x)
+    * <p> If <b>Border</b>    x is given in the list, we call obj.setBorder(x)
+    * <p> If <b>Dimension</b> x is given in the list, we call obj.setPreferredSize(x)
+    * <p> If <b>Color</b> x is given in the list, and it's the first color, we call obj.setForeground(x)
+    * <p> If <b>Color</b> x is given in the list, and it's not the first color, we call obj.setBackground(x) then obj.setOpaque(true)
     * <p> (If no Font is given, then after all these changes have been applied, we will call obj.setFont() will a default font)
     */
    public static<X extends JComponent> X make(X obj, Object... attributes) {
@@ -91,13 +82,21 @@ public final class OurUtil {
       return obj;
    }
 
-   /** Make a JLabel, then call Util.make() to apply a set of attributes to it. */
+   /** Make a JLabel, then call Util.make() to apply a set of attributes to it.
+    * @param attributes - see {@link edu.mit.csail.sdg.alloy4.OurUtil#make OurUtil.make(component, attributes...)}
+    */
    public static JLabel label (String label, Object... attributes)  { return make(new JLabel(label), attributes); }
 
-   /** Make a JTextField, then call Util.make() to apply a set of attributes to it. */
-   public static JTextField textfield (String text, int columns, Object... attributes)  { return make(new JTextField(text, columns), attributes); }
+   /** Make a JTextField, then call Util.make() to apply a set of attributes to it.
+    * @param attributes - see {@link edu.mit.csail.sdg.alloy4.OurUtil#make OurUtil.make(component, attributes...)}
+    */
+   public static JTextField textfield (String text, int columns, Object... attributes)  {
+      return make(new JTextField(text, columns), attributes);
+   }
 
-   /** Make a JTextArea, then call Util.make() to apply a set of attributes to it. */
+   /** Make a JTextArea, then call Util.make() to apply a set of attributes to it.
+    * @param attributes - see {@link edu.mit.csail.sdg.alloy4.OurUtil#make OurUtil.make(component, attributes...)}
+    */
    public static JTextArea textarea (String text, int rows, int columns, boolean editable, boolean wrap, Object... attributes) {
       JTextArea ans = new JTextArea(text, rows, columns);
       ans.setForeground(Color.BLACK);
@@ -109,7 +108,9 @@ public final class OurUtil {
       return make(ans, attributes);
    }
 
-   /** Make a JScrollPane containing the given component (which can be null), then call Util.make() to apply a set of attributes to it. */
+   /** Make a JScrollPane containing the given component (which can be null), then apply a set of attributes to it.
+    * @param attributes - see {@link edu.mit.csail.sdg.alloy4.OurUtil#make OurUtil.make(component, attributes...)}
+    */
    public static JScrollPane scrollpane (Component component, Object... attributes) {
       JScrollPane ans = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
       if (component!=null) ans.setViewportView(component);
@@ -119,25 +120,15 @@ public final class OurUtil {
    }
 
    /** Returns the recommended font to use in the visualizer, based on the OS. */
-   public static Font getVizFont()  { return Util.onMac() ? new Font("Lucida Grande", Font.PLAIN, 11) : new Font("Dialog", Font.PLAIN, 12); }
+   public static Font getVizFont()  {
+      return Util.onMac() ? new Font("Lucida Grande", Font.PLAIN, 11) : new Font("Dialog", Font.PLAIN, 12);
+   }
 
    /** Returns the screen height (in pixels). */
    public static int getScreenHeight()  { return Toolkit.getDefaultToolkit().getScreenSize().height; }
 
    /** Returns the screen width (in pixels). */
    public static int getScreenWidth()  { return Toolkit.getDefaultToolkit().getScreenSize().width; }
-
-   /** Run r.run() using the AWT event thread; if it's not the AWT event thread, use SwingUtilities.invokeAndWait() on it. */
-   public static void invokeAndWait(Runnable r) {
-      if (SwingUtilities.isEventDispatchThread()) { r.run(); return; }
-      try {
-         SwingUtilities.invokeAndWait(r);
-      } catch (InterruptedException e) {
-         // Nothing we can do about it
-      } catch (InvocationTargetException e) {
-         // Nothing we can do about it
-      }
-   }
 
    /** Make a graphical button
     * @param label - the text to show beneath the button
@@ -171,7 +162,7 @@ public final class OurUtil {
     * <br> If a component is Integer, we will insert an "n*1" (or "1*n") rigid area instead.
     * <br> If a component is String, we will insert a JLabel with it as the label.
     * <br> Each component will be aligned by xAlign and yAlign.
-    * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we encounter another Color object).
+    * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we see another Color)
     */
    private static JPanel makeBox(boolean horizontal, float xAlign, float yAlign, Object[] a) {
       JPanel ans = new JPanel();
@@ -207,7 +198,7 @@ public final class OurUtil {
     * <br> If a component is Integer, we will insert an "n*1" rigid area instead.
     * <br> If a component is String, we will insert a JLabel with it as the label.
     * <br> Each component will be center-aligned.
-    * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we encounter another Color object).
+    * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we see another Color)
     */
    public static JPanel makeH(Object... a) { return makeBox(true, 0.5f, 0.5f, a); }
 
@@ -216,7 +207,7 @@ public final class OurUtil {
     * <br> If a component is Integer, we will insert an "n*1" rigid area instead.
     * <br> If a component is String, we will insert a JLabel with it as the label.
     * <br> Each component will be top-aligned.
-    * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we encounter another Color object).
+    * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we see another Color)
     */
    public static JPanel makeHT(Object... a) { return makeBox(true, 0.5f, 0.0f, a); }
 
@@ -225,7 +216,7 @@ public final class OurUtil {
     * <br> If a component is Integer, we will insert an "n*1" rigid area instead.
     * <br> If a component is String, we will insert a JLabel with it as the label.
     * <br> Each component will be bottom-aligned.
-    * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we encounter another Color object).
+    * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we see another Color)
     */
    public static JPanel makeHB(Object... a) { return makeBox(true, 0.5f, 1.0f, a); }
 
@@ -234,7 +225,7 @@ public final class OurUtil {
     * <br> If a component is Integer, we will insert an "1*n" rigid area instead.
     * <br> If a component is String, we will insert a JLabel with it as the label.
     * <br> Each component will be left-aligned.
-    * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we encounter another Color object).
+    * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we see another Color)
     */
    public static JPanel makeVL(Object... a) { return makeBox(false, 0.0f, 0.5f, a); }
 
@@ -243,7 +234,7 @@ public final class OurUtil {
     * <br> If a component is Integer, we will insert an "1*n" rigid area instead.
     * <br> If a component is String, we will insert a JLabel with it as the label.
     * <br> Each component will be right-aligned.
-    * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we encounter another Color object).
+    * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we see another Color)
     */
    public static JPanel makeVR(Object... a) { return makeBox(false, 1.0f, 0.5f, a); }
 
@@ -303,9 +294,9 @@ public final class OurUtil {
     * @param parent - the JMenu to add this JMenuItem into (or null if you don't want to add it to any JMenu yet)
     * @param label - the text to show on the menu
     * @param attrs - a list of attributes to apply onto the new JMenuItem
-    * <p> If one nonnegative integer a is supplied, we call setMnemonic(a)
-    * <p> If two nonnegative integers a and b are supplied, and a!=VK_ALT, and a!=VK_SHIFT, we call setMnemoic(a) and setAccelerator(b)
-    * <p> If two nonnegative integers a and b are supplied, and a==VK_ALT or a==VK_SHIFT, we call setAccelerator(a | b)
+    * <p> If one nonnegative int a is supplied, we call setMnemonic(a)
+    * <p> If two nonnegative ints a and b are supplied, and a!=VK_ALT, and a!=VK_SHIFT, we call setMnemoic(a) and setAccelerator(b)
+    * <p> If two nonnegative ints a and b are supplied, and a==VK_ALT or a==VK_SHIFT, we call setAccelerator(a | b)
     * <p> If an Icon is supplied, we call setIcon()
     * <p> If an ActionListener is supplied, we call addActionListener()
     * <p> If true is supplied, we call setEnabled(true)
