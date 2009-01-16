@@ -755,7 +755,6 @@ public final class SimpleGUI implements ComponentListener, Listener {
 
     /** This method performs File->Quit. */
     private Runner doQuit() {
-        System.out.println("Q"); System.out.flush();
         if (!wrap) if (text.closeAll()) {
             try { WorkerEngine.stop(); } finally { System.exit(0); }
         }
