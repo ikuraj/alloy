@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -30,7 +30,7 @@ import java.io.Serializable;
 
 public final class ConstSet<K> extends AbstractSet<K> implements Serializable {
 
-   /** This ensures the class can be serialized reliably. */
+   /** This ensures this class can be serialized reliably. */
    private static final long serialVersionUID = 0;
 
    /** The underlying Collections.unmodifiableSet set. */
@@ -63,11 +63,11 @@ public final class ConstSet<K> extends AbstractSet<K> implements Serializable {
       if (ans==null) return make(); else return new ConstSet<K>(ans);
    }
 
-   /** Returns a read-only iterator over this set. */
-   @Override public Iterator<K> iterator() { return set.iterator(); }
-
    /** Returns the number of objects in this set. */
    @Override public int size() { return set.size(); }
+
+   /** Returns a read-only iterator over this set. */
+   @Override public Iterator<K> iterator() { return set.iterator(); }
 
    /** Returns true if the given object is in this set. */
    @Override public boolean contains(Object element) { return set.contains(element); }  // overridden for performance

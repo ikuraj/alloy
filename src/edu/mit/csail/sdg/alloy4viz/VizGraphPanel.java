@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -58,8 +58,8 @@ import edu.mit.csail.sdg.alloy4graph.GraphViewer;
 
 public final class VizGraphPanel extends JPanel {
 
-   /** This silences javac's warning about missing serialVersionUID. */
-   private static final long serialVersionUID = 1L;
+   /** This ensures the class can be serialized reliably. */
+   private static final long serialVersionUID = 0;
 
    /** This is the current customization settings. */
    private final VizState vizState;
@@ -90,8 +90,8 @@ public final class VizGraphPanel extends JPanel {
 
    /** Inner class that displays a combo box of possible projection atom choices. */
    private final class TypePanel extends JPanel {
-      /** This silences javac's warning about missing serialVersionUID. */
-      private static final long serialVersionUID = 1L;
+      /** This ensures the class can be serialized reliably. */
+      private static final long serialVersionUID = 0;
       /** The type being projected. */
       private final AlloyType type;
       /** The list of atoms; can be an empty list if there are no atoms in this type to be projected. */

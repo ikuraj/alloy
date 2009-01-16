@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -95,8 +95,8 @@ public final class VizTree extends OurTree {
             }
          } else if (parent instanceof A4Tuple) {
             A4Tuple tp = (A4Tuple)parent;
-            for(int i=1; i<tp.arity(); i++) ans.add(tp.atom(i));
-            for(int i=ans.size()-1; i>0; i--) for(int j=i-1; j>=0; j--) if (ans.get(i).equals(ans.get(j))) { ans.remove(i); break; }
+            for(int i=1; i<tp.arity(); i++) if (!ans.contains(tp.atom(i))) ans.add(tp.atom(i));
+            return ans; // we don't want to sort this; we want the original order
          }
          Collections.sort(ans, new Comparator<Object>() {
             public int compare(Object a, Object b) {
@@ -113,7 +113,7 @@ public final class VizTree extends OurTree {
       }
    }
 
-   /** This suppresses javac's warning about missing serialVersionUID. */
+   /** This ensures the class can be serialized reliably. */
    private static final long serialVersionUID = 0;
 
    /** Caches whether we're on Windows or not. */
@@ -139,10 +139,6 @@ public final class VizTree extends OurTree {
       for(ExprVar v: instance.getAllSkolems()) if (v.type.arity()==1 && v.label.startsWith("$")) toplevel.add(v);
       Collections.sort(toplevel, new Comparator<Object>() {
          public int compare(Object a, Object b) {
-            //if (a==Sig.UNIV) return -1; else if (b==Sig.UNIV) return 1;
-            //if (a==Sig.SIGINT) return -1; else if (b==Sig.SIGINT) return 1;
-            //if (a==Sig.SEQIDX) return -1; else if (b==Sig.SEQIDX) return 1;
-            //if (a==Sig.STRING) return -1; else if (b==Sig.STRING) return 1;
             String t1, t2;
             if (a instanceof Sig) { t1=((Sig)a).label; if (b instanceof ExprVar) return -1; else t2=((Sig)b).label; }
                else { t1=((ExprVar)a).label; if (b instanceof Sig) return 1; else t2=((ExprVar)b).label; }

@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -28,7 +28,6 @@ import java.awt.Color;
 import java.awt.geom.Line2D;
 import java.awt.geom.RoundRectangle2D;
 import edu.mit.csail.sdg.alloy4.Pair;
-import edu.mit.csail.sdg.alloy4.Rational;
 import edu.mit.csail.sdg.alloy4.Util;
 import static edu.mit.csail.sdg.alloy4graph.Artist.getBounds;
 
@@ -292,28 +291,28 @@ public final strictfp class Graph {
    /** Layout step #5: decide the order of the nodes within each layer. */
    private void layout_reorderPerLayer() {
       // This uses the original Barycenter heuristic
-      final IdentityHashMap<GraphNode,Object> map=new IdentityHashMap<GraphNode,Object>();
-      final Rational[] bc=new Rational[nodes.size()+1];
-      int i=1; for(GraphNode n:layer(0)) { bc[n.pos()]=Rational.make(i); i++; }
+      final IdentityHashMap<GraphNode,Object> map = new IdentityHashMap<GraphNode,Object>();
+      final double[] bc = new double[nodes.size()+1];
+      int i=1; for(GraphNode n:layer(0)) { bc[n.pos()] = i; i++; }
       for(int layer=0; layer<layers()-1; layer++) {
          for(GraphNode n:layer(layer+1)) {
             map.clear();
-            int count=0;
-            Rational sum=Rational.ZERO;
+            int count = 0;
+            double sum = 0;
             for(GraphEdge e: n.outs) {
                GraphNode nn=e.b();
-               if (map.put(nn,nn)==null) { count++; sum=sum.add(bc[nn.pos()]); }
+               if (map.put(nn,nn)==null) { count++; sum += bc[nn.pos()]; }
             }
-            bc[n.pos()] = (count==0 ? Rational.ZERO : (sum.div(count)));
+            bc[n.pos()] = count==0 ? 0 : (sum/count);
          }
          sortLayer(layer+1, new Comparator<GraphNode>() {
             public int compare(GraphNode o1, GraphNode o2) {
                // If the two nodes have the same barycenter, we use their ordering that was established during layout_assignOrder()
                if (o1==o2) return 0;
-               int n=bc[o1.pos()].cmp(bc[o2.pos()]); if (n!=0) return n; else if (o1.pos()<o2.pos()) return -1; else return 1;
+               int n = Double.compare(bc[o1.pos()], bc[o2.pos()]); if (n!=0) return n; else if (o1.pos()<o2.pos()) return -1; else return 1;
             }
          });
-         int j=1; for(GraphNode n:layer(layer+1)) { bc[n.pos()]=Rational.make(j); j++; }
+         int j=1; for(GraphNode n:layer(layer+1)) { bc[n.pos()]=j; j++; }
       }
    }
 

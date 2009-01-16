@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -43,7 +43,7 @@ import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 public final class SafeList<T> implements Serializable, Iterable<T> {
 
    /** This ensures the class can be serialized reliably. */
-   private static final long serialVersionUID = 1L;
+   private static final long serialVersionUID = 0;
 
    /** The actual list of elements; it will be shared by an original SafeList and all its unmodifiable copies. */
    private final List<T> list;

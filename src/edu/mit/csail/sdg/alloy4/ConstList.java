@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -20,13 +20,14 @@ import java.util.AbstractList;
 import java.util.Collection;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.RandomAccess;
 
 /** Immutable; implements a list based on equals(); null values are allowed.
  *
  * @param <T> - the type of element
  */
 
-public final class ConstList<T> extends AbstractList<T> implements Serializable {
+public final class ConstList<T> extends AbstractList<T> implements Serializable, RandomAccess {
 
    /** Mutable; this implements a modifiable list that can be used to construct a ConstList; null values are allowed.
     *
@@ -43,8 +44,8 @@ public final class ConstList<T> extends AbstractList<T> implements Serializable 
       /** Construct an empty TempList. */
       public TempList()  { list = new ArrayList<T>(); }
 
-      /** Construct an empty TempList with initial capacity of n (if n<=0, the list will be given a default initial capacity) */
-      public TempList(int n)  { list = new ArrayList<T>(n>=0 ? n : 16); }
+      /** Construct an empty TempList with initial capacity of n (if n<=0, the list will be given a default capacity of 0) */
+      public TempList(int n)  { list = new ArrayList<T>(n>=0 ? n : 0); }
 
       /** Construct a new TempList whose initial content is n references to the given elem (if n<=0, the created list is empty) */
       public TempList(int n, T elem)  { list = new ArrayList<T>(n>0 ? n : 0); while(n>0) { list.add(elem); n--; } }
@@ -65,7 +66,7 @@ public final class ConstList<T> extends AbstractList<T> implements Serializable 
       public int size()  { return list.size(); }
 
       /** Returns true if the element is in the list. */
-      public boolean contains(Object elem)  { return list.contains(elem); }
+      public boolean contains(T elem)  { return list.contains(elem); }
 
       /** Returns the i-th element. */
       public T get(int index)  { return list.get(index); }
@@ -73,27 +74,28 @@ public final class ConstList<T> extends AbstractList<T> implements Serializable 
       /** Removes then returns the i-th element. */
       public T remove(int index)  { chk(); return list.remove(index); }
 
-      /** Removes every element. */
-      public void clear()  { chk(); list.clear(); }
+      /** Removes every element, then return itself. */
+      public TempList<T> clear()  { chk(); list.clear(); return this; }
 
       /** Appends the given element to the list, then return itself. */
       public TempList<T> add(T elem)  { chk(); list.add(elem); return this; }
 
       /** Appends the elements in the given collection to the list, then return itself. */
-      public TempList<T> addAll(Collection<? extends T> all)  { chk(); list.addAll(all); return this; }
+      public TempList<T> addAll(Iterable<? extends T> all)  {
+         chk();
+         if (all instanceof Collection) list.addAll((Collection<? extends T>)all); else if (all!=null) { for(T x: all) list.add(x); }
+         return this;
+      }
 
-      /** Appends the elements in the given collection to the list, then return itself. */
-      public TempList<T> addAll(Iterable<? extends T> all)  { chk(); for(T x: all) list.add(x); return this; }
-
-      /** Change the i-th element to be the given element, then return itself. */
+      /** Changes the i-th element to be the given element, then return itself. */
       public TempList<T> set(int index, T elem)  { chk(); list.set(index, elem); return this; }
 
-      /** Turns this TempList unmodifiable, then construct a ConstList backed by this TempList. */
+      /** Makes this TempList unmodifiable, then construct a ConstList backed by this TempList. */
       @SuppressWarnings("unchecked")
       public ConstList<T> makeConst() { if (clist==null) clist=(list.isEmpty() ? emptylist : new ConstList<T>(list)); return clist; }
    }
 
-   /** This ensures the class can be serialized reliably. */
+   /** This ensures this class can be serialized reliably. */
    private static final long serialVersionUID = 0;
 
    /** The underlying unmodifiable list. */
@@ -142,11 +144,11 @@ public final class ConstList<T> extends AbstractList<T> implements Serializable 
       if (ans==null) return make(); else return new ConstList<T>(ans);
    }
 
-   /** Return the i-th element
+   /** Returns the i-th element
     * @throws ArrayIndexOutOfBoundsException if the given index doesn't exist
     */
    @Override public T get(int index) { return list.get(index); }
 
-   /** Returns the number of objects in this list. */
+   /** Returns the number of elements in this list. */
    @Override public int size() { return list.size(); }
 }

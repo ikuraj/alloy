@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -31,20 +31,18 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import edu.mit.csail.sdg.alloy4.Listener.Event;
 
-/** Graphical tabbed editor.
+/** Graphical multi-tabbed syntax-highlighting editor.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  *
- * <p><b>Invariant</b>: list.get(i).filename must not contain duplicate entries.
+ * <p><b>Invariant</b>: each tab has distinct file name.
  */
 
-public final class OurTabbedSyntaxWidget implements Listener {
+public final class OurTabbedSyntaxWidget {
 
-   /** The list of events that the OurTabbedSyntaxWidget object may fire. */
-   public enum Event { STATUS_CHANGE, FOCUSED };
-
-   /** The current list of listeners. */
+   /** The current list of listeners; possible events are { STATUS_CHANGE, FOCUSED, CARET_MOVED }. */
    public final Listeners listeners = new Listeners();
 
    /** The JScrollPane containing everything. */
@@ -84,10 +82,37 @@ public final class OurTabbedSyntaxWidget implements Listener {
    private final JScrollPane tabBarScroller;
 
    /** The list of tabs. */
-   private final ArrayList<OurSyntaxWidget> tabs = new ArrayList<OurSyntaxWidget>();
+   private final List<OurSyntaxWidget> tabs = new ArrayList<OurSyntaxWidget>();
 
    /** The currently selected tab from 0 to list.size()-1 (This value must be 0 if there are no tabs) */
    private int me = 0;
+
+   /** This object receives messages from sub-JTextPane objects. */
+   private final Listener listener = new Listener() {
+      public Object do_action(Object sender, Event e) {
+         final OurTabbedSyntaxWidget me = OurTabbedSyntaxWidget.this;
+         if (sender instanceof OurSyntaxWidget) switch(e) {
+            case FOCUSED:        listeners.fire(me, e); break;
+            case CARET_MOVED:    listeners.fire(me, Event.STATUS_CHANGE); break;
+            case CTRL_PAGE_UP:   prev(); listeners.fire(me, Event.STATUS_CHANGE); break;
+            case CTRL_PAGE_DOWN: next(); listeners.fire(me, Event.STATUS_CHANGE); break;
+            case STATUS_CHANGE:
+               clearShade();
+               OurSyntaxWidget t = (OurSyntaxWidget)sender;
+               String n = t.getFilename();
+               t.obj1.setToolTipText(n);
+               int i = n.lastIndexOf('/'); if (i >= 0) n = n.substring(i + 1);
+               i = n.lastIndexOf('\\');    if (i >= 0) n = n.substring(i + 1);
+               i = n.lastIndexOf('.');     if (i >= 0) n = n.substring(0, i);
+               if (n.length() > 14) { n = n.substring(0, 14) + "..."; }
+               if (t.obj1 instanceof JLabel) { ((JLabel)(t.obj1)).setText("  " + n + (t.modified() ? " *  " : "  ")); }
+               listeners.fire(me, Event.STATUS_CHANGE);
+               break;
+         }
+         return true;
+      }
+      public Object do_action(Object sender, Event e, Object arg) { return true;  }
+   };
 
    /** Constructs a tabbed editor pane. */
    public OurTabbedSyntaxWidget(String fontName, int fontSize, int tabSize) {
@@ -100,8 +125,8 @@ public final class OurTabbedSyntaxWidget implements Listener {
       tabBarScroller = new JScrollPane(tabBar, JScrollPane.VERTICAL_SCROLLBAR_NEVER, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
       tabBarScroller.setFocusable(false);
       tabBarScroller.setBorder(null);
-      newtab();
       setFont(fontName, fontSize, tabSize);
+      newtab(null);
       tabBarScroller.addComponentListener(new ComponentListener() {
          public final void componentResized(ComponentEvent e) { select(me); }
          public final void componentMoved(ComponentEvent e) { select(me); }
@@ -124,22 +149,22 @@ public final class OurTabbedSyntaxWidget implements Listener {
       }
    }
 
-   /** Removes all highlights from every text buffer. */
-   public void clearShade() {  for(OurSyntaxWidget tab: tabs) {tab.clearShade();}   adjustLabelColor();  }
+   /** Removes all highlights from every text buffer, then adjust the TAB LABEL COLOR if necessary. */
+   public void clearShade() { for(int i=0; ;i++) if (i < tabs.size()) tabs.get(i).clearShade(); else { adjustLabelColor(); break; } }
 
-   /** Switch to the i-th tab (Note: if successful, it will then always call notifyChange.run()) */
-   private void select(final int i) {
+   /** Switch to the i-th tab (Note: if successful, it will always send STATUS_CHANGE to the registered listeners. */
+   private void select(int i) {
       if (i < 0 || i >= tabs.size()) return; else { me=i; component.revalidate(); adjustLabelColor(); component.removeAll(); }
       if (tabs.size() > 1) component.add(tabBarScroller, BorderLayout.NORTH);
       tabs.get(me).addTo(component, BorderLayout.CENTER);
       component.repaint();
-      listeners.fire(me, Event.STATUS_CHANGE);
       tabs.get(me).requestFocusInWindow();
       tabBar.scrollRectToVisible(new Rectangle(0,0,0,0)); // Forces recalculation
       tabBar.scrollRectToVisible(new Rectangle(tabs.get(me).obj2.getX(), 0, tabs.get(me).obj2.getWidth()+200, 1));
+      listeners.fire(me, Event.STATUS_CHANGE);
    }
 
-   /** Refresh all tbs. */
+   /** Refresh all tabs. */
    public void reloadAll() { for(OurSyntaxWidget t: tabs) t.reload(); }
 
    /** Return the list of all filenames except the filename in the i-th tab. */
@@ -157,28 +182,28 @@ public final class OurTabbedSyntaxWidget implements Listener {
       return tabs.get(me).getFilename();
    }
 
-   /** Close the i-th tab and then create a new empty tab if there were no tabs remaining.
+   /** Close the i-th tab (if there are no more tabs afterwards, we'll create a new empty tab).
     *
-    * If the text editor content is not modified since the last save, return true; otherwise, ask the user.
+    * <p> If the text editor content is not modified since the last save, then return true; otherwise, ask the user.
     * <p> If the user says to save it, we will attempt to save it, then return true iff the save succeeded.
     * <p> If the user says to discard it, this method returns true.
-    * <p> If the user says to cancel it, this method returns false.
+    * <p> If the user says to cancel it, this method returns false (and the original tab and its contents will not be harmed).
     */
-   private boolean close(int i, boolean askUser) {
+   private boolean close(int i) {
       clearShade();
-      if (!tabs.get(i).discard(getAllNamesExcept(i), true)) return false;
+      if (i<0 || i>=tabs.size()) return true; else if (!tabs.get(i).discard(true, getAllNamesExcept(i))) return false;
       if (tabs.size() > 1) { tabBar.remove(i);  tabs.remove(i);  if (me >= tabs.size()) me = tabs.size() - 1; }
       select(me);
       return true;
    }
 
    /** Close the current tab (then create a new empty tab if there were no tabs remaining) */
-   public void close()  { if (me>=0 && me<tabs.size()) close(me, true); }
+   public void close()  { close(me); }
 
    /** Close every tab then create a new empty tab; returns true iff success. */
    public boolean closeAll() {
-      for(int i=tabs.size()-1; i>=0; i--) if (tabs.get(i).modified()==false) close(i, true); // first close all the unmodified files
-      for(int i=tabs.size()-1; i>=0; i--) if (close(i, true)==false) return false; // then attempt to close modified files one-by-one
+      for(int i=tabs.size()-1; i>=0; i--) if (tabs.get(i).modified()==false) close(i); // first close all the unmodified files
+      for(int i=tabs.size()-1; i>=0; i--) if (close(i)==false) return false; // then attempt to close modified files one-by-one
       return true;
    }
 
@@ -215,9 +240,6 @@ public final class OurTabbedSyntaxWidget implements Listener {
    /** Switches to the next tab. */
    public void next() { if (tabs.size()>=2) select(me==tabs.size()-1 ? 0 : (me+1)); }
 
-   /** Create a new empty tab. */
-   public void newtab() { newtab(null); }
-
    /** Create a new tab with the given filename (if filename==null, we'll create a blank tab instead)
     * <p> If a text buffer with that filename already exists, we will just switch to it; else we'll read that file into a new tab.
     * @return false iff an error occurred
@@ -239,14 +261,16 @@ public final class OurTabbedSyntaxWidget implements Listener {
       pan.setAlignmentX(0.0f);
       pan.setAlignmentY(1.0f);
       OurSyntaxWidget text = new OurSyntaxWidget(syntaxHighlighting, "", fontName, fontSize, tabSize, lb, pan);
-      tabBar.add(text.obj2, tabs.size());
+      tabBar.add(pan, tabs.size());
       tabs.add(text);
-      text.listeners.add(this); // add this AFTER we've updated this.tabs and this.tabBar
-      if (filename==null) text.discard(getFilenames(), false); // forces the tab to re-derive a suitable fresh name
-      else if (!text.load(filename)) { OurDialog.alert(null, "Error reading the file \""+filename+"\""); return false; }
-      if (filename!=null) for(int i=tabs.size()-1; i>=0; i--) if (!tabs.get(i).isFile() && tabs.get(i).getText().length()==0) {
-         close(i, false); // Remove the rightmost untitled empty tab
-         break;
+      text.listeners.add(listener); // add listener AFTER we've updated this.tabs and this.tabBar
+      if (filename==null) {
+         text.discard(false, getFilenames()); // forces the tab to re-derive a suitable fresh name
+      } else {
+         if (!text.load(filename)) return false;
+         for(int i=tabs.size()-1; i>=0; i--) if (!tabs.get(i).isFile() && tabs.get(i).getText().length()==0) {
+            tabs.get(i).discard(false, getFilenames()); close(i); break; // Remove the rightmost untitled empty tab
+         }
       }
       select(tabs.size() - 1); // Must call this to switch to the new tab; and it will fire STATUS_CHANGE message which is important
       return true;
@@ -261,9 +285,9 @@ public final class OurTabbedSyntaxWidget implements Listener {
          text = get();
          c = text.getLineStartOffset(p.y-1) + p.x - 1;
          d = text.getLineStartOffset(p.y2-1) + p.x2 - 1;
-         tabs.get(me).shade(color, c, d+1);
+         text.shade(color, c, d+1);
       }
-      if (text!=null) { text.moveCaret(0,0); text.moveCaret(c,c); } // Move to 0 ensures we'll scroll to the highlighted section
+      if (text!=null) { text.moveCaret(0, 0); text.moveCaret(c, c); } // Move to 0 ensures we'll scroll to the highlighted section
       get().requestFocusInWindow();
       adjustLabelColor();
       listeners.fire(me, Event.STATUS_CHANGE);
@@ -271,28 +295,4 @@ public final class OurTabbedSyntaxWidget implements Listener {
 
    /** Highlights the text editor, based on the location information in the Pos object. */
    public void shade(Pos pos) { shade(Util.asList(pos), new Color(0.9f, 0.4f, 0.4f), true); }
-
-   /** {@inheritDoc} */
-   public boolean do_action(Object sender, Enum<? extends Enum<?>> e) {
-      if (e == OurSyntaxWidget.Event.CTRL_PAGE_UP) prev();
-      if (e == OurSyntaxWidget.Event.CTRL_PAGE_DOWN) next();
-      if (e == OurSyntaxWidget.Event.CARET_MOVED) listeners.fire(me, Event.STATUS_CHANGE);
-      if (e == OurSyntaxWidget.Event.FOCUSED) listeners.fire(me, Event.FOCUSED);
-      if (e == OurSyntaxWidget.Event.STATUS_CHANGE && (sender instanceof OurSyntaxWidget)) {
-         clearShade();
-         OurSyntaxWidget t = (OurSyntaxWidget)sender;
-         String n = t.getFilename();
-         t.obj1.setToolTipText(n);
-         int i = n.lastIndexOf('/'); if (i>=0) n=n.substring(i+1);
-         i = n.lastIndexOf('\\');    if (i>=0) n=n.substring(i+1);
-         i = n.lastIndexOf('.');     if (i>=0) n=n.substring(0,i);
-         if (n.length() > 14) { n=n.substring(0,14)+"..."; }
-         if (t.obj1 instanceof JLabel) { ((JLabel)(t.obj1)).setText("  " + n + (t.modified() ? " *  " : "  ")); }
-         listeners.fire(me, Event.STATUS_CHANGE);
-      }
-      return true;
-   }
-
-   /** {@inheritDoc} */
-   public boolean do_action(Object sender, Enum<? extends Enum<?>> e, Object arg) { return false;  }
 }

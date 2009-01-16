@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -19,9 +19,11 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.util.Locale;
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.FileDialog;
 import java.awt.Frame;
 import java.awt.GraphicsEnvironment;
+import java.awt.HeadlessException;
 import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
 import javax.swing.JButton;
@@ -37,9 +39,9 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.filechooser.FileFilter;
 import static javax.swing.JOptionPane.YES_NO_OPTION;
-import static javax.swing.JOptionPane.YES_NO_CANCEL_OPTION;
-import static javax.swing.JOptionPane.WARNING_MESSAGE;
 import static javax.swing.JOptionPane.QUESTION_MESSAGE;
+import static javax.swing.JOptionPane.WARNING_MESSAGE;
+import static javax.swing.JOptionPane.ERROR_MESSAGE;
 
 /** Graphical dialog methods for asking the user some questions.
  *
@@ -51,60 +53,72 @@ public final class OurDialog {
    /** The constructor is private, since this utility class never needs to be instantiated. */
    private OurDialog() { }
 
+   /** Helper method for constructing an always-on-top modal dialog. */
+   private static Object show(String title, int type, Object message, Object[] options, Object initialOption) {
+      if (options == null) { options = new Object[]{"Ok"};  initialOption = "Ok"; }
+      JOptionPane p = new JOptionPane(message, type, JOptionPane.DEFAULT_OPTION, null, options, initialOption);
+      p.setInitialValue(initialOption);
+      JDialog d = p.createDialog(null, title);
+      p.selectInitialValue();
+      d.setAlwaysOnTop(true);
+      d.setVisible(true);
+      d.dispose();
+      return p.getValue();
+   }
+
+   /** Popup the given informative message, then ask the user to click Close to close it. */
+   public static void showmsg(String title, Object... msg) {
+      JButton dismiss = new JButton(Util.onMac() ? "Dismiss" : "Close");
+      Object[] objs = new Object[msg.length + 1];
+      System.arraycopy(msg, 0, objs, 0, msg.length);
+      objs[objs.length - 1] = OurUtil.makeH(null, dismiss, null);
+      JOptionPane about = new JOptionPane(objs, JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION, null, new Object[]{});
+      JDialog dialog = about.createDialog(null, title);
+      dismiss.addActionListener(Runner.createDispose(dialog));
+      dialog.setAlwaysOnTop(true);
+      dialog.setVisible(true);
+      dialog.dispose();
+   }
+
    /** Popup the given error message. */
-   public static void alert(Frame parentFrame, Object message) {
-      JOptionPane.showMessageDialog(parentFrame, message, "Error", JOptionPane.PLAIN_MESSAGE);
+   public static void alert(Object message) {
+      show("Error", ERROR_MESSAGE, message, null, null);
    }
 
    /** Popup the given error message, then terminate the program. */
-   public static void fatal(Frame parentFrame, Object message) {
-      try {
-         JOptionPane.showMessageDialog(parentFrame, message, "Fatal Error", JOptionPane.ERROR_MESSAGE);
-      } finally {
-         System.exit(1);
-      }
+   public static void fatal(Object message) {
+      try { show("Fatal Error", ERROR_MESSAGE, message, null, null); } finally { System.exit(1); }
    }
 
    /** Ask if the user wishes to save the file, discard the file, or cancel the entire operation (default is cancel).
     * @return 'c' if cancel, 's' if save, 'd' if discard
     */
-   public static char askSaveDiscardCancel(Frame parentFrame, String description) {
-      int ans = JOptionPane.showOptionDialog(parentFrame,
-         new String[] {
-            description + " has not been saved. Do you want to",
-            "cancel the operation, close the file without saving, or save it and close?"
-         },
-         "Warning",
-         YES_NO_CANCEL_OPTION,
-         WARNING_MESSAGE,
-         null,
-         new Object[] {"Save", "Don't Save", "Cancel"},
-         "Cancel"
-      );
-      return (ans == JOptionPane.YES_OPTION) ? 's' : (ans == JOptionPane.NO_OPTION ? 'd' : 'c');
-   }
-
-   /**
-    * Ask if the user really wishes to overwrite the file (default is no).
-    * @return true if the user wishes to overwrite the file, false if the user does not wish to overwrite the file.
-    */
-   public static boolean askOverwrite(Frame parentFrame, String filename) {
-      int ans=JOptionPane.showOptionDialog(parentFrame,
-            new String[] {"The file \"" + filename + "\"", "already exists. Do you wish to overwrite it?"},
-            "Warning: file already exists",
-            YES_NO_OPTION,
-            WARNING_MESSAGE,
-            null,
-            new Object[] {"Overwrite", "Cancel"},
+   public static char askSaveDiscardCancel(String description) {
+      description = description + " has not been saved. Do you want to";
+      Object ans = show(
+            "Warning", WARNING_MESSAGE,
+            new String[] {description, "cancel the operation, close the file without saving, or save it and close?"},
+            new Object[] {"Save", "Don't Save", "Cancel"},
             "Cancel"
       );
-      return ans == JOptionPane.YES_OPTION;
+      return (ans == "Save") ? 's' : (ans == "Don't Save" ? 'd' : 'c');
+   }
+
+   /** Ask if the user really wishes to overwrite the file (default is no).
+    * @return true if the user wishes to overwrite the file, false if the user does not wish to overwrite the file.
+    */
+   public static boolean askOverwrite(String filename) {
+      return "Overwrite" == show("Warning: file already exists", WARNING_MESSAGE,
+            new String[] {"The file \"" + filename + "\"", "already exists. Do you wish to overwrite it?"},
+            new String[] {"Overwrite", "Cancel"},
+            "Cancel"
+      );
    }
 
    /** This caches the result of the call to get all fonts. */
    private static String[] allFonts = null;
 
-   /** Returns true if a font with that name exists on the system. */
+   /** Returns true if a font with that name exists on the system (comparison is case-insensitive). */
    public synchronized static boolean hasFont(String fontname) {
       if (allFonts == null) allFonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
       for(int i = 0; i < allFonts.length; i++) if (fontname.compareToIgnoreCase(allFonts[i]) == 0) return true;
@@ -112,21 +126,14 @@ public final class OurDialog {
    }
 
    /** Asks the user to choose a font; returns "" if the user cancels the request. */
-   public synchronized static String askFont(Frame parentFrame) {
+   public synchronized static String askFont() {
       if (allFonts == null) allFonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
       JComboBox jcombo = new OurCombobox(allFonts);
-      int ans = JOptionPane.showOptionDialog(
-            parentFrame,
-            new Object[] {"Please choose the new font:", jcombo},
-            "Font",
-            YES_NO_OPTION,
-            WARNING_MESSAGE,
-            null,
-            new Object[] {"Ok", "Cancel"},
-            "Cancel"
+      Object ans = show("Font", JOptionPane.INFORMATION_MESSAGE,
+            new Object[] {"Please choose the new font:", jcombo}, new Object[] {"Ok", "Cancel"}, "Cancel"
       );
       Object value = jcombo.getSelectedItem();
-      if (ans != JOptionPane.YES_OPTION || !(value instanceof String)) return ""; else return (String)value;
+      if (ans=="Ok" && (value instanceof String)) return (String)value; else return "";
    }
 
    /** True if we should use AWT (instead of Swing) to display the OPEN and SAVE dialog. */
@@ -134,74 +141,79 @@ public final class OurDialog {
 
    /** Use the platform's preferred file chooser to ask the user to select a file.
     * <br> Note: if it is a save operation, and the user didn't include an extension, then we'll add the extension.
-    * @param parentFrame - the parent frame
     * @param isOpen - true means this is an Open operation; false means this is a Save operation
     * @param dir - the initial directory (or null if we want to use the default)
     * @param ext - the file extension (including "."; using lowercase letters; for example, ".als") or ""
     * @param description - the description for the given extension
     * @return null if the user didn't choose anything, otherwise it returns the selected file
     */
-   public static File askFile (Frame parentFrame, boolean isOpen, String dir, final String ext, final String description) {
+   public static File askFile (boolean isOpen, String dir, final String ext, final String description) {
       if (dir == null) dir = Util.getCurrentDirectory();
       if (!(new File(dir).isDirectory())) dir = System.getProperty("user.home");
       dir = Util.canon(dir);
       String ans;
       if (useAWT) {
-         FileDialog open = new FileDialog(parentFrame, isOpen ? "Open..." : "Save...");
+         Frame parent = new Frame("Alloy File Dialog"); // this window is unused and not shown; needed by FileDialog and nothing more
+         FileDialog open = new FileDialog(parent, isOpen ? "Open..." : "Save...");
+         open.setAlwaysOnTop(true);
          open.setMode(isOpen ? FileDialog.LOAD : FileDialog.SAVE);
          open.setDirectory(dir);
          if (ext.length()>0) open.setFilenameFilter(new FilenameFilter() {
             public boolean accept(File dir, String name) { return name.toLowerCase(Locale.US).endsWith(ext); }
          });
          open.setVisible(true); // This method blocks until the user either chooses something or cancels the dialog.
-         if (open.getFile() == null) return null;
-         ans = open.getDirectory() + File.separatorChar + open.getFile();
+         parent.dispose();
+         if (open.getFile() == null) return null; else ans = open.getDirectory() + File.separatorChar + open.getFile();
       } else {
          try {
-            JFileChooser open = new JFileChooser(dir);
+            JFileChooser open = new JFileChooser(dir) {
+               private static final long serialVersionUID = 0;
+               public JDialog createDialog(Component parent) throws HeadlessException {
+                  JDialog dialog = super.createDialog(null);
+                  dialog.setAlwaysOnTop(true);
+                  return dialog;
+               }
+            };
             open.setDialogTitle(isOpen ? "Open..." : "Save...");
             open.setApproveButtonText(isOpen ? "Open" : "Save");
+            open.setDialogType(isOpen ? JFileChooser.OPEN_DIALOG : JFileChooser.SAVE_DIALOG);
             if (ext.length()>0) open.setFileFilter(new FileFilter() {
                public boolean accept(File file) { return !file.isFile() || file.getPath().toLowerCase(Locale.US).endsWith(ext); }
                public String getDescription() { return description; }
             });
-            if (open.showOpenDialog(parentFrame) != JFileChooser.APPROVE_OPTION || open.getSelectedFile() == null) return null;
+            if (open.showDialog(null, null) != JFileChooser.APPROVE_OPTION || open.getSelectedFile() == null) return null;
             ans = open.getSelectedFile().getPath();
          } catch(Exception ex) {
             // Some combination of Windows version and JDK version will trigger this failure.
             // In such a case, we'll fall back to using the "AWT" file open dialog
             useAWT = true;
-            return askFile(parentFrame, isOpen, dir, ext, description);
+            return askFile(isOpen, dir, ext, description);
          }
       }
       if (!isOpen) {
          int lastSlash = ans.lastIndexOf(File.separatorChar);
          int lastDot = (lastSlash>=0) ? ans.indexOf('.', lastSlash) : ans.indexOf('.');
-         if (lastDot<0) ans = ans + ext;
+         if (lastDot < 0) ans = ans + ext;
       }
       return new File(Util.canon(ans));
    }
 
    /** Display "msg" in a modal dialog window, and ask the user to choose "yes" versus "no" (default is "no"). */
-   public static boolean yesno(Frame parentFrame, String msg, String yes, String no) {
-      return JOptionPane.YES_OPTION == JOptionPane.showOptionDialog(
-            parentFrame, msg, "Question", YES_NO_OPTION, WARNING_MESSAGE, null, new Object[]{yes, no}, no
-      );
+   public static boolean yesno(Object msg, String yes, String no) {
+      return show("Question", WARNING_MESSAGE, msg, new Object[]{yes, no}, no) == yes;
    }
 
    /** Display "msg" in a modal dialog window, and ask the user to choose "Yes" versus "No" (default is "no"). */
-   public static boolean yesno(Frame parentFrame, String msg) {
-      return yesno(parentFrame, msg, "Yes", "No");
-   }
+   public static boolean yesno(Object msg) { return yesno(msg, "Yes", "No"); }
 
    /** Display a modal dialog window containing the "objects"; returns true iff the user clicks Ok. */
-   public static boolean getInput(Frame parentFrame, String title, Object... objects) {
+   public static boolean getInput(String title, Object... objects) {
       // If there is a JTextField or a JTextArea here, then let the first JTextField or JTextArea be the initially focused widget
       Object main = "Ok";
       for(Object obj: objects) if (obj instanceof JTextField || obj instanceof JTextArea) { main = obj; break; }
       // Construct the dialog panel
       final JOptionPane pane = new JOptionPane(objects, QUESTION_MESSAGE, YES_NO_OPTION, null, new Object[]{"Ok", "Cancel"}, main);
-      final JDialog dialog = pane.createDialog(parentFrame, title);
+      final JDialog dialog = pane.createDialog(null, title);
       // For each JTextField and JCheckBox, add a KeyListener that detects VK_ENTER and treat it as if the user clicked OK
       for(Object obj: objects) if (obj instanceof JTextField || obj instanceof JCheckBox) {
          ((JComponent)obj).addKeyListener(new KeyListener() {
@@ -210,7 +222,9 @@ public final class OurDialog {
             public void keyTyped(KeyEvent e)    { }
          });
       }
+      dialog.setAlwaysOnTop(true);
       dialog.setVisible(true); // This method blocks until the user either chooses something or cancels the dialog.
+      dialog.dispose();
       return pane.getValue() == "Ok";
    }
 

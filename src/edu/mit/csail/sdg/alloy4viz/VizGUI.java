@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -25,7 +25,6 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
-import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -46,7 +45,6 @@ import javax.swing.JTextArea;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.JToolBar;
@@ -64,6 +62,8 @@ import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4.Util.IntPref;
 import edu.mit.csail.sdg.alloy4.Util.StringPref;
 import edu.mit.csail.sdg.alloy4graph.GraphViewer;
+import static edu.mit.csail.sdg.alloy4.OurUtil.menu;
+import static edu.mit.csail.sdg.alloy4.OurUtil.menuItem;
 
 /** GUI main window for the visualizer.
  *
@@ -265,7 +265,7 @@ public final class VizGUI implements ComponentListener {
       for(int i=0; i<methods.length; i++) if (methods[i].getName().equals(name)) { m=methods[i]; break; }
       final Method method=m;
       return new Runner() {
-         private static final long serialVersionUID = 1L;
+         private static final long serialVersionUID = 0;
          public void run() {
             try {
                method.setAccessible(true);
@@ -288,7 +288,7 @@ public final class VizGUI implements ComponentListener {
       for(int i=0; i<methods.length; i++) if (methods[i].getName().equals(name)) { m=methods[i]; break; }
       final Method method=m;
       return new Runner() {
-         private static final long serialVersionUID = 1L;
+         private static final long serialVersionUID = 0;
          public void run(Object arg) {
             try {
                method.setAccessible(true);
@@ -357,22 +357,18 @@ public final class VizGUI implements ComponentListener {
       // Create the menubar
       JMenuBar mb = new JMenuBar();
       try {
-         wrap=true;
-         JMenu fileMenu = OurUtil.makeMenu(mb, "File", KeyEvent.VK_F, null);
-         OurUtil.makeMenuItem(fileMenu,        "Open...", KeyEvent.VK_O, KeyEvent.VK_O, doLoad());
-         OurUtil.makeMenuItem(fileMenu,        "Close",   KeyEvent.VK_W, KeyEvent.VK_W, doClose());
-         if (!standalone)
-            OurUtil.makeMenuItem(fileMenu,    "Close All", KeyEvent.VK_A, doCloseAll());
-         else
-            OurUtil.makeMenuItem(fileMenu,    "Quit", KeyEvent.VK_Q, KeyEvent.VK_Q, doCloseAll());
-         JMenu instanceMenu = OurUtil.makeMenu(mb, "Instance", KeyEvent.VK_I, null);
-         enumerateMenu = OurUtil.makeMenuItem(instanceMenu, "Show Next Solution", KeyEvent.VK_N, KeyEvent.VK_N, doNext());
-         thememenu = OurUtil.makeMenu(mb, "Theme", KeyEvent.VK_T, doRefreshTheme());
-         if (standalone || windowmenu==null)
-            windowmenu = OurUtil.makeMenu(mb, "Window", KeyEvent.VK_W, doRefreshWindow());
-         this.windowmenu=windowmenu;
+         wrap = true;
+         JMenu fileMenu = menu(mb, "&File", null);
+         menuItem(fileMenu, "Open...", 'O', 'O', doLoad());
+         menuItem(fileMenu, "Close",   'W', 'W', doClose());
+         if (standalone) menuItem(fileMenu, "Quit", 'Q', 'Q', doCloseAll()); else menuItem(fileMenu, "Close All", 'A', doCloseAll());
+         JMenu instanceMenu = menu(mb, "&Instance", null);
+         enumerateMenu = menuItem(instanceMenu, "Show Next Solution", 'N', 'N', doNext());
+         thememenu = menu(mb, "&Theme", doRefreshTheme());
+         if (standalone || windowmenu==null) windowmenu = menu(mb, "&Window", doRefreshWindow());
+         this.windowmenu = windowmenu;
       } finally {
-         wrap=false;
+         wrap = false;
       }
       mb.add(windowmenu);
       thememenu.setEnabled(false);
@@ -564,7 +560,7 @@ public final class VizGUI implements ComponentListener {
          left = myCustomPanel;
       } else if (settingsOpen>1) {
          if (myEvaluatorPanel==null)
-            myEvaluatorPanel = new OurConsole(evaluator,
+            myEvaluatorPanel = new OurConsole(evaluator, true,
                   "The ", true, "Alloy Evaluator ", false,
                   "allows you to type\nin Alloy expressions and see their values.\nFor example, ", true,
                   "univ", false, " shows the list of all atoms.\n(You can press UP and DOWN to recall old inputs).\n");
@@ -623,7 +619,7 @@ public final class VizGUI implements ComponentListener {
       try { text="<!-- "+filename+" -->\n"+Util.readAll(filename); } catch(IOException ex) { text="# Error reading from "+filename; }
       final JTextArea ta = OurUtil.textarea(text, 10, 10, false, true);
       final JScrollPane ans = new JScrollPane(ta, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED) {
-         private static final long serialVersionUID = 1L;
+         private static final long serialVersionUID = 0;
          @Override public void setFont(Font font) { ta.setFont(font); }
       };
       ans.setBorder(new OurBorder(true, false, true, false));
@@ -638,19 +634,17 @@ public final class VizGUI implements ComponentListener {
 
    /** Load the XML instance. */
    public void loadXML(final String fileName, boolean forcefully) {
-      final String xmlFileName=Util.canon(fileName);
-      File f=new File(xmlFileName);
+      final String xmlFileName = Util.canon(fileName);
+      File f = new File(xmlFileName);
       if (forcefully || !xmlFileName.equals(this.xmlFileName)) {
          AlloyInstance myInstance;
          try {
-            if (!f.canRead()) throw new Exception("");
+            if (!f.exists()) throw new IOException("File " + xmlFileName + " does not exist.");
             myInstance = StaticInstanceReader.parseInstance(f);
          } catch (Throwable e) {
             xmlLoaded.remove(fileName);
             xmlLoaded.remove(xmlFileName);
-            JOptionPane.showMessageDialog(null, "File does not exist or is not a valid Alloy instance: "
-                  +e.getMessage()+"\n\nFile: "+xmlFileName,
-                  "Error", JOptionPane.ERROR_MESSAGE);
+            OurDialog.alert("Cannot read or parse Alloy instance: "+xmlFileName+"\n\nError: "+e.getMessage());
             if (xmlLoaded.size()>0) { loadXML(xmlLoaded.get(xmlLoaded.size()-1), false); return; }
             doCloseAll();
             return;
@@ -676,11 +670,11 @@ public final class VizGUI implements ComponentListener {
    /** This method loads a specific theme file. */
    public boolean loadThemeFile(String filename) {
       if (myState==null) return false; // Can only load if there is a VizState loaded
-      filename=Util.canon(filename);
+      filename = Util.canon(filename);
       try {
          myState.loadPaletteXML(filename);
       } catch (IOException ex) {
-         JOptionPane.showMessageDialog(null,"Exception: "+ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+         OurDialog.alert("Error: " + ex.getMessage());
          return false;
       }
       repopulateProjectionPopup();
@@ -696,19 +690,19 @@ public final class VizGUI implements ComponentListener {
    public boolean saveThemeFile(String filename) {
       if (myState==null) return false; // Can only save if there is a VizState loaded
       if (filename==null) {
-         File file=OurDialog.askFile(frame, false, null, ".thm", ".thm theme files");
+         File file=OurDialog.askFile(false, null, ".thm", ".thm theme files");
          if (file==null) return false;
-         if (file.exists()) if (!OurDialog.askOverwrite(frame, Util.canon(file.getPath()))) return false;
+         if (file.exists()) if (!OurDialog.askOverwrite(Util.canon(file.getPath()))) return false;
          Util.setCurrentDirectory(file.getParentFile());
          filename = file.getPath();
       }
-      filename=Util.canon(filename);
+      filename = Util.canon(filename);
       try {
          myState.savePaletteXML(filename);
-         filename=Util.canon(filename); // Since the canon name may have changed
+         filename = Util.canon(filename); // Since the canon name may have changed
          addThemeHistory(filename);
       } catch (Throwable er) {
-         JOptionPane.showMessageDialog(null, "Error saving the theme: "+er.toString(), "Error", JOptionPane.ERROR_MESSAGE);
+         OurDialog.alert("Error saving the theme.\n\nError: " + er.getMessage());
          return false;
       }
       thmFileName = filename;
@@ -726,7 +720,7 @@ public final class VizGUI implements ComponentListener {
    /** This method asks the user for a new XML instance file to load. */
    private Runner doLoad() {
       if (wrap) return wrapMe();
-      File file=OurDialog.askFile(frame, true, null, ".xml", ".xml instance files");
+      File file=OurDialog.askFile(true, null, ".xml", ".xml instance files");
       if (file==null) return null;
       Util.setCurrentDirectory(file.getParentFile());
       loadXML(file.getPath(), true);
@@ -765,16 +759,16 @@ public final class VizGUI implements ComponentListener {
    /** This method refreshes the "theme" menu. */
    private Runner doRefreshTheme() {
       if (wrap) return wrapMe();
-      String defaultTheme=System.getProperty("alloy.theme0");
+      String defaultTheme = System.getProperty("alloy.theme0");
       thememenu.removeAll();
       try {
          wrap=true;
-         OurUtil.makeMenuItem(thememenu,     "Load Theme...",        KeyEvent.VK_L, doLoadTheme());
+         menuItem(thememenu,    "Load Theme...",        'L', doLoadTheme());
          if (defaultTheme!=null && defaultTheme.length()>0 && (new File(defaultTheme)).isDirectory())
-            OurUtil.makeMenuItem(thememenu, "Load Sample Theme...", KeyEvent.VK_B, doLoadSampleTheme());
-         OurUtil.makeMenuItem(thememenu,     "Save Theme",           KeyEvent.VK_S, doSaveTheme());
-         OurUtil.makeMenuItem(thememenu,     "Save Theme As...",     KeyEvent.VK_A, doSaveThemeAs());
-         OurUtil.makeMenuItem(thememenu,     "Reset Theme",          KeyEvent.VK_R, doResetTheme());
+            menuItem(thememenu, "Load Sample Theme...", 'B', doLoadSampleTheme());
+         menuItem(thememenu,    "Save Theme",           'S', doSaveTheme());
+         menuItem(thememenu,    "Save Theme As...",     'A', doSaveThemeAs());
+         menuItem(thememenu,    "Reset Theme",          'R', doResetTheme());
       } finally {
          wrap=false;
       }
@@ -788,11 +782,11 @@ public final class VizGUI implements ComponentListener {
       if (defaultTheme==null) defaultTheme="";
       if (myState==null) return null; // Can only load if there is a VizState loaded
       if (myState.changedSinceLastSave()) {
-         char opt = OurDialog.askSaveDiscardCancel(frame, "The current theme");
+         char opt = OurDialog.askSaveDiscardCancel("The current theme");
          if (opt=='c') return null;
          if (opt=='s' && !saveThemeFile(thmFileName.length()==0 ? null : thmFileName)) return null;
       }
-      File file=OurDialog.askFile(frame, true, null, ".thm", ".thm theme files");
+      File file=OurDialog.askFile(true, null, ".thm", ".thm theme files");
       if (file!=null) { Util.setCurrentDirectory(file.getParentFile()); loadThemeFile(file.getPath()); }
       return null;
    }
@@ -804,11 +798,11 @@ public final class VizGUI implements ComponentListener {
       if (defaultTheme==null) defaultTheme="";
       if (myState==null) return null; // Can only load if there is a VizState loaded
       if (myState.changedSinceLastSave()) {
-         char opt = OurDialog.askSaveDiscardCancel(frame, "The current theme");
+         char opt = OurDialog.askSaveDiscardCancel("The current theme");
          if (opt=='c') return null;
          if (opt=='s' && !saveThemeFile(thmFileName.length()==0 ? null : thmFileName)) return null;
       }
-      File file=OurDialog.askFile(frame, true, defaultTheme, ".thm", ".thm theme files");
+      File file=OurDialog.askFile(true, defaultTheme, ".thm", ".thm theme files");
       if (file!=null) loadThemeFile(file.getPath());
       return null;
    }
@@ -822,9 +816,9 @@ public final class VizGUI implements ComponentListener {
    /** This method saves the current theme to a new ".thm" file. */
    private Runner doSaveThemeAs() {
       if (wrap) return wrapMe();
-      File file=OurDialog.askFile(frame, false, null, ".thm", ".thm theme files");
+      File file=OurDialog.askFile(false, null, ".thm", ".thm theme files");
       if (file==null) return null;
-      if (file.exists()) if (!OurDialog.askOverwrite(frame, Util.canon(file.getPath()))) return null;
+      if (file.exists()) if (!OurDialog.askOverwrite(Util.canon(file.getPath()))) return null;
       Util.setCurrentDirectory(file.getParentFile());
       saveThemeFile(file.getPath());
       return null;
@@ -834,7 +828,7 @@ public final class VizGUI implements ComponentListener {
    private Runner doResetTheme() {
       if (wrap) return wrapMe();
       if (myState==null) return null;
-      if (!OurDialog.yesno(frame, "Are you sure you wish to clear all your customizations?", "Yes, clear them", "No, keep them")) return null;
+      if (!OurDialog.yesno("Are you sure you wish to clear all your customizations?", "Yes, clear them", "No, keep them")) return null;
       myState.resetTheme();
       repopulateProjectionPopup();
       if (myCustomPanel!=null) myCustomPanel.remakeAll();
@@ -848,7 +842,7 @@ public final class VizGUI implements ComponentListener {
    private Runner doMagicLayout() {
       if (wrap) return wrapMe();
       if (myState==null) return null;
-      if (!OurDialog.yesno(frame, "This will clear your original customizations. Are you sure?", "Yes, clear them", "No, keep them")) return null;
+      if (!OurDialog.yesno("This will clear your original customizations. Are you sure?", "Yes, clear them", "No, keep them")) return null;
       myState.resetTheme();
       try { MagicLayout.magic(myState);  MagicColor.magic(myState); } catch(Throwable ex) { }
       repopulateProjectionPopup();
@@ -880,8 +874,8 @@ public final class VizGUI implements ComponentListener {
    public void addMinMaxActions(JMenu menu) {
       try {
          wrap=true;
-         OurUtil.makeMenuItem(menu, "Minimize", KeyEvent.VK_M, doMinimize(), iconNo);
-         OurUtil.makeMenuItem(menu, "Zoom",                    doZoom(),     iconNo);
+         menuItem(menu, "Minimize", 'M', doMinimize(), iconNo);
+         menuItem(menu, "Zoom",          doZoom(),     iconNo);
       } finally {
          wrap=false;
       }
@@ -899,21 +893,16 @@ public final class VizGUI implements ComponentListener {
       return wrapMe();
    }
 
-   /** This method displays an alert message. */
-   public void doAlert(String message) {
-      OurDialog.alert(frame, message);
-   }
-
    /** This method attempts to derive the next satisfying instance. */
    private Runner doNext() {
       if (wrap) return wrapMe();
       if (settingsOpen!=0) return null;
       if (xmlFileName.length()==0) {
-         OurDialog.alert(frame,"Cannot display the next solution since no instance is currently loaded.");
+         OurDialog.alert("Cannot display the next solution since no instance is currently loaded.");
       } else if (enumerator==null) {
-         OurDialog.alert(frame,"Cannot display the next solution since the analysis engine is not loaded with the visualizer.");
+         OurDialog.alert("Cannot display the next solution since the analysis engine is not loaded with the visualizer.");
       } else {
-         try { enumerator.compute(xmlFileName); } catch(Throwable ex) { OurDialog.alert(frame, ex.getMessage()); }
+         try { enumerator.compute(xmlFileName); } catch(Throwable ex) { OurDialog.alert(ex.getMessage()); }
       }
       return null;
    }

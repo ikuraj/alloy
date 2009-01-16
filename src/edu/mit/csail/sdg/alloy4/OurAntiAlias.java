@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -24,8 +24,7 @@ import javax.swing.JLabel;
 import javax.swing.JTextPane;
 import javax.swing.text.DefaultHighlighter;
 
-/**
- * Graphical convenience methods for managing and constructing antialias-capable components.
+/** Graphical convenience methods for managing and constructing antialias-capable components.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -38,13 +37,13 @@ public final class OurAntiAlias {
    /** Use anti-alias or not. */
    private static boolean antiAlias = Util.onMac() || Util.onWindows();
 
-   /** Stores a weak-reference set of all objects that need to be redrawn when anti-alias setting changes. */
+   /** Stores weak references of all objects that need to be redrawn when anti-alias setting changes. */
    private static WeakHashMap<JComponent, Boolean> map = new WeakHashMap<JComponent, Boolean>();
 
    /** Changes whether anti-aliasing should be done or not (when changed, we will automatically repaint all affected components). */
    public static void enableAntiAlias(boolean enableAntiAlias) {
-      if (Util.onMac() || Util.onWindows()) enableAntiAlias = true; // On Mac and Windows they are already antialiased
-      if (antiAlias == enableAntiAlias) return; else { antiAlias = enableAntiAlias; }
+      if (antiAlias == enableAntiAlias || Util.onMac() || Util.onWindows()) return;
+      antiAlias = enableAntiAlias;
       for(JComponent x: map.keySet()) if (x!=null) { x.invalidate(); x.repaint(); x.validate(); }
    }
 

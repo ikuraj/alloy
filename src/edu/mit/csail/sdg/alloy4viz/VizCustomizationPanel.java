@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -16,18 +16,17 @@
 package edu.mit.csail.sdg.alloy4viz;
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.util.ArrayList;
 import java.util.List;
 import javax.swing.BoxLayout;
 import javax.swing.Icon;
@@ -38,21 +37,16 @@ import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
 import javax.swing.JTextField;
-import javax.swing.JTree;
 import javax.swing.SpinnerNumberModel;
-import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeSelectionListener;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.TreePath;
-import javax.swing.tree.TreeSelectionModel;
+import edu.mit.csail.sdg.alloy4.Listener;
 import edu.mit.csail.sdg.alloy4.OurBorder;
 import edu.mit.csail.sdg.alloy4.OurCombobox;
 import edu.mit.csail.sdg.alloy4.OurCheckbox;
+import edu.mit.csail.sdg.alloy4.OurTree;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4graph.DotColor;
@@ -67,8 +61,20 @@ import edu.mit.csail.sdg.alloy4graph.DotStyle;
 
 public final class VizCustomizationPanel extends JPanel {
 
-   /** This silences javac's warning about missing serialVersionUID. */
-   private static final long serialVersionUID = 1L;
+   /** This ensures the class can be serialized reliably. */
+   private static final long serialVersionUID = 0;
+
+   /** The TREE NODE representing the root of the customization panel. */
+   private static final Object ROOT = new Object();
+
+   /** The TREE NODE representing the GENERAL OPTIONS panel. */
+   private static final Object GENERAL = new Object();
+
+   /** The TREE NODE representing the GENERAL NODES panel. */
+   private static final Object NODES = new Object();
+
+   /** The TREE NODE representing the GENERAL EDGES panel. */
+   private static final Object EDGES = new Object();
 
    /** This is the VizState object that this customization panel will customize. */
    private final VizState vizState;
@@ -79,14 +85,11 @@ public final class VizCustomizationPanel extends JPanel {
    /** This is the upper-half of the customization panel. */
    private final JPanel zoomPane;
 
-   /** This is the lower-half of the customization panel. */
-   private JScrollPane widgetsScrollPane = null;
-
    /** The JSplitPane separating this customization panel with the main graph panel. */
    private final JSplitPane divider;
 
    /** If it's an instance of AlloyElement, that means it's the latest selected type/set/relation.
-    * If it's an Integer 1, 2, or 3, that means the latest selected panel is
+    * If it's GENERAL, NODES, or EDGES, that means the latest selected panel is
     * the General Graph Settings, Default Type+Set, or Default Relation panels respectively.
     * All else, that means the zoom panel is empty.
     */
@@ -114,10 +117,9 @@ public final class VizCustomizationPanel extends JPanel {
    //=============================================================================================================//
 
    /** This method selects a particular treenode and shows the details of a particular Type/Set/Relation.
-    *
     * <p>
     * If x is an instance of AlloyElement, that means it's the latest selected type/set/relation.
-    * If x is an Integer 1, 2, or 3, that means the latest selected panel is
+    * If x is GENERAL, NODES, or EDGES, that means the latest selected panel is
     * the General Graph Settings, Default Type+Set, or Default Relation panels respectively.
     */
    private void zoom(Object x) {
@@ -125,9 +127,9 @@ public final class VizCustomizationPanel extends JPanel {
       zoomPane.removeAll();
       if (x instanceof AlloyNodeElement) makeNodeOptionsPanel(zoomPane, (AlloyNodeElement)x);
       else if (x instanceof AlloyRelation) makeEdgeOptionsPanel(zoomPane, (AlloyRelation)x);
-      else if (Integer.valueOf(1).equals(x)) createGeneralWidget(zoomPane);
-      else if (Integer.valueOf(2).equals(x)) createDefaultNodeWidget(zoomPane);
-      else if (Integer.valueOf(3).equals(x)) createDefaultEdgeWidget(zoomPane);
+      else if (x == GENERAL) createGeneralWidget(zoomPane);
+      else if (x == NODES) createDefaultNodeWidget(zoomPane);
+      else if (x == EDGES) createDefaultEdgeWidget(zoomPane);
       else {
          // The following 2 lines make sure the panel doesn't get too small on Mac
          zoomPane.add(OurUtil.makeH(wcolor, new JLabel(" "), (Object)null));
@@ -146,181 +148,71 @@ public final class VizCustomizationPanel extends JPanel {
 
    //=============================================================================================================//
 
-   /** Custom TreeCellRenderer to print the tree nodes better.
-    * The idea of using JLabel is inspired by the DefaultTreeCellRenderer implementation.
-    */
-   private final class OurRenderer extends JLabel implements TreeCellRenderer {
-      /** This suppresses javac's warning about missing serialVersionUID. */
-      private static final long serialVersionUID = 1L;
-      /** This stores the height of one line of text. */
-      private int height;
-      /** If preferredHeight>0, then preferredWidth is the desired width for the current object being drawn. */
-      private int preferredWidth=0;
-      /** If preferredHeight>0, then preferredHeight is the desired height for the current object being drawn. */
-      private int preferredHeight=0;
-      /** Whether the current object is selected or not. */
-      private boolean isSelected;
-      /** Whether the current object is focused or not. */
-      private boolean isFocused;
-      /** Constructs the Renderer. */
-      public OurRenderer() {
-         setVerticalAlignment(JLabel.BOTTOM);
-         setBorder(new EmptyBorder(0, 3, 0, 3));
-         setFont(OurUtil.getVizFont());
-         setText("ABC"); // So that we can derive the height
-         height=super.getPreferredSize().height;
-      }
-      /** Returns an object to be drawn. */
-      public Component getTreeCellRendererComponent(JTree tree, Object value,
-            boolean isSelected, boolean expanded, boolean isLeaf, int row, boolean isFocused) {
-         if (value instanceof DefaultMutableTreeNode) value=((DefaultMutableTreeNode)value).getUserObject();
-         String string="";
-         if (value instanceof AlloySet) {
-            AlloySet x=(AlloySet)value;
-            string="<html><b>set</b> "+x.getName()+"</html>";
-         } else if (value instanceof AlloyRelation) {
-            AlloyRelation x=(AlloyRelation)value;
-            string=x.toString();
-         } else if (value instanceof AlloyType) {
-            AlloyType x=(AlloyType)value;
-            if (!vizState.getCurrentModel().hasType(x))
-               string="<html><b>sig</b> "+typename(x)+" <font color=\"#808080\">(projected)</font></html>";
-            else string="<html><b>sig</b> "+typename(x)+"</html>";
-         }
-         else if (Integer.valueOf(1).equals(value)) string="<html><b>general graph settings</b></html>";
-         else if (Integer.valueOf(2).equals(value)) string="<html><b>types and sets</b></html>";
-         else if (Integer.valueOf(3).equals(value)) string="<html><b>relations</b></html>";
-         else string="";
-         this.isFocused = isFocused;
-         this.isSelected = isSelected;
-         this.setText(string);
-         this.setForeground(UIManager.getColor(isSelected ? "Tree.selectionForeground" : "Tree.textForeground"));
-         // By default, we don't want to specify a width or height. Only specify if we need to...
-         preferredHeight=0;
-         if (Integer.valueOf(2).equals(value) || Integer.valueOf(3).equals(value)) {
-            Dimension d=super.getPreferredSize();
-            preferredWidth=d.width+3;
-            preferredHeight=(d.height*2);
-         }
-         return this;
-      }
-      /** We override the getPreferredSize() method to return a custom size for "sig" and for "univ". */
-      @Override public Dimension getPreferredSize() {
-         if (preferredHeight!=0) return new Dimension(preferredWidth, preferredHeight);
-         Dimension d=super.getPreferredSize();
-         return new Dimension(d.width+3, d.height);
-      }
-      /** We override the paint() method to avoid drawing the box around the "extra space" above sig and univ. */
-      @Override public void paint(Graphics g) {
-         int w=getWidth(), h=getHeight(), y=h-height;
-         Color background = isSelected ? UIManager.getColor("Tree.selectionBackground") : Color.WHITE;
-         Color border = isFocused ? UIManager.getColor("Tree.selectionBorderColor") : null;
-         if (background!=null) { g.setColor(background); g.fillRect(0,y,w,h-y); }
-         if (border!=null && isSelected) { g.setColor(border); g.drawRect(0,y,w-1,h-1-y); }
-         super.paint(g);
-      }
-   }
-
-   //=============================================================================================================//
-
-   /** Generate nodes for that type, all its subtypes and subsets. */
-   private TreePath remakeForType(final boolean hidePrivate, final boolean hideMeta, TreePath path, AlloyType type) {
-      TreePath last=null; // If nonnull, that means we've found which entry we should highlight
-      AlloyModel old=vizState.getOriginalModel(), now=vizState.getCurrentModel();
-      DefaultMutableTreeNode rad=null, rad2;
-      if (!now.hasType(type) && !vizState.canProject(type)) return null;
-      DefaultMutableTreeNode tailnode=(DefaultMutableTreeNode)(path.getLastPathComponent());
-      tailnode.add(rad=new DefaultMutableTreeNode(type));
-      path=path.pathByAddingChild(rad);
-      if (type.equals(lastElement)) last=path;
-      // Generate the nodes for all AlloySet(s) whose types == this type
-      for (AlloySet s:now.getSets())
-         if (!(hidePrivate && s.isPrivate) && !(hideMeta && s.isMeta) && s.getType().equals(type)) {
-            rad.add(rad2=new DefaultMutableTreeNode(s));
-            if (s.equals(lastElement)) last=path.pathByAddingChild(rad2);
-         }
-      // Generate the nodes for all AlloyType that inherit from this
-      if (!type.isEnum)
-         for(AlloyType t:old.getDirectSubTypes(type))
-            if (!(hidePrivate && t.isPrivate) && !(hideMeta && t.isMeta)) {
-               TreePath possibleLast=remakeForType(hidePrivate, hideMeta, path, t);
-               if (possibleLast!=null) last=possibleLast;
-            }
-      return last;
-   }
-
    /** Regenerate all the customization widgets based on the latest settings. */
    public void remakeAll() {
-      TreePath last=null; // If nonnull, that means we've found which entry we should highlight
-
-      // Generate a new JPanel to house all the widgets
-      JPanel elementsPanel = new JPanel();
-      elementsPanel.setBorder(null);
-      elementsPanel.setLayout(new BoxLayout(elementsPanel, BoxLayout.Y_AXIS));
-      final boolean hidePrivate = vizState.hidePrivate();
-      final boolean hideMeta = vizState.hideMeta();
-
-      // Generate the nodes of the tree
-      DefaultMutableTreeNode top = new DefaultMutableTreeNode("Theme Customizations");
-      // Global Settings
-      DefaultMutableTreeNode radA = new DefaultMutableTreeNode(1);
-      top.add(radA);
-      if (Integer.valueOf(1).equals(lastElement)) last=new TreePath(new Object[]{top,radA});
-      // Types and Sets
-      DefaultMutableTreeNode radTS = new DefaultMutableTreeNode(2);
-      top.add(radTS);
-      if (Integer.valueOf(2).equals(lastElement)) last=new TreePath(new Object[]{top,radTS});
-      TreePath possibleLast=remakeForType(hidePrivate, hideMeta, new TreePath(new Object[]{top,radTS}), AlloyType.UNIV);
-      if (possibleLast!=null) last=possibleLast;
-      // Relations
-      DefaultMutableTreeNode radR = new DefaultMutableTreeNode(3);
-      top.add(radR);
-      if (Integer.valueOf(3).equals(lastElement)) last=new TreePath(new Object[]{top,radR});
-      for (AlloyRelation rel:vizState.getCurrentModel().getRelations())
-         if (!(hidePrivate && rel.isPrivate) && !(hideMeta && rel.isMeta)) {
-            DefaultMutableTreeNode rad;
-            radR.add(rad=new DefaultMutableTreeNode(rel));
-            if (rel.equals(lastElement)) last=new TreePath(new Object[]{top,radR,rad});
+      // Make the tree
+      final OurTree tree = new OurTree(12) {
+         private static final long serialVersionUID = 0;
+         private final AlloyModel old = vizState.getOriginalModel(), now = vizState.getCurrentModel();
+         private final boolean hidePrivate = vizState.hidePrivate(), hideMeta = vizState.hideMeta();
+         {
+            do_start();
+            setRootVisible(false);
+            setShowsRootHandles(false);
+            listeners.add(new Listener() {
+               public Object do_action(Object sender, Event event) { return null; }
+               public Object do_action(Object sender, Event event, Object arg) { zoom(arg); return null; }
+            });
          }
-
-      // Now, generate the tree
-      final JTree tree = OurUtil.make(new JTree(top), Color.BLACK, Color.WHITE, new EmptyBorder(8,8,2,2));
-      tree.setRootVisible(false);
-      tree.setRowHeight(0); // To allow variable row height on Mac OS X
-      tree.setCellRenderer(new OurRenderer());
-      tree.setShowsRootHandles(false);
-      tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-      tree.addTreeSelectionListener(new TreeSelectionListener() {
-         public final void valueChanged(TreeSelectionEvent e) {
-            TreePath path = tree.getSelectionPath();
-            if (path==null) {zoom(null);return;}
-            Object x = path.getLastPathComponent();
-            if (!(x instanceof DefaultMutableTreeNode)) {zoom(null);return;}
-            zoom(((DefaultMutableTreeNode)x).getUserObject());
+         @Override public String convertValueToText(Object value, boolean sel, boolean expand, boolean leaf, int i, boolean focus) {
+            if (value==GENERAL) return "<html><b>general graph settings</b></html>";
+            if (value==NODES) return "<html><b>types and sets</b></html>";
+            if (value==EDGES) return "<html><b>relations</b></html>";
+            if (value instanceof AlloyType) {
+               AlloyType x = (AlloyType)value;
+               if (vizState.getCurrentModel().hasType(x)) return "<html><b>sig</b> "+typename(x)+"</html>";
+               return "<html><b>sig</b> "+typename(x)+" <font color=\"#808080\">(projected)</font></html>";
+            }
+            if (value instanceof AlloySet) return "<html><b>set</b> "+ ((AlloySet)value).getName() + "</html>";
+            if (value instanceof AlloyRelation) return value.toString(); else return "";
          }
-      });
-
-      // Remove the old widgets on display, and show these new widgets
-      widgetsScrollPane = OurUtil.scrollpane(tree, Color.BLACK, Color.WHITE, Util.onMac() ? new OurBorder(false,false,false,true) : null);
-      widgetsScrollPane.setAlignmentX(0f);
-      widgetsScrollPane.getVerticalScrollBar().setUnitIncrement(50);
-
-      // Pre-expand the entire tree
-      for (int i=0; i<tree.getRowCount(); i++) tree.expandRow(i);
-
-      // If we found the tree node corresponding to the previously selected item, then select it now.
-      if (last!=null && lastElement!=null) {
-         zoom(lastElement);
-      } else {
-         last=new TreePath(new Object[]{top,radA});
-         zoom(1);
+         @Override public List<?> do_ask(Object parent) {
+            ArrayList<Object> ans = new ArrayList<Object>();
+            if (parent==ROOT) { ans.add(GENERAL); ans.add(NODES); ans.add(EDGES); }
+            else if (parent==NODES) { ans.add(AlloyType.UNIV); }
+            else if (parent==EDGES) {
+               for (AlloyRelation rel: vizState.getCurrentModel().getRelations())
+                  if (!(hidePrivate && rel.isPrivate) && !(hideMeta && rel.isMeta)) ans.add(rel);
+            } else if (parent instanceof AlloyType) {
+               AlloyType type = (AlloyType)parent;
+               for (AlloySet s:now.getSets())
+                  if (!(hidePrivate && s.isPrivate) && !(hideMeta && s.isMeta) && s.getType().equals(type)) ans.add(s);
+               if (!type.isEnum) for(AlloyType t: old.getDirectSubTypes(type))
+                  if (!(hidePrivate && t.isPrivate) && !(hideMeta && t.isMeta))
+                     if (now.hasType(t) || vizState.canProject(t)) ans.add(t);
+            }
+            return ans;
+         }
+         @Override public boolean do_isDouble(Object object) { return object==NODES || object==EDGES; }
+         @Override public Object do_root() { return ROOT; }
+      };
+      // Pre-expand the entire tree.
+      TreePath last = null;
+      for(int i=0; i<tree.getRowCount(); i++) {
+         tree.expandRow(i);
+         if (lastElement!=null && last==null) {last=tree.getPathForRow(i); if (lastElement!=last.getLastPathComponent()) last=null;}
       }
+      // Show the current element if found, else show the GENERAL OPTIONS
+      if (last!=null) { zoom(lastElement); } else { last = tree.getPathForRow(0); zoom(GENERAL); }
       tree.scrollPathToVisible(last);
       tree.setSelectionPath(last);
-      this.removeAll();
-      this.add(zoomPane);
-      this.add(widgetsScrollPane);
-      this.validate();
+      JScrollPane scroll = OurUtil.scrollpane(tree, Color.BLACK, Color.WHITE, new OurBorder(false, false, false, Util.onMac()));
+      scroll.setAlignmentX(0f);
+      scroll.getVerticalScrollBar().setUnitIncrement(50);
+      removeAll();
+      add(zoomPane);
+      add(scroll);
+      validate();
    }
 
    //=============================================================================================================//
@@ -328,42 +220,35 @@ public final class VizCustomizationPanel extends JPanel {
    /** Generates the node settings widgets for the given type or set, and add them to "parent". */
    private void makeNodeOptionsPanel(final JPanel answer, final AlloyNodeElement elt) {
       final boolean enabled = !(elt instanceof AlloyType) || (vizState.getCurrentModel().hasType((AlloyType)elt));
-      if (elt instanceof AlloyType)
-         answer.add(makelabel(" "+typename((AlloyType)elt)));
-      else
-         answer.add(makelabel(" "+elt.toString()));
+      answer.add(makelabel( (elt instanceof AlloyType) ? (" "+typename((AlloyType)elt)) : (" "+elt) ));
       final JTextField labelText = OurUtil.textfield(vizState.label.get(elt), 10);
       labelText.setMaximumSize(new Dimension(100, 25));
-      labelText.addKeyListener(new KeyListener() {
-         public final void keyTyped(KeyEvent e) { }
-         public final void keyPressed(KeyEvent e) { }
-         public final void keyReleased(KeyEvent e) { vizState.label.put(elt, labelText.getText()); }
+      labelText.addKeyListener(new KeyAdapter() {
+         @Override public final void keyReleased(KeyEvent e) { vizState.label.put(elt, labelText.getText()); }
       });
       labelText.addActionListener(new ActionListener() {
          public final void actionPerformed(ActionEvent e) { vizState.label.put(elt, labelText.getText()); }
       });
-      labelText.addFocusListener(new FocusListener() {
-         public final void focusGained(FocusEvent e) { }
-         public final void focusLost(FocusEvent e) { vizState.label.put(elt, labelText.getText()); }
+      labelText.addFocusListener(new FocusAdapter() {
+         @Override public void focusLost(FocusEvent e) { vizState.label.put(elt, labelText.getText()); }
       });
-      //
-      final AlloyModel model=vizState.getCurrentModel();
+      final AlloyModel model = vizState.getCurrentModel();
       final AlloyNodeElement elt2;
       if (elt instanceof AlloyType) elt2=model.getSuperType((AlloyType)elt); else if (elt instanceof AlloySet) elt2=((AlloySet)elt).getType(); else elt2=null;
       JComboBox color = new OurCombobox(true, DotColor.valuesWithout(DotColor.MAGIC), 100, 35, vizState.nodeColor.get(elt)) {
-         private static final long serialVersionUID = 1L;
+         private static final long serialVersionUID = 0;
          @Override public String do_getText(Object value) { if (value==null) return "Inherit"; else return ((DotColor)value).getDisplayedText(); }
          @Override public Icon   do_getIcon(Object value) { if (value==null) value=vizState.nodeColor.resolve(elt2); return value==null ? null : ((DotColor)value).getIcon(vizState.getNodePalette()); }
          @Override public void   do_changed(Object value) { vizState.nodeColor.put(elt, (DotColor)value); }
       };
       JComboBox shape = new OurCombobox(true, DotShape.values(), 125, 35, vizState.shape.get(elt)) {
-         private static final long serialVersionUID = 1L;
+         private static final long serialVersionUID = 0;
          @Override public String do_getText(Object value) { if (value==null) return "Inherit"; else return ((DotShape)value).getDisplayedText(); }
          @Override public Icon   do_getIcon(Object value) { if (value==null) value=vizState.shape.resolve(elt2); return value==null ? null : ((DotShape)value).getIcon(); }
          @Override public void   do_changed(Object value) { vizState.shape.put(elt, (DotShape)value); }
       };
       JComboBox style = new OurCombobox(true, DotStyle.values(), 95, 35, vizState.nodeStyle.get(elt)) {
-         private static final long serialVersionUID = 1L;
+         private static final long serialVersionUID = 0;
          @Override public String do_getText(Object value) { if (value==null) return "Inherit"; else return ((DotStyle)value).getDisplayedText(); }
          @Override public Icon   do_getIcon(Object value) { if (value==null) value=vizState.nodeStyle.resolve(elt2); return value==null ? null : ((DotStyle)value).getIcon(); }
          @Override public void   do_changed(Object value) { vizState.nodeStyle.put(elt, (DotStyle)value); }
@@ -377,10 +262,10 @@ public final class VizCustomizationPanel extends JPanel {
          JPanel proj = null;
          if (vizState.canProject((AlloyType)elt))
             proj = new OurCheckbox("Project over this sig", "Click here to " + (enabled?"":"un") + "project over this signature", enabled ? OurCheckbox.ALL_OFF : OurCheckbox.ALL_ON) {
-            private static final long serialVersionUID = 1L;
+            private static final long serialVersionUID = 0;
             public Icon do_action() {
                if (enabled) projectAlloyType((AlloyType)elt); else deprojectAlloyType((AlloyType)elt);
-               lastElement=elt;
+               lastElement = elt;
                return enabled ? ALL_ON : ALL_OFF;
             }
          };
@@ -410,33 +295,26 @@ public final class VizCustomizationPanel extends JPanel {
    private void makeEdgeOptionsPanel(final JPanel parent, final AlloyRelation rel) {
       final JTextField labelText = OurUtil.textfield(vizState.label.get(rel), 10);
       labelText.setMaximumSize(new Dimension(100, 25));
-      labelText.addKeyListener(new KeyListener() {
-         public void keyTyped(KeyEvent e)    { }
-         public void keyPressed(KeyEvent e)  { }
-         public void keyReleased(KeyEvent e) { vizState.label.put(rel, labelText.getText()); }
+      labelText.addKeyListener(new KeyAdapter() {
+         @Override public void keyReleased(KeyEvent e)     { vizState.label.put(rel, labelText.getText()); }
       });
       labelText.addActionListener(new ActionListener() {
-         public final void actionPerformed(ActionEvent e) { vizState.label.put(rel, labelText.getText()); }
+         public final void actionPerformed(ActionEvent e)  { vizState.label.put(rel, labelText.getText()); }
       });
-      labelText.addFocusListener(new FocusListener() {
-         public final void focusGained(FocusEvent e) { }
-         public final void focusLost(FocusEvent e)   { vizState.label.put(rel, labelText.getText()); }
+      labelText.addFocusListener(new FocusAdapter() {
+         @Override public void focusLost(FocusEvent e)     { vizState.label.put(rel, labelText.getText()); }
       });
       final JLabel weightLabel = OurUtil.label("Weight:");
       final JSpinner weightSpinner = new JSpinner(new SpinnerNumberModel(vizState.weight.get(rel), 0, 999, 1));
       weightSpinner.setMaximumSize(weightSpinner.getPreferredSize());
       weightSpinner.setToolTipText("A higher weight will cause the edge to be shorter and straighter.");
-      weightSpinner.addKeyListener(new KeyListener() {
-         public void keyTyped(KeyEvent e)    { }
-         public void keyPressed(KeyEvent e)  { }
-         public void keyReleased(KeyEvent e) { vizState.weight.put(rel, (Integer) (weightSpinner.getValue())); }
+      weightSpinner.addKeyListener(new KeyAdapter() {
+         @Override public void keyReleased(KeyEvent e) { vizState.weight.put(rel, (Integer) (weightSpinner.getValue())); }
       });
-      weightSpinner.addMouseListener(new MouseListener() {
-         public void mouseClicked(MouseEvent e)  { vizState.weight.put(rel, (Integer) (weightSpinner.getValue())); }
-         public void mousePressed(MouseEvent e)  { vizState.weight.put(rel, (Integer) (weightSpinner.getValue())); }
-         public void mouseReleased(MouseEvent e) { vizState.weight.put(rel, (Integer) (weightSpinner.getValue())); }
-         public void mouseEntered(MouseEvent e)  { }
-         public void mouseExited(MouseEvent e)   { }
+      weightSpinner.addMouseListener(new MouseAdapter() {
+         @Override public void mouseClicked(MouseEvent e)  { vizState.weight.put(rel, (Integer) (weightSpinner.getValue())); }
+         @Override public void mousePressed(MouseEvent e)  { vizState.weight.put(rel, (Integer) (weightSpinner.getValue())); }
+         @Override public void mouseReleased(MouseEvent e) { vizState.weight.put(rel, (Integer) (weightSpinner.getValue())); }
       });
       weightSpinner.addChangeListener(new ChangeListener() {
          public void stateChanged(ChangeEvent e) { vizState.weight.put(rel, (Integer) (weightSpinner.getValue())); }
@@ -446,13 +324,13 @@ public final class VizCustomizationPanel extends JPanel {
       weightPanel.setAlignmentY(0.5f);
       weightPanel.setToolTipText("A higher weight will cause the edge to be shorter and straighter.");
       OurCombobox color = new OurCombobox(true, DotColor.valuesWithout(DotColor.WHITE), 110, 35, vizState.edgeColor.get(rel)) {
-         private static final long serialVersionUID = 1L;
+         private static final long serialVersionUID = 0;
          @Override public String do_getText(Object value) { return value==null ? "Inherit" : ((DotColor)value).getDisplayedText(); }
          @Override public Icon   do_getIcon(Object value) { if (value==null) value=vizState.edgeColor.get(null); return value==null ? null : ((DotColor)value).getIcon(vizState.getEdgePalette()); }
          @Override public void   do_changed(Object value) { vizState.edgeColor.put(rel, (DotColor)value); }
       };
       OurCombobox style = new OurCombobox(true, DotStyle.values(), 105, 35, vizState.edgeStyle.get(rel)) {
-         private static final long serialVersionUID = 1L;
+         private static final long serialVersionUID = 0;
          @Override public String do_getText(Object value) { return value==null ? "Inherit" : ((DotStyle)value).getDisplayedText(); }
          @Override public Icon   do_getIcon(Object value) { if (value==null) value=vizState.edgeStyle.get(null); return value==null ? null : ((DotStyle)value).getIcon(); }
          @Override public void   do_changed(Object value) { vizState.edgeStyle.put(rel, (DotStyle)value); }
@@ -481,29 +359,29 @@ public final class VizCustomizationPanel extends JPanel {
       JLabel mLabel = OurUtil.label("Hide meta sigs/relations:");
       JLabel fLabel = OurUtil.label("Font Size:");
       JComboBox fontSize = new OurCombobox(false, fontSizes.toArray(), 60, 32, vizState.getFontSize()) {
-         private static final long serialVersionUID = 1L;
+         private static final long serialVersionUID = 0;
          @Override public void do_changed(Object value) { if (fontSizes.contains(value)) vizState.setFontSize((Integer)value); }
       };
       JComboBox nodepal = new OurCombobox(false, DotPalette.values(), 100, 32, vizState.getNodePalette()) {
-         private static final long serialVersionUID = 1L;
+         private static final long serialVersionUID = 0;
          @Override public String do_getText(Object value) { return ((DotPalette)value).getDisplayedText(); }
          @Override public void   do_changed(Object value) { vizState.setNodePalette((DotPalette)value); }
       };
       JComboBox edgepal = new OurCombobox(false, DotPalette.values(), 100, 32, vizState.getEdgePalette()) {
-         private static final long serialVersionUID = 1L;
+         private static final long serialVersionUID = 0;
          @Override public String do_getText(Object value) { return ((DotPalette)value).getDisplayedText(); }
          @Override public void   do_changed(Object value) { vizState.setEdgePalette((DotPalette)value); }
       };
       JPanel name = new OurCheckbox("", "Whether the visualizer should use the original atom names as-is.", vizState.useOriginalName() ? OurCheckbox.ON : OurCheckbox.OFF) {
-         private static final long serialVersionUID = 1L;
+         private static final long serialVersionUID = 0;
          public Icon do_action() { boolean x = vizState.useOriginalName();  vizState.useOriginalName(!x); return (!x ? ON : OFF); }
       };
       JPanel priv = new OurCheckbox("", "Whether the visualizer should hide private sigs, sets, and relations by default.", vizState.hidePrivate() ? OurCheckbox.ON : OurCheckbox.OFF) {
-         private static final long serialVersionUID = 1L;
+         private static final long serialVersionUID = 0;
          public Icon do_action() { boolean x = vizState.hidePrivate();  vizState.hidePrivate(!x); remakeAll(); return (!x ? ON : OFF); }
       };
       JPanel meta = new OurCheckbox("", "Whether the visualizer should hide meta sigs, sets, and relations by default.", vizState.hideMeta() ? OurCheckbox.ON : OurCheckbox.OFF) {
-         private static final long serialVersionUID = 1L;
+         private static final long serialVersionUID = 0;
          public Icon do_action() { boolean x = vizState.hideMeta();  vizState.hideMeta(!x); remakeAll(); return (!x ? ON : OFF); }
       };
       parent.add(makelabel(" General Graph Settings:"));
@@ -519,19 +397,19 @@ public final class VizCustomizationPanel extends JPanel {
    /** Generates the "default type and set settings" widgets, and add them to "parent". */
    private void createDefaultNodeWidget(JPanel parent) {
       JComboBox color = new OurCombobox(false, DotColor.valuesWithout(DotColor.MAGIC), 110, 35, vizState.nodeColor.get(null)) {
-         private static final long serialVersionUID = 1L;
+         private static final long serialVersionUID = 0;
          @Override public String do_getText(Object value) { return ((DotColor)value).getDisplayedText(); }
          @Override public Icon   do_getIcon(Object value) { return ((DotColor)value).getIcon(vizState.getNodePalette()); }
          @Override public void   do_changed(Object value) { vizState.nodeColor.put(null, (DotColor)value); }
       };
       JComboBox shape = new OurCombobox(false, DotShape.values(), 135, 35, vizState.shape.get(null)) {
-         private static final long serialVersionUID = 1L;
+         private static final long serialVersionUID = 0;
          @Override public String do_getText(Object value) { return ((DotShape)value).getDisplayedText(); }
          @Override public Icon   do_getIcon(Object value) { return ((DotShape)value).getIcon(); }
          @Override public void   do_changed(Object value) { vizState.shape.put(null, (DotShape)value); }
       };
       JComboBox style = new OurCombobox(false, DotStyle.values(), 110, 35, vizState.nodeStyle.get(null)) {
-         private static final long serialVersionUID = 1L;
+         private static final long serialVersionUID = 0;
          @Override public String do_getText(Object value) { return ((DotStyle)value).getDisplayedText(); }
          @Override public Icon   do_getIcon(Object value) { return ((DotStyle)value).getIcon(); }
          @Override public void   do_changed(Object value) { vizState.nodeStyle.put(null, (DotStyle)value); }
@@ -552,13 +430,13 @@ public final class VizCustomizationPanel extends JPanel {
    /** Generates the "default relation settings" widgets, and add them to "parent". */
    private void createDefaultEdgeWidget(JPanel parent) {
       JComboBox colorComboE = new OurCombobox(false, DotColor.valuesWithout(DotColor.WHITE), 110, 35, vizState.edgeColor.get(null)) {
-         private static final long serialVersionUID = 1L;
+         private static final long serialVersionUID = 0;
          @Override public String do_getText(Object value) { return ((DotColor)value).getDisplayedText(); }
          @Override public Icon   do_getIcon(Object value) { return ((DotColor)value).getIcon(vizState.getEdgePalette()); }
          @Override public void   do_changed(Object value) { vizState.edgeColor.put(null, (DotColor)value); }
       };
       JComboBox outlineComboE = new OurCombobox(false, DotStyle.values(), 110, 35, vizState.edgeStyle.get(null)) {
-         private static final long serialVersionUID = 1L;
+         private static final long serialVersionUID = 0;
          @Override public String do_getText(Object value) { return ((DotStyle)value).getDisplayedText(); }
          @Override public Icon   do_getIcon(Object value) { return ((DotStyle)value).getIcon(); }
          @Override public void   do_changed(Object value) { vizState.edgeStyle.put(null, (DotStyle)value); }
@@ -585,7 +463,7 @@ public final class VizCustomizationPanel extends JPanel {
    }
 
    /** Generates a black JLabel for the given String. */
-   private JLabel makelabel(String label) { return OurUtil.label(label, OurUtil.getVizFont().deriveFont(Font.BOLD)); }
+   private static JLabel makelabel(String label) { return OurUtil.label(label, OurUtil.getVizFont().deriveFont(Font.BOLD)); }
 
    /** Project over the given type if we are allowed to. */
    private void projectAlloyType(AlloyType type) { vizState.project(type); remakeAll(); }

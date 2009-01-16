@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -15,13 +15,13 @@
 
 package edu.mit.csail.sdg.alloy4;
 
-import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
+import java.util.AbstractMap;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Set;
 import java.io.Serializable;
 
 /** Immutable; implements a map based on hashCode() and equals(); null key and values are allowed.
@@ -32,7 +32,7 @@ import java.io.Serializable;
 
 public final class ConstMap<K,V> extends AbstractMap<K,V> implements Serializable {
 
-   /** This ensures the class can be serialized reliably. */
+   /** This ensures this class can be serialized reliably. */
    private static final long serialVersionUID = 0;
 
    /** The underlying Collections.unmodifiableMap map. */

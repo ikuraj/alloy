@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -35,6 +35,7 @@ public final strictfp class OurPNGWriter {
          setDPI(filename, dpiX, dpiY);
       } catch(Throwable ex) {
          if (ex instanceof IOException) throw (IOException)ex;
+         if (ex instanceof StackOverflowError) throw new IOException("Out of memory trying to save the PNG file to " + filename);
          if (ex instanceof OutOfMemoryError) throw new IOException("Out of memory trying to save the PNG file to " + filename);
          throw new IOException("Error writing the PNG file to " + filename + " (" + ex + ")");
       }
@@ -69,13 +70,16 @@ public final strictfp class OurPNGWriter {
       RandomAccessFile f = null;
       try {
          f = new RandomAccessFile(filename, "rw");
-         long total = f.length(), pos = 8;
-         // Jump to the appropriate place for inserting the pHYs chunk, then insert it
-         while(true) {
-            if (pos >= total) throw new IOException("PNG is missing the IDAT chunk");
+         for(long total=f.length(), pos=8; pos<total;) { // Jump to the right place for inserting the pHYs chunk, then insert it
             f.seek(pos);
-            int a1=f.read(), a2=f.read(), a3=f.read(), a4=f.read(), b1=f.read(), b2=f.read(), b3=f.read(), b4=f.read();
-            if (a1<0 || a2<0 || a3<0 || a4<0 || b1<0 || b2<0 || b3<0 || b4<0) throw new IOException("PNG is missing the IDAT chunk");
+            int a1 = f.read(); if (a1 < 0) break;
+            int a2 = f.read(); if (a2 < 0) break;
+            int a3 = f.read(); if (a3 < 0) break;
+            int a4 = f.read(); if (a4 < 0) break;
+            int b1 = f.read(); if (b1 < 0) break;
+            int b2 = f.read(); if (b2 < 0) break;
+            int b3 = f.read(); if (b3 < 0) break;
+            int b4 = f.read(); if (b4 < 0) break;
             int jump = (a1<<24) | (a2<<16) | (a3<<8) | a4;
             if (jump<0 || (total-pos)-12<jump) throw new IOException("PNG chunk size exceeds the rest of the file.");
             if ((b1=='I' && b2=='D' && b3=='A' && b4=='T') || (b1=='p' && b2=='H' && b3=='Y' && b4=='s')) {
@@ -83,11 +87,12 @@ public final strictfp class OurPNGWriter {
                f.seek(pos);
                writeDPI(f, dpiX, dpiY);
                f.close();
-               f=null;
-               break;
+               f = null;
+               return; // use a "return" rather than "break" so that we don't enter the line that throws the IOException
             }
             pos = pos + 12 + jump;
          }
+         throw new IOException("PNG is missing the IDAT chunk");
       } finally {
          Util.close(f);
       }

@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -38,7 +38,7 @@ public final class Env<K,V> {
 
    /** If a key is bound to one or more values, this stores the first value.
     * <p>
-    * For example: if key K is bound to values V1..Vn, then map1.get(K) returns V1
+    * For example: if key K is bound to list of values V1,V2,V3...Vn, then map1.get(K) returns V1
     * <p>
     * Invariant:  map2.containsKey(x) implies (map1.containsKey(x) && map2.get(x).size()>0)
     */
@@ -46,7 +46,7 @@ public final class Env<K,V> {
 
    /** If a key is bound to more than one value, this stores every value except the first value.
     * <p>
-    * For example: if key K is bound to values V1..Vn, then map2.get(K) returns the sublist V2..Vn
+    * For example: if key K is bound to list of values V1,V2,V3...Vn, then map2.get(K) returns the sublist V2..Vn
     * <p>
     * Invariant:  map2.containsKey(x) implies (map1.containsKey(x) && map2.get(x).size()>0)
     */

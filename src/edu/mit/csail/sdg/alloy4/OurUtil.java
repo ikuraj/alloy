@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -43,6 +43,7 @@ import javax.swing.JTextField;
 import javax.swing.JSplitPane;
 import javax.swing.KeyStroke;
 import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
@@ -67,16 +68,14 @@ public final class OurUtil {
     * <p> (If no Font is given, then after all these changes have been applied, we will call obj.setFont() will a default font)
     */
    public static<X extends JComponent> X make(X obj, Object... attributes) {
-      boolean hasFont = false;
-      boolean hasForeground = false;
-      if (attributes!=null) for(int i=0; i<attributes.length; i++) {
-         Object at = attributes[i];
-         if (at instanceof Color && !hasForeground) { obj.setForeground((Color)at); hasForeground=true; continue; }
-         if (at instanceof Color) { obj.setBackground((Color)at); obj.setOpaque(true); }
-         if (at instanceof Font) { obj.setFont((Font)at); hasFont=true; }
-         if (at instanceof String) { obj.setToolTipText((String)at); }
-         if (at instanceof Border) { obj.setBorder((Border)at); }
-         if (at instanceof Dimension) { obj.setPreferredSize((Dimension)at); }
+      boolean hasFont = false, hasForeground = false;
+      if (attributes!=null) for(Object x: attributes) {
+         if (x instanceof Font) { obj.setFont((Font)x); hasFont=true; }
+         if (x instanceof String) { obj.setToolTipText((String)x); }
+         if (x instanceof Border) { obj.setBorder((Border)x); }
+         if (x instanceof Dimension) { obj.setPreferredSize((Dimension)x); }
+         if (x instanceof Color && !hasForeground) { obj.setForeground((Color)x); hasForeground=true; continue; }
+         if (x instanceof Color) { obj.setBackground((Color)x); obj.setOpaque(true); }
       }
       if (!hasFont) obj.setFont(getVizFont());
       return obj;
@@ -87,24 +86,21 @@ public final class OurUtil {
     */
    public static JLabel label (String label, Object... attributes)  { return make(new JLabel(label), attributes); }
 
-   /** Make a JTextField, then call Util.make() to apply a set of attributes to it.
+   /** Make a JTextField with the given text and number of columns, then call Util.make() to apply a set of attributes to it.
     * @param attributes - see {@link edu.mit.csail.sdg.alloy4.OurUtil#make OurUtil.make(component, attributes...)}
     */
    public static JTextField textfield (String text, int columns, Object... attributes)  {
       return make(new JTextField(text, columns), attributes);
    }
 
-   /** Make a JTextArea, then call Util.make() to apply a set of attributes to it.
+   /** Make a JTextArea with the given text and number of rows and columns, then call Util.make() to apply a set of attributes to it.
     * @param attributes - see {@link edu.mit.csail.sdg.alloy4.OurUtil#make OurUtil.make(component, attributes...)}
     */
    public static JTextArea textarea (String text, int rows, int columns, boolean editable, boolean wrap, Object... attributes) {
-      JTextArea ans = new JTextArea(text, rows, columns);
-      ans.setForeground(Color.BLACK);
-      ans.setBackground(Color.WHITE);
+      JTextArea ans = make(new JTextArea(text, rows, columns), Color.BLACK, Color.WHITE, new EmptyBorder(0,0,0,0));
       ans.setEditable(editable);
       ans.setLineWrap(wrap);
       ans.setWrapStyleWord(wrap);
-      ans.setBorder(null);
       return make(ans, attributes);
    }
 
@@ -112,10 +108,9 @@ public final class OurUtil {
     * @param attributes - see {@link edu.mit.csail.sdg.alloy4.OurUtil#make OurUtil.make(component, attributes...)}
     */
    public static JScrollPane scrollpane (Component component, Object... attributes) {
-      JScrollPane ans = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+      JScrollPane ans = make(new JScrollPane(), new EmptyBorder(0,0,0,0));
       if (component!=null) ans.setViewportView(component);
       ans.setMinimumSize(new Dimension(50, 50));
-      ans.setBorder(null);
       return make(ans, attributes);
    }
 
@@ -124,20 +119,20 @@ public final class OurUtil {
       return Util.onMac() ? new Font("Lucida Grande", Font.PLAIN, 11) : new Font("Dialog", Font.PLAIN, 12);
    }
 
-   /** Returns the screen height (in pixels). */
-   public static int getScreenHeight()  { return Toolkit.getDefaultToolkit().getScreenSize().height; }
-
    /** Returns the screen width (in pixels). */
    public static int getScreenWidth()  { return Toolkit.getDefaultToolkit().getScreenSize().width; }
+
+   /** Returns the screen height (in pixels). */
+   public static int getScreenHeight()  { return Toolkit.getDefaultToolkit().getScreenSize().height; }
 
    /** Make a graphical button
     * @param label - the text to show beneath the button
     * @param tip - the tooltip to show when the mouse hovers over the button
-    * @param iconname - the filename of the icon to show (it will be loaded from an accompanying jar file)
-    * @param func - the function to call when the button is pressed (null if we don't want to call any function)
+    * @param iconFileName - if nonnull, it's the filename of the icon to show (it will be loaded from an accompanying jar file)
+    * @param func - if nonnull, it's the function to call when the button is pressed
     */
-   public static JButton button (String label, String tip, String iconname, ActionListener func) {
-      JButton button = new JButton(label, (iconname!=null && iconname.length()>0) ? loadIcon(iconname) : null);
+   public static JButton button (String label, String tip, String iconFileName, ActionListener func) {
+      JButton button = new JButton(label, (iconFileName!=null && iconFileName.length()>0) ? loadIcon(iconFileName) : null);
       if (func != null) button.addActionListener(func);
       button.setVerticalTextPosition(JButton.BOTTOM);
       button.setHorizontalTextPosition(JButton.CENTER);
@@ -153,39 +148,31 @@ public final class OurUtil {
    public static Icon loadIcon(String pathname) {
       URL url = OurUtil.class.getClassLoader().getResource(pathname);
       if (url!=null) return new ImageIcon(Toolkit.getDefaultToolkit().createImage(url));
-      return new ImageIcon(new BufferedImage(2, 2, BufferedImage.TYPE_INT_RGB));
+      return new ImageIcon(new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB));
    }
 
-   /** Make a JPanel using horizontal or vertical BoxLayout, and add the components to it.
+   /** Make a JPanel with horizontal or vertical BoxLayout, then add the list of components to it (each aligned by xAlign and yAlign)
+    * <br> If a component is Color, it's the background of this JPanel and every component after it (until we see another Color)
     * <br> If a component is Dimension, we will set it as the newly constructed JPanel's preferedSize and MaximumSize.
-    * <br> If a component is null, we will insert a horizontal (or vertical) glue instead.
-    * <br> If a component is Integer, we will insert an "n*1" (or "1*n") rigid area instead.
     * <br> If a component is String, we will insert a JLabel with it as the label.
-    * <br> Each component will be aligned by xAlign and yAlign.
-    * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we see another Color)
+    * <br> If a component is Integer, we will insert an "n*1" (or "1*n") rigid area instead.
+    * <br> If a component is null, we will insert a horizontal (or vertical) glue instead.
     */
-   private static JPanel makeBox(boolean horizontal, float xAlign, float yAlign, Object[] a) {
+   private static JPanel makeBox(boolean horizontal, float xAlign, float yAlign, Object[] components) {
       JPanel ans = new JPanel();
       ans.setLayout(new BoxLayout(ans, horizontal ? BoxLayout.X_AXIS : BoxLayout.Y_AXIS));
       ans.setAlignmentX(0.0f);
       ans.setAlignmentY(0.0f);
       Color color = null;
-      for(int i = 0; i < a.length; i++) {
-         Component c;
-         if (a[i] instanceof Color) { color = (Color)a[i]; ans.setBackground(color); continue; }
-         if (a[i] instanceof Dimension) { ans.setPreferredSize((Dimension)a[i]); ans.setMaximumSize((Dimension)a[i]); continue; }
-         if (a[i] instanceof Component) {
-            c = (Component)a[i];
-         } else if (a[i] instanceof String) {
-            c = label((String)a[i], Color.BLACK);
-         } else if (a[i] instanceof Integer) {
-            Dimension d = horizontal ?  new Dimension((Integer)a[i], 1) : new Dimension(1, (Integer)a[i]);
-            c = Box.createRigidArea(d);
-         } else if (a[i]==null) {
-            c = horizontal ? Box.createHorizontalGlue() : Box.createVerticalGlue();
-         } else {
-            continue;
-         }
+      for(Object x: components) {
+         Component c = null;
+         if (x instanceof Color) { color = (Color)x; ans.setBackground(color); continue; }
+         if (x instanceof Dimension) { ans.setPreferredSize((Dimension)x); ans.setMaximumSize((Dimension)x); continue; }
+         if (x instanceof Component) { c = (Component)x; }
+         if (x instanceof String) { c = label((String)x, Color.BLACK); }
+         if (x instanceof Integer) { int i = (Integer)x; c = Box.createRigidArea(new Dimension(horizontal?i:1, horizontal?1:i)); }
+         if (x==null) { c = horizontal ? Box.createHorizontalGlue() : Box.createVerticalGlue(); }
+         if (c==null) continue;
          if (color!=null) c.setBackground(color);
          if (c instanceof JComponent) { ((JComponent)c).setAlignmentX(xAlign); ((JComponent)c).setAlignmentY(yAlign); }
          ans.add(c);
@@ -193,60 +180,59 @@ public final class OurUtil {
       return ans;
    }
 
-   /** Make a JPanel using horizontal BoxLayout, and add the components to it.
-    * <br> If a component is null, we will insert a horizontal glue instead.
-    * <br> If a component is Integer, we will insert an "n*1" rigid area instead.
+   /** Make a JPanel using horizontal BoxLayout, and add the components to it (each component will be center-aligned).
+    * <br> If a component is Color, it's the background of this JPanel and every component after it (until we see another Color)
+    * <br> If a component is Dimension, we will set it as the newly constructed JPanel's preferedSize and MaximumSize.
     * <br> If a component is String, we will insert a JLabel with it as the label.
-    * <br> Each component will be center-aligned.
-    * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we see another Color)
+    * <br> If a component is Integer, we will insert an "n*1" (or "1*n") rigid area instead.
+    * <br> If a component is null, we will insert a horizontal (or vertical) glue instead.
     */
-   public static JPanel makeH(Object... a) { return makeBox(true, 0.5f, 0.5f, a); }
+   public static JPanel makeH(Object... components) { return makeBox(true, 0.5f, 0.5f, components); }
 
-   /** Make a JPanel using horizontal BoxLayout, and add the components to it.
-    * <br> If a component is null, we will insert a horizontal glue instead.
-    * <br> If a component is Integer, we will insert an "n*1" rigid area instead.
+   /** Make a JPanel using horizontal BoxLayout, and add the components to it (each component will be top-aligned).
+    * <br> If a component is Color, it's the background of this JPanel and every component after it (until we see another Color)
+    * <br> If a component is Dimension, we will set it as the newly constructed JPanel's preferedSize and MaximumSize.
     * <br> If a component is String, we will insert a JLabel with it as the label.
-    * <br> Each component will be top-aligned.
-    * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we see another Color)
+    * <br> If a component is Integer, we will insert an "n*1" (or "1*n") rigid area instead.
+    * <br> If a component is null, we will insert a horizontal (or vertical) glue instead.
     */
-   public static JPanel makeHT(Object... a) { return makeBox(true, 0.5f, 0.0f, a); }
+   public static JPanel makeHT(Object... components) { return makeBox(true, 0.5f, 0.0f, components); }
 
-   /** Make a JPanel using horizontal BoxLayout, and add the components to it.
-    * <br> If a component is null, we will insert a horizontal glue instead.
-    * <br> If a component is Integer, we will insert an "n*1" rigid area instead.
+   /** Make a JPanel using horizontal BoxLayout, and add the components to it (each component will be bottom-aligned).
+    * <br> If a component is Color, it's the background of this JPanel and every component after it (until we see another Color)
+    * <br> If a component is Dimension, we will set it as the newly constructed JPanel's preferedSize and MaximumSize.
     * <br> If a component is String, we will insert a JLabel with it as the label.
-    * <br> Each component will be bottom-aligned.
-    * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we see another Color)
+    * <br> If a component is Integer, we will insert an "n*1" (or "1*n") rigid area instead.
+    * <br> If a component is null, we will insert a horizontal (or vertical) glue instead.
     */
-   public static JPanel makeHB(Object... a) { return makeBox(true, 0.5f, 1.0f, a); }
+   public static JPanel makeHB(Object... components) { return makeBox(true, 0.5f, 1.0f, components); }
 
-   /** Make a JPanel using vertical BoxLayout, and add the components to it.
-    * <br> If a component is null, we will insert a vertical glue instead.
-    * <br> If a component is Integer, we will insert an "1*n" rigid area instead.
+   /** Make a JPanel using vertical BoxLayout, and add the components to it (each component will be left-aligned).
+    * <br> If a component is Color, it's the background of this JPanel and every component after it (until we see another Color)
+    * <br> If a component is Dimension, we will set it as the newly constructed JPanel's preferedSize and MaximumSize.
     * <br> If a component is String, we will insert a JLabel with it as the label.
-    * <br> Each component will be left-aligned.
-    * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we see another Color)
+    * <br> If a component is Integer, we will insert an "n*1" (or "1*n") rigid area instead.
+    * <br> If a component is null, we will insert a horizontal (or vertical) glue instead.
     */
-   public static JPanel makeVL(Object... a) { return makeBox(false, 0.0f, 0.5f, a); }
+   public static JPanel makeVL(Object... components) { return makeBox(false, 0.0f, 0.5f, components); }
 
-   /** Make a JPanel using vertical BoxLayout, and add the components to it.
-    * <br> If a component is null, we will insert a vertical glue instead.
-    * <br> If a component is Integer, we will insert an "1*n" rigid area instead.
+   /** Make a JPanel using vertical BoxLayout, and add the components to it (each component will be right-aligned).
+    * <br> If a component is Color, it's the background of this JPanel and every component after it (until we see another Color)
+    * <br> If a component is Dimension, we will set it as the newly constructed JPanel's preferedSize and MaximumSize.
     * <br> If a component is String, we will insert a JLabel with it as the label.
-    * <br> Each component will be right-aligned.
-    * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we see another Color)
+    * <br> If a component is Integer, we will insert an "n*1" (or "1*n") rigid area instead.
+    * <br> If a component is null, we will insert a horizontal (or vertical) glue instead.
     */
-   public static JPanel makeVR(Object... a) { return makeBox(false, 1.0f, 0.5f, a); }
+   public static JPanel makeVR(Object... components) { return makeBox(false, 1.0f, 0.5f, components); }
 
    /** Constructs a new SplitPane containing the two components given as arguments
     * @param orientation - the orientation (HORIZONTAL_SPLIT or VERTICAL_SPLIT)
-    * @param leftComp - the left component (if horizontal) or top component (if vertical)
-    * @param rightComp - the right component (if horizontal) or bottom component (if vertical)
+    * @param first - the left component (if horizontal) or top component (if vertical)
+    * @param second - the right component (if horizontal) or bottom component (if vertical)
     * @param initialDividerLocation - the initial divider location (in pixels)
     */
-   public static JSplitPane splitpane (int orientation, Component leftComp, Component rightComp, int initialDividerLocation) {
-      JSplitPane x = new JSplitPane(orientation, leftComp, rightComp);
-      x.setBorder(null);
+   public static JSplitPane splitpane (int orientation, Component first, Component second, int initialDividerLocation) {
+      JSplitPane x = make(new JSplitPane(orientation, first, second), new EmptyBorder(0,0,0,0));
       x.setContinuousLayout(true);
       x.setDividerLocation(initialDividerLocation);
       x.setOneTouchExpandable(false);
@@ -264,25 +250,26 @@ public final class OurUtil {
    public static void enableAll (JMenu menu) {
       for(int i = 0; i < menu.getMenuComponentCount(); i++) {
          Component x = menu.getMenuComponent(i);
-         if (x instanceof JMenuItem) { ((JMenuItem)x).setEnabled(true); }  else if (x instanceof JMenu) { enableAll((JMenu)x); }
+         if (x instanceof JMenuItem) ((JMenuItem)x).setEnabled(true); else if (x instanceof JMenu) enableAll((JMenu)x);
       }
    }
 
    /** Construct a new JMenu and add it to an existing JMenuBar.
-    *
-    * <p> Note: every time the user expands then collapses this JMenu,
-    * it will automatically enable all JMenu and JMenuItem objects inside it.
+    * <p> Note: every time the user expands then collapses this JMenu, we automatically enable all JMenu and JMenuItem objects in it.
     *
     * @param parent - the JMenuBar to add this Menu into (or null if we don't want to add it to a JMenuBar yet)
-    * @param label - the label to show on screen
-    * @param mnemonic - the mnemonic (eg. KeyEvent.VK_F), or -1 if you don't want mnemonic
-    * @param func - the function to call if the user expands this menu (or null if there is no function to call)
+    * @param label - the label to show on screen (if it contains '&' followed by 'a'..'z', we'll remove '&' and use it as mnemonic)
+    * @param func - if nonnull we'll call its "run()" method right before expanding this menu
     */
-   public static JMenu makeMenu (JMenuBar parent, String label, int mnemonic, final Runnable func) {
-      final JMenu x = new JMenu(label, false);
-      if (mnemonic!=-1 && !Util.onMac()) x.setMnemonic(mnemonic);
+   public static JMenu menu (JMenuBar parent, String label, final Runnable func) {
+      final JMenu x = new JMenu(label.replace("&", ""), false);
+      if (!Util.onMac()) {
+         int i = label.indexOf('&');
+         if (i>=0 && i+1<label.length()) i = label.charAt(i+1);
+         if (i>='a' && i<='z') x.setMnemonic((i-'a')+'A'); else if (i>='A' && i<='Z') x.setMnemonic(i);
+      }
       x.addMenuListener(new MenuListener() {
-         public void menuSelected   (MenuEvent e) { if (func!=null) func.run(); }
+         public void menuSelected   (MenuEvent e) { if (func != null) func.run(); }
          public void menuDeselected (MenuEvent e) { OurUtil.enableAll(x); }
          public void menuCanceled   (MenuEvent e) { OurUtil.enableAll(x); }
       });
@@ -294,35 +281,31 @@ public final class OurUtil {
     * @param parent - the JMenu to add this JMenuItem into (or null if you don't want to add it to any JMenu yet)
     * @param label - the text to show on the menu
     * @param attrs - a list of attributes to apply onto the new JMenuItem
-    * <p> If one nonnegative int a is supplied, we call setMnemonic(a)
-    * <p> If two nonnegative ints a and b are supplied, and a!=VK_ALT, and a!=VK_SHIFT, we call setMnemoic(a) and setAccelerator(b)
-    * <p> If two nonnegative ints a and b are supplied, and a==VK_ALT or a==VK_SHIFT, we call setAccelerator(a | b)
-    * <p> If an Icon is supplied, we call setIcon()
-    * <p> If an ActionListener is supplied, we call addActionListener()
-    * <p> If true is supplied, we call setEnabled(true)
-    * <p> If false is supplied, we call setEnabled(false)
+    * <p> If one positive number  a is supplied, we call setMnemonic(a)
+    * <p> If two positive numbers a and b are supplied, and a!=VK_ALT, and a!=VK_SHIFT, we call setMnemoic(a) and setAccelerator(b)
+    * <p> If two positive numbers a and b are supplied, and a==VK_ALT or a==VK_SHIFT, we call setAccelerator(a | b)
+    * <p> If an ActionListener is supplied, we call addActionListener(x)
+    * <p> If an Boolean x      is supplied, we call setEnabled(x)
+    * <p> If an Icon x         is supplied, we call setIcon(x)
     */
-   public static JMenuItem makeMenuItem (JMenu parent, String label, Object... attrs) {
-      JMenuItem x = new JMenuItem(label, null);
+   public static JMenuItem menuItem (JMenu parent, String label, Object... attrs) {
+      JMenuItem m = new JMenuItem(label, null);
       int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
       boolean hasMnemonic = false;
-      for(int i=0; i<attrs.length; i++) {
-         Object at = attrs[i];
-         if (at instanceof Integer) {
-            int k = (Integer)at;
-            if (k<0) continue;
-            if (k==KeyEvent.VK_ALT)   { hasMnemonic=true; accelMask = accelMask | InputEvent.ALT_MASK;   continue; }
-            if (k==KeyEvent.VK_SHIFT) { hasMnemonic=true; accelMask = accelMask | InputEvent.SHIFT_MASK; continue; }
-            if (!hasMnemonic) x.setMnemonic(k); else x.setAccelerator(KeyStroke.getKeyStroke(k, accelMask));
-            hasMnemonic=true;
+      for(Object x: attrs) {
+         if (x instanceof Character || x instanceof Integer) {
+            int k = (x instanceof Character) ? ((int)((Character)x)) : ((Integer)x).intValue();
+            if (k < 0) continue;
+            if (k==KeyEvent.VK_ALT)   { hasMnemonic = true; accelMask = accelMask | InputEvent.ALT_MASK;   continue; }
+            if (k==KeyEvent.VK_SHIFT) { hasMnemonic = true; accelMask = accelMask | InputEvent.SHIFT_MASK; continue; }
+            if (!hasMnemonic) { m.setMnemonic(k); hasMnemonic=true; } else m.setAccelerator(KeyStroke.getKeyStroke(k, accelMask));
          }
-         if (at instanceof ActionListener) x.addActionListener((ActionListener)at);
-         if (at instanceof Icon) x.setIcon((Icon)at);
-         if (Boolean.TRUE.equals(at)) x.setEnabled(true);
-         if (Boolean.FALSE.equals(at)) x.setEnabled(false);
+         if (x instanceof ActionListener) m.addActionListener((ActionListener)x);
+         if (x instanceof Icon) m.setIcon((Icon)x);
+         if (x instanceof Boolean) m.setEnabled((Boolean)x);
       }
-      if (parent!=null) parent.add(x);
-      return x;
+      if (parent!=null) parent.add(m);
+      return m;
    }
 
    /** This method minimizes the window. */
@@ -330,9 +313,8 @@ public final class OurUtil {
 
    /** This method alternatingly maximizes or restores the window. */
    public static void zoom(JFrame frame) {
-      int goal = JFrame.MAXIMIZED_BOTH;
-      if ((frame.getExtendedState() & goal)==goal) goal=JFrame.NORMAL;
-      frame.setExtendedState(goal);
+      int both = JFrame.MAXIMIZED_BOTH;
+      frame.setExtendedState((frame.getExtendedState() & both)!=both ? both : JFrame.NORMAL);
    }
 
    /** Make the frame visible, non-iconized, and focused. */

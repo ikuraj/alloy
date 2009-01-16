@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -274,7 +274,7 @@ public final class ExprUnary extends Expr {
      */
     private static Type resolveClosure (Type parent, Type child) {
         LinkedHashSet<PrimSig> nodes = new LinkedHashSet<PrimSig>();
-        DirectedGraph graph = new DirectedGraph();
+        DirectedGraph<PrimSig> graph = new DirectedGraph<PrimSig>();
         // For each (v1->v2) in childType, add (v1->v2) into the graph.
         for (ProductType c:child) if (c.arity()==2) {
             PrimSig a=c.get(0), b=c.get(1);

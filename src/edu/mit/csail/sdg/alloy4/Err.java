@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -19,6 +19,9 @@ package edu.mit.csail.sdg.alloy4;
 
 public abstract class Err extends Exception {
 
+   /** This ensures this class can be serialized reliably. */
+   private static final long serialVersionUID = 0;
+
    /** This stores the filename/line/column information (Pos.UNKNOWN if unknown) (never null) */
    public final Pos pos;
 
@@ -28,10 +31,10 @@ public abstract class Err extends Exception {
    /** Constructs a new Err object.
     * @param pos - the filename/line/row information (can be null if unknown)
     * @param msg - the actual error message (can be null)
-    * @param ex - if nonnull, it will be recorded as the cause of this exception
+    * @param cause - if nonnull, it will be recorded as the cause of this exception
     */
-   Err(Pos pos, String msg, Throwable ex) {
-      super((msg==null ? "" : msg), ex);
+   Err(Pos pos, String msg, Throwable cause) {
+      super((msg==null ? "" : msg), cause);
       this.pos = (pos==null ? Pos.UNKNOWN : pos);
       this.msg = (msg==null ? "" : msg);
    }
@@ -48,6 +51,6 @@ public abstract class Err extends Exception {
       return msg.hashCode();
    }
 
-   /** Returns this exception type, its error message, and its complete stack trace. */
+   /** Returns this exception type, its error message, and its complete stack trace as a String. */
    public final String dump() { return MailBug.dump(this); }
 }

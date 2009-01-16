@@ -30,10 +30,10 @@ private one sig Ord {
 }
 
 // first
-fun first: lone elem { Ord.First }
+fun first: one elem { Ord.First }
 
 // last
-fun last: lone elem { elem - (next.elem) }
+fun last: one elem { elem - (next.elem) }
 
 // return a mapping from each element to its predecessor
 fun prev : elem->elem { ~(Ord.Next) }
@@ -79,9 +79,8 @@ assert correct {
      ( all b:elem | (lone b.next) && (lone b.prev) && (b !in b.^mynext) )
      ( (no first.prev) && (no last.next) )
      ( all b:elem | (b!=first && b!=last) => (one b.prev && one b.next) )
-     ( (!(lone elem)) => (one first && one last && first!=last && one first.next && one last.prev) )
-     ( one elem => (first=last && no myprev && no mynext) )
-     ( no elem => (no first && no last && no myprev && no mynext) )
+     ( !one elem => (one first && one last && first!=last && one first.next && one last.prev) )
+     ( one elem => (first=elem && last=elem && no myprev && no mynext) )
      ( myprev=~mynext )
      ( elem = first.*mynext )
      (all disj a,b:elem | a in b.^mynext or a in b.^myprev)
@@ -90,7 +89,11 @@ assert correct {
      (all disj a,b,c:elem | (b in a.^myprev and c in b.^myprev) =>(c in a.^myprev))
   }
 }
-
+run {} for exactly 0 elem expect 0
+run {} for exactly 1 elem expect 1
+run {} for exactly 2 elem expect 1
+run {} for exactly 3 elem expect 1
+run {} for exactly 4 elem expect 1
 check correct for exactly 0 elem
 check correct for exactly 1 elem
 check correct for exactly 2 elem

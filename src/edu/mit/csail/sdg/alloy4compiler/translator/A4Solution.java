@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -101,19 +101,19 @@ public final class A4Solution {
     //====== static immutable fields ====================================================================//
 
     /** The constant unary relation representing the smallest Int atom. */
-    static final Relation SIGINT_MIN = Relation.unary("Int/min");
+    static final Relation KK_MIN = Relation.unary("Int/min");
 
     /** The constant unary relation representing the Int atom "0". */
-    static final Relation SIGINT_ZERO = Relation.unary("Int/zero");
+    static final Relation KK_ZERO = Relation.unary("Int/zero");
 
     /** The constant unary relation representing the largest Int atom. */
-    static final Relation SIGINT_MAX = Relation.unary("Int/max");
+    static final Relation KK_MAX = Relation.unary("Int/max");
 
     /** The constant binary relation representing the "next" relation from each Int atom to its successor. */
-    static final Relation SIGINT_NEXT = Relation.binary("Int/next");
+    static final Relation KK_NEXT = Relation.binary("Int/next");
 
     /** The constant unary relation representing the set of all seq/Int atoms. */
-    static final Relation SEQ_SEQIDX = Relation.unary("seq/Int");
+    static final Relation KK_SEQIDX = Relation.unary("seq/Int");
 
     /** The constant unary relation representing the set of all String atoms. */
     static final Relation KK_STRING = Relation.unary("String");
@@ -215,7 +215,7 @@ public final class A4Solution {
         opt = opt.dup();
         this.unrolls = opt.unrolls;
         this.sigs = new SafeList<Sig>(Arrays.asList(UNIV, SIGINT, SEQIDX, STRING, NONE));
-        this.a2k = Util.asMap(new Expr[]{UNIV, SIGINT, SEQIDX, STRING, NONE}, Relation.INTS.union(KK_STRING), Relation.INTS, SEQ_SEQIDX, KK_STRING, Relation.NONE);
+        this.a2k = Util.asMap(new Expr[]{UNIV, SIGINT, SEQIDX, STRING, NONE}, Relation.INTS.union(KK_STRING), Relation.INTS, KK_SEQIDX, KK_STRING, Relation.NONE);
         this.k2pos = new LinkedHashMap<Formula,Object>();
         this.rel2type = new LinkedHashMap<Relation,Type>();
         this.decl2type = new LinkedHashMap<Variable,Pair<Type,Pos>>();
@@ -223,12 +223,10 @@ public final class A4Solution {
         this.originalCommand = (originalCommand==null ? "" : originalCommand);
         this.bitwidth = bitwidth;
         this.maxseq = maxseq;
-        int max = max();
-        int min = min();
-        if (bitwidth < 1)  throw new ErrorSyntax("Cannot specify a bitwidth less than 1");
-        if (bitwidth > 30) throw new ErrorSyntax("Cannot specify a bitwidth greater than 30");
-        if (maxseq < 0)   throw new ErrorSyntax("The maximum sequence length cannot be negative.");
-        if (maxseq > max) throw new ErrorSyntax("With integer bitwidth of "+bitwidth+", you cannot have sequence length longer than "+max);
+        if (bitwidth < 1)   throw new ErrorSyntax("Cannot specify a bitwidth less than 1");
+        if (bitwidth > 30)  throw new ErrorSyntax("Cannot specify a bitwidth greater than 30");
+        if (maxseq < 0)     throw new ErrorSyntax("The maximum sequence length cannot be negative.");
+        if (maxseq > max()) throw new ErrorSyntax("With integer bitwidth of "+bitwidth+", you cannot have sequence length longer than "+max());
         kAtoms = ConstList.make(atoms);
         bounds = new Bounds(new Universe(kAtoms));
         factory = bounds.universe().factory();
@@ -236,21 +234,21 @@ public final class A4Solution {
         TupleSet seqidxBounds = factory.noneOf(1);
         TupleSet stringBounds = factory.noneOf(1);
         final TupleSet next = factory.noneOf(2);
-        for(int i=min; i<=max; i++) { // Safe since we know 1 <= bitwidth <= 30
+        for(int min=min(), max=max(), i=min; i<=max; i++) { // Safe since we know 1 <= bitwidth <= 30
            Tuple ii = factory.tuple(""+i);
            TupleSet is = factory.range(ii, ii);
            bounds.boundExactly(i, is);
            sigintBounds.add(ii);
            if (i>=0 && i<maxseq) seqidxBounds.add(ii);
            if (i+1<=max) next.add(factory.tuple(""+i, ""+(i+1)));
-           if (i==min) bounds.boundExactly(SIGINT_MIN,  is);
-           if (i==max) bounds.boundExactly(SIGINT_MAX,  is);
-           if (i==0)   bounds.boundExactly(SIGINT_ZERO, is);
+           if (i==min) bounds.boundExactly(KK_MIN,  is);
+           if (i==max) bounds.boundExactly(KK_MAX,  is);
+           if (i==0)   bounds.boundExactly(KK_ZERO, is);
         }
         this.sigintBounds = sigintBounds.unmodifiableView();
         this.seqidxBounds = seqidxBounds.unmodifiableView();
-        bounds.boundExactly(SIGINT_NEXT, next);
-        bounds.boundExactly(SEQ_SEQIDX, this.seqidxBounds);
+        bounds.boundExactly(KK_NEXT, next);
+        bounds.boundExactly(KK_SEQIDX, this.seqidxBounds);
         Map<String,Expression> s2k = new HashMap<String,Expression>();
         for(String e: stringAtoms) {
             Relation r = Relation.unary("");
@@ -499,7 +497,7 @@ public final class A4Solution {
     TupleSet query(boolean findUpper, Expression expr, boolean makeMutable) throws ErrorFatal {
        if (expr==Relation.NONE) return factory.noneOf(1);
        if (expr==Relation.INTS) return makeMutable ? sigintBounds.clone() : sigintBounds;
-       if (expr==SEQ_SEQIDX) return makeMutable ? seqidxBounds.clone() : seqidxBounds;
+       if (expr==KK_SEQIDX) return makeMutable ? seqidxBounds.clone() : seqidxBounds;
        if (expr==KK_STRING) return makeMutable ? stringBounds.clone() : stringBounds;
        if (expr instanceof Relation) {
           TupleSet ans = findUpper ? bounds.upperBound((Relation)expr) : bounds.lowerBound((Relation)expr);
@@ -639,9 +637,6 @@ public final class A4Solution {
 
     //===================================================================================================//
 
-    /** Maps a Kodkod relation to an Alloy Type (or null if unknown) */
-    Type kr2type(Relation relation) { return rel2type.get(relation); }
-
     /** Associates the Kodkod relation to a particular Alloy Type (if it is not already associated with something) */
     void kr2type(Relation relation, Type newType) throws Err {
        if (solved) throw new ErrorFatal("Cannot alter the k->type mapping since solve() has completed.");
@@ -724,44 +719,25 @@ public final class A4Solution {
 
     //===================================================================================================//
 
-    /** Helper method that adds every mentioned Relation into set (assuming "ex" is a Relation, or a binary composition of Relations) */
-    private static void addAllSubrelation(LinkedHashSet<Relation> set, Expression ex) {
-        while(ex instanceof BinaryExpression) {
-            BinaryExpression b = (BinaryExpression)ex;
-            addAllSubrelation(set, b.left());
-            ex = b.right();
-        }
-        if (ex instanceof Relation) set.add((Relation)ex);
-    }
-
-    //===================================================================================================//
-
     /** Helper method that chooses a name for each atom based on its most specific sig; (external caller should call this method with s==null) */
     private static void rename (A4Solution frame, PrimSig s, UniqueNameGenerator un) throws Err {
         if (s==null) {
             for(ExprVar sk:frame.skolems) un.seen(sk.label);
             // Store up the skolems
             List<Object> skolems = new ArrayList<Object>();
-            LinkedHashSet<Relation> rels = new LinkedHashSet<Relation>(Arrays.asList(KK_STRING, SEQ_SEQIDX, SIGINT_MAX, SIGINT_MIN, SIGINT_ZERO, SIGINT_NEXT));
-            for(final Sig s2:frame.getAllReachableSigs()) {
-               addAllSubrelation(rels, frame.a2k(s2));
-               for(Field f:s2.getFields()) addAllSubrelation(rels, frame.a2k(f));
-            }
-            for(final Relation r:frame.eval.instance().relations()) if (!rels.contains(r)) {
-               Type t=frame.kr2type(r);
-               if (t==null) continue; // That means it is a spurious skolem, rather than a real skolem
-               while (t.arity() < r.arity()) t=UNIV.type.product(t);
-               if (t.arity() > r.arity()) continue; // That means something terrible has happened, so let's skip it
+            for(Map.Entry<Relation,Type> e: frame.rel2type.entrySet()) {
+               Relation r = e.getKey(); if (!frame.eval.instance().contains(r)) continue;
+               Type t = e.getValue();   if (t.arity() > r.arity()) continue; // Something is wrong; let's skip it
+               while (t.arity() < r.arity()) t = UNIV.type.product(t);
                String n = Util.tail(r.name());
-               while(n.length()>0 && n.charAt(0)=='$') n=n.substring(1);
+               while(n.length()>0 && n.charAt(0)=='$') n = n.substring(1);
                skolems.add(n);
                skolems.add(t);
                skolems.add(r);
             }
-            // Add the atoms then the skolems (we want to make sure atom names that precedence over skolem names)
             // Assign atom->name and atom->MostSignificantSig
             for(Tuple t:frame.eval.evaluate(Relation.INTS)) { frame.atom2sig.put(t.atom(0), SIGINT); }
-            for(Tuple t:frame.eval.evaluate(SEQ_SEQIDX))    { frame.atom2sig.put(t.atom(0), SEQIDX); }
+            for(Tuple t:frame.eval.evaluate(KK_SEQIDX))     { frame.atom2sig.put(t.atom(0), SEQIDX); }
             for(Tuple t:frame.eval.evaluate(KK_STRING))     { frame.atom2sig.put(t.atom(0), STRING); }
             for(Sig sig:frame.sigs) if (sig instanceof PrimSig && !sig.builtin && ((PrimSig)sig).isTopLevel()) rename(frame, (PrimSig)sig, un);
             // These are redundant atoms that were not chosen to be in the final instance
@@ -781,32 +757,20 @@ public final class A4Solution {
             return;
         }
         for(PrimSig c: s.children()) rename(frame, c, un);
-        List<Tuple> list=null;
+        String signame = un.make(s.label.startsWith("this/") ? s.label.substring(5) : s.label);
+        int i = 0;
         for(Tuple t: frame.eval.evaluate(frame.a2k(s))) {
            if (frame.atom2sig.containsKey(t.atom(0))) continue; // This means one of the subsig has already claimed this atom.
+           String x = signame + "$" + i;
+           i++;
            frame.atom2sig.put(t.atom(0), s);
-           if (list==null) list=new ArrayList<Tuple>();
-           list.add(t);
-        }
-        if (list==null) return;
-        // Many A4Solution objects will have the repetitive "this/" in front of the sig names (since that is
-        // the convention of alloy4compiler), so removing "this/" will make the output look nicer.
-        // This renaming is safe, since we'll pass it into UniqueNameGenerator to ensure no name clash anyway.
-        String signame = s.label;
-        if (signame.startsWith("this/")) signame=signame.substring(5);
-        signame = un.make(signame);
-        StringBuilder sb = new StringBuilder();
-        int i=0;
-        for(Tuple t:list) {
-           String x = sb.delete(0, sb.length()).append(signame).append('$').append(i).toString();
            frame.atom2name.put(t.atom(0), x);
-           ExprVar v = ExprVar.make(Pos.UNKNOWN, x, s.type);
-           TupleSet ts = t.universe().factory().range(t,t);
+           ExprVar v = ExprVar.make(null, x, s.type);
+           TupleSet ts = t.universe().factory().range(t, t);
            Relation r = Relation.unary(x);
            frame.eval.instance().add(r, ts);
            frame.a2k.put(v, r);
            frame.atoms.add(v);
-           i++;
         }
     }
 
@@ -839,34 +803,9 @@ public final class A4Solution {
         rep.debug("Generating the solution...\n");
         kEnumerator = null;
         Solution sol = null;
-        // Set up a reporter to catch the type+pos of skolems
         final Reporter oldReporter = solver.options().reporter();
-        solver.options().setReporter(new AbstractReporter() {
-            @Override public void skolemizing(Decl decl, Relation skolem, List<Decl> predecl) {
-                try {
-                    Type t=kv2typepos(decl.variable()).a;
-                    if (t==Type.EMPTY) return;
-                    for(int i=(predecl==null ? -1 : predecl.size()-1); i>=0; i--) {
-                        Type pp=kv2typepos(predecl.get(i).variable()).a;
-                        if (pp==Type.EMPTY) return;
-                        t=pp.product(t);
-                    }
-                    kr2type(skolem, t);
-                } catch(Throwable ex) { } // Exception here is not fatal
-            }
-        });
-        // Try the book examples
-        if (!opt.solver.equals(SatSolver.CNF) && !opt.solver.equals(SatSolver.KK) && tryBookExamples) {
-           // fgoal = Nodes.balance(fgoal); throw new ErrorSyntax("Kodkod depth = " + TranslateKodkodToJava.countHeight(fgoal));
-           A4Reporter r = "yes".equals(System.getProperty("debug")) ? rep : null;
-           if (r!=null) r.debug("Begin the book check...\n");
-           try { sol=BookExamples.trial(r, this, fgoal, solver, cmd.check); } catch(Throwable ex) { }
-           if (r!=null) r.debug("Book check is done.\n");
-        }
-        // set up a flag to indicate whether "solving()" has been called or not
-        final boolean solved[] = new boolean[]{false};
-        // Set up a reporter to catch the type+pos of skolems, this time allowing the reporter to report the # of vars and clauses
-        solver.options().setReporter(new AbstractReporter() {
+        final boolean solved[] = new boolean[]{true};
+        solver.options().setReporter(new AbstractReporter() { // Set up a reporter to catch the type+pos of skolems
             @Override public void skolemizing(Decl decl, Relation skolem, List<Decl> predecl) {
                 try {
                     Type t=kv2typepos(decl.variable()).a;
@@ -880,14 +819,16 @@ public final class A4Solution {
                 } catch(Throwable ex) { } // Exception here is not fatal
             }
             @Override public void solvingCNF(int primaryVars, int vars, int clauses) {
-                solved[0] = true;
-                if (rep!=null) rep.solve(primaryVars, vars, clauses);
-            }
+               if (solved[0]) return; else solved[0]=true; // initially solved[0] is true, so we won't report the # of vars/clauses
+               if (rep!=null) rep.solve(primaryVars, vars, clauses);
+           }
         });
-        // Kodkod refuses to enlarge a Relation during solution enumeration
-        // if that Relation is never mentioned in the GOAL formula; so, this ensures that
-        // the said relation is mentioned (and the R==R is optimized away very efficiently, so we don't incur runtime cost)
-        for(Relation r: bounds.relations()) { formulas.add(r.eq(r)); }
+        if (!opt.solver.equals(SatSolver.CNF) && !opt.solver.equals(SatSolver.KK) && tryBookExamples) { // try book examples
+           A4Reporter r = "yes".equals(System.getProperty("debug")) ? rep : null;
+           try { sol = BookExamples.trial(r, this, fgoal, solver, cmd.check); } catch(Throwable ex) { sol = null; }
+        }
+        solved[0] = false; // this allows the reporter to report the # of vars/clauses
+        for(Relation r: bounds.relations()) { formulas.add(r.eq(r)); } // Without this, kodkod refuses to grow unmentioned relations
         fgoal = Formula.and(formulas);
         // Now pick the solver and solve it!
         if (opt.solver.equals(SatSolver.KK)) {
@@ -1046,10 +987,13 @@ public final class A4Solution {
        if (hCore!=null) for(Node f: hCore) {
           Object x = k2pos(f);
           if (x instanceof Pos) {
+             // System.out.println("F: "+f+" at "+x+"\n"); System.out.flush();
              ans1.add((Pos)x);
           } else if (x instanceof Expr) {
              Expr expr = (Expr)x;
-             ans1.add(expr.span());
+             Pos p = ((Expr)x).span();
+             ans1.add(p);
+             // System.out.println("F: "+f+" by "+p.x+","+p.y+"->"+p.x2+","+p.y2+" for "+x+"\n\n"); System.out.flush();
              for(Func func: expr.findAllFunctions()) ans2.add(func.getBody().span());
           }
        }

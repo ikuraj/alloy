@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -41,15 +41,15 @@ public final class OurHighlighter implements Highlighter.HighlightPainter {
       Color old = gr.getColor();
       gr.setColor(color);
       try {
-         Rectangle box=shape.getBounds(), a=text.getUI().modelToView(text, start), b=text.getUI().modelToView(text, end);
+         Rectangle box = shape.getBounds(), a = text.getUI().modelToView(text, start), b = text.getUI().modelToView(text, end);
          if (a.y == b.y) {
             // same line (Note: furthermore, if start==end, then we draw all the way to the right edge)
             Rectangle r = a.union(b);
             gr.fillRect(r.x, r.y, (r.width<=1 ? (box.x + box.width - r.x) : r.width), r.height);
          } else {
-            // Multiline; (Note: on first line we'll draw from "start" and extend to rightmost)
+            // Multiple lines; (Note: on first line we'll draw from "start" and extend to rightmost)
             gr.fillRect(a.x, a.y, box.x + box.width - a.x, a.height);
-            if (a.y + a.height != b.y) gr.fillRect(box.x, a.y+a.height, box.width, b.y - (a.y + a.height));
+            if (a.y + a.height < b.y) gr.fillRect(box.x, a.y + a.height, box.width, b.y - (a.y + a.height));
             gr.fillRect(box.x, b.y, b.x - box.x, b.height);
          }
       } catch (BadLocationException e) { } // Failure to highlight is not fatal

@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -403,7 +403,7 @@ public final class VizState {
       }
       OurCheckbox pick(String label, String tooltip) {
          return new OurCheckbox(label, tooltip, (Boolean.TRUE.equals(get(null)) ? OurCheckbox.ON : OurCheckbox.OFF)) {
-            private static final long serialVersionUID = 1L;
+            private static final long serialVersionUID = 0;
             public Icon do_action() {
                T old = get(null);
                boolean ans = (old!=null && old.equals(onValue));
@@ -416,7 +416,7 @@ public final class VizState {
          T a = get(obj), b = resolve(obj);
          Icon icon = a==null ? (Boolean.TRUE.equals(b) ? OurCheckbox.INH_ON : OurCheckbox.INH_OFF) : (Boolean.TRUE.equals(a) ? OurCheckbox.ALL_ON : OurCheckbox.ALL_OFF);
          return new OurCheckbox(label, tooltip, icon) {
-            private static final long serialVersionUID = 1L;
+            private static final long serialVersionUID = 0;
             public Icon do_action() {
                T a = get(obj);
                if (a==null) a=onValue; else if (a.equals(onValue)) a=offValue; else a=null;

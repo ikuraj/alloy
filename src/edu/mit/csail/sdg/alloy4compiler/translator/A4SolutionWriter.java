@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -174,9 +174,9 @@ public final class A4SolutionWriter {
 
     /** If sol==null, write the list of Sigs as a Metamodel, else write the solution as an XML file. */
     private A4SolutionWriter(A4Reporter rep, A4Solution sol, Iterable<Sig> sigs, int bitwidth, int maxseq, String originalCommand, String originalFileName, PrintWriter out, Iterable<Func> extraSkolems) throws Err {
-        this.rep=rep;
-        this.out=out;
-        this.sol=sol;
+        this.rep = rep;
+        this.out = out;
+        this.sol = sol;
         for (Sig s:sigs) if (s instanceof PrimSig && ((PrimSig)s).parent==Sig.UNIV) toplevels.add((PrimSig)s);
         out.print("<instance bitwidth=\""); out.print(bitwidth);
         out.print("\" maxseq=\""); out.print(maxseq);

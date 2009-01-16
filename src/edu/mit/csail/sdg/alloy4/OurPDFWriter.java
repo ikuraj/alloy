@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -29,6 +29,9 @@ import java.io.RandomAccessFile;
  */
 
 public final strictfp class OurPDFWriter {
+
+   // FIXTHIS: too many 'q' compared to 'Q'
+   // FIXTHIS: try writing PS or EPS also
 
    /** The filename. */
    private final String filename;
@@ -63,7 +66,7 @@ public final strictfp class OurPDFWriter {
 
    /** Changes the color for subsequent graphical drawing. */
    public OurPDFWriter setColor(Color color) {
-      int rgb = color.getRGB() & 0xFFFFFF, r = (rgb>>16)&0xFF, g = (rgb>>8)&0xFF, b = (rgb&0xFF);
+      int rgb = color.getRGB() & 0xFFFFFF, r = (rgb>>16), g = (rgb>>8) & 0xFF, b = (rgb & 0xFF);
       if (this.color == rgb) return this; else this.color = rgb; // no need to change
       buf.writes(r/255.0).writes(g/255.0).writes(b/255.0).write("RG\n");
       buf.writes(r/255.0).writes(g/255.0).writes(b/255.0).write("rg\n");
@@ -205,7 +208,7 @@ public final strictfp class OurPDFWriter {
     *  /Root 5 0 R\n           // 5 is because it's the Catalog Object's object ID
     *  >>\n
     *  startxref\n
-    *  $xref\n                 // $xref is the byte offset of the start of this entire "xref" paragraph
+    *  ${xref}\n               // $xref is the byte offset of the start of this entire "xref" paragraph
     *  %%EOF\n
     */
 
@@ -238,7 +241,7 @@ public final strictfp class OurPDFWriter {
          offset[2] = now;
          now += out(out, contentID + " 0 obj << /Length " + space
                + (compressOrNot ? " /Filter /FlateDecode" : "") + " >> stream\r\n");
-         long ct = compressOrNot ? buf.dumpFlate(out) : buf.dump(out);
+         final long ct = compressOrNot ? buf.dumpFlate(out) : buf.dump(out);
          now += ct + out(out, "endstream endobj\n\n");
          // Page
          offset[3] = now;
@@ -251,7 +254,7 @@ public final strictfp class OurPDFWriter {
          offset[5] = now;
          now += out(out, catalogID + " 0 obj << /Type /Catalog /Pages " + pagesID + " 0 R >> endobj\n\n");
          // Xref
-         String xr = "xref\n0 " + offset.length + "\n";
+         String xr = "xref\n" + "0 " + offset.length + "\n";
          for(int i = 0; i < offset.length; i++) {
             String txt = Long.toString(offset[i]);
             while(txt.length() < 10) txt = "0" + txt; // must be exactly 10 characters long
@@ -268,6 +271,7 @@ public final strictfp class OurPDFWriter {
          Util.close(out);
          if (ex instanceof IOException) throw (IOException)ex;
          if (ex instanceof OutOfMemoryError) throw new IOException("Out of memory trying to save the PDF file to " + filename);
+         if (ex instanceof StackOverflowError) throw new IOException("Out of memory trying to save the PDF file to " + filename);
          throw new IOException("Error writing the PDF file to " + filename + " (" + ex + ")");
       }
    }

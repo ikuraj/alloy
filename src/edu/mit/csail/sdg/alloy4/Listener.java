@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -19,9 +19,12 @@ package edu.mit.csail.sdg.alloy4;
 
 public interface Listener {
 
+   /** This defines the list of possible events. */
+   enum Event { CLICK, STATUS_CHANGE, FOCUSED, CTRL_PAGE_UP, CTRL_PAGE_DOWN, CARET_MOVED};
+
    /** This method is called when the given zero-argument-event occurs. */
-   public boolean do_action(Object sender, Enum<? extends Enum<?>> e);
+   public Object do_action(Object sender, Event event);
 
    /** This method is called when the given single-argument-event occurs. */
-   public boolean do_action(Object sender, Enum<? extends Enum<?>> e, Object arg);
+   public Object do_action(Object sender, Event event, Object arg);
 }

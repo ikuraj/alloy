@@ -75,13 +75,20 @@ import java_cup_11a.runtime.*;
  private final Symbol alloy_string(String txt) throws Err {
     Pos p = alloy_here(txt);
     if (!Version.experimental) throw new ErrorSyntax(p, "String literal is not currently supported.");
-    int i = txt.indexOf('\\');
-    if (i>=0) {
-       StringBuilder sb = new StringBuilder(txt.length());
-       for(i=0; i<txt.length(); i++) { if (txt.charAt(i)=='\\' && i+1<txt.length()) i++; sb.append(txt.charAt(i)); }
-       txt = sb.toString();
+    StringBuilder sb = new StringBuilder(txt.length());
+    for(int i=0; i<txt.length(); i++) {
+       char c = txt.charAt(i);
+       if (c=='\r' || c=='\n') throw new ErrorSyntax(p, "String literal cannot span multiple lines; use \\n instead.");
+       if (c=='\\') {
+          i++;
+          if (i>=txt.length()) throw new ErrorSyntax(p, "String literal cannot end with a single \\");
+          c = txt.charAt(i);
+          if (c=='n') c='\n'; else if (c!='\'' && c!='\"' && c!='\\') throw new ErrorSyntax(p, "String literal currenty only supports\nfour escape sequences: \\\\, \\n, \\\', and \\\"");
+       }
+       sb.append(c);
     }
-    if (txt.length()==2) throw new ErrorSyntax(p, "Empty string is not allowed; instead, use an empty set instead.");
+    txt = sb.toString();
+    if (txt.length()==2) throw new ErrorSyntax(p, "Empty string is not allowed; try rewriting your model to use an empty set instead.");
     return new Symbol(CompSym.STR, p, ExprConstant.Op.STRING.make(p, txt));
  }
  private final Symbol alloy_id(String txt) throws Err {
@@ -190,22 +197,22 @@ import java_cup_11a.runtime.*;
 "this"                { return alloy_sym(yytext(), CompSym.THIS        );}
 "univ"                { return alloy_sym(yytext(), CompSym.UNIV        );}
 
-[\"] ([^\\\"\r\n] | ("\\" [^\r\n]))* [\"] [\$a-zA-Z_\'\"\u0019\u001d] [\$0-9a-zA-Z_\'\"\u0019\u001d]* { throw new ErrorSyntax(alloy_here(yytext()),"String literal cannot be followed by a legal identifier character."); }
-[\"] ([^\\\"\r\n] | ("\\" [^\r\n]))* [\"]                                                             { return alloy_string(yytext()); }
-[0-9][0-9]*[\$a-zA-Z_\'\"\u0019\u001d][\$0-9a-zA-Z_\'\"\u0019\u001d]*        { throw new ErrorSyntax(alloy_here(yytext()),"Name cannot start with a number."); }
-[0-9][0-9]*                                                                  { return alloy_num (yytext()); }
-[\$a-zA-Z][\$0-9a-zA-Z_\'\"\u0019\u001d]*                                    { return alloy_id  (yytext()); }
+[\"] ([^\\\"] | ("\\" .))* [\"] [\$0-9a-zA-Z_\'\"] [\$0-9a-zA-Z_\'\"]* { throw new ErrorSyntax(alloy_here(yytext()),"String literal cannot be followed by a legal identifier character."); }
+[\"] ([^\\\"] | ("\\" .))* [\"]                                        { return alloy_string(yytext()); }
+[\"] ([^\\\"] | ("\\" .))*                                             { throw new ErrorSyntax(alloy_here(yytext()),"String literal is missing its closing \" character"); }
+[0-9][0-9]*[\$a-zA-Z_\'\"][\$0-9a-zA-Z_\'\"]*                          { throw new ErrorSyntax(alloy_here(yytext()),"Name cannot start with a number."); }
+[0-9][0-9]*                                                            { return alloy_num (yytext()); }
+[\$a-zA-Z][\$0-9a-zA-Z_\'\"]*                                          { return alloy_id  (yytext()); }
 
-// "/**" ~"*/"               { String txt=yytext(); if (txt.length()>5) { txt=txt.substring(3,txt.length()-2); alloy_module.javadocs.add(ExprVar.make(alloy_here(txt), txt)); } }
+"/**" ~"*/"                  { }
 
 "/*" ~"*/"                   { }
 
 ("//"|"--") [^\r\n]* [\r\n]  { }
 
 ("//"|"--") [^\r\n]*         { } // This rule is shorter than the previous rule,
-                                 // so it will only apply if the final line of a file
-                                 // is missing the \n or \r character.
+                                 // so it will only apply if the final line of a file is missing the \n or \r character.
 
 [ \t\f\r\n]                  { }
 
-. { throw new ErrorSyntax(alloy_here(" "),"The character "+yytext()+" cannot start a lexical token."); }
+. { throw new ErrorSyntax(alloy_here(" "), "Syntax error at the "+yytext()+" character."); }

@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -262,9 +262,9 @@ public final class StaticGraphMaker {
             // If the reverse tuple is in the same relation, and it is not a self-edge, then draw it as a <-> arrow.
             if (reverse!=null && tuples.contains(reverse) && !reverse.equals(tuple)) {
                ignore.add(reverse);
-               if (createEdge(hidePrivate, hideMeta, rel, tuple, true, magicColor)) count++;
+               if (createEdge(hidePrivate, hideMeta, rel, tuple, true, magicColor)) count = count + 2;
             } else {
-               if (createEdge(hidePrivate, hideMeta, rel, tuple, false, magicColor)) count++;
+               if (createEdge(hidePrivate, hideMeta, rel, tuple, false, magicColor)) count = count + 1;
             }
          }
       }

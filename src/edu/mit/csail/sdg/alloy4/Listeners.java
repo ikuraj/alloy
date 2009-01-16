@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -16,26 +16,31 @@
 package edu.mit.csail.sdg.alloy4;
 
 import java.util.ArrayList;
+import edu.mit.csail.sdg.alloy4.Listener.Event;
 
 /** This stores a list of listeners. */
 
 public final class Listeners {
 
-   /** This stores a list of listeners. */
+   /** The actual list of listeners. */
    private final ArrayList<Listener> listeners = new ArrayList<Listener>();
 
    /** Construct a empty list of listeners. */
    public Listeners() { }
 
-   /** Add a listener to this group of listeners. */
+   /** Add a listener to this group of listeners (if not already in the list) */
    public void add(Listener listener) {
       for(Listener x: listeners) if (x == listener) return;
       listeners.add(listener);
    }
 
-   /** Send the following message to every registered listener. */
-   public void fire(Object sender, Enum<? extends Enum<?>> e)  { for(Listener x: listeners) x.do_action(sender, e); }
+   /** Send the following zero-argument event to every listener. */
+   public void fire(Object sender, Event event) {
+      for(Listener x: listeners) x.do_action(sender, event);
+   }
 
-   /** Send the following message to every registered listener. */
-   public void fire(Object sender, Enum<? extends Enum<?>> e, Object arg) { for(Listener x: listeners) x.do_action(sender, e, arg); }
+   /** Send the following one-argument event to every listener. */
+   public void fire(Object sender, Event event, Object arg) {
+      for(Listener x: listeners) x.do_action(sender, event, arg);
+   }
 }

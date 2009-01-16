@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -106,7 +106,7 @@ public final class SimTupleset implements Iterable<SimTuple> {
         if (min<max && !next) ans++;
         if (i<ans) {
            SimAtom a = SimAtom.make(min+i);
-           if (next) return SimTuple.make(a, SimAtom.make(min+i+1L)); else return SimTuple.make(a);
+           if (next) return SimTuple.make(a, SimAtom.make((min+i)+1)); else return SimTuple.make(a);
         }
         i = i - ans;
         if (i<tuples.size()) return tuples.get((int)i); else return null;
@@ -544,7 +544,7 @@ public final class SimTupleset implements Iterable<SimTuple> {
 
     /** Return true if this is a total ordering over "elem", with "first" being the first element of the total order. */
     public boolean totalOrder(SimTupleset elem, SimTupleset first) throws ErrorAPI {
-       if (elem.empty()) return first.empty() && empty();
+       if (elem.empty()) return false;
        if (elem.longsize()==1) return elem.arity()==1 && first.equals(elem) && empty();
        if (first.longsize()!=1 || first.arity()!=1 || elem.arity()!=1 || arity()!=2 || longsize()!=elem.longsize()-1) return false;
        SimAtom e = first.getAtom();

@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -44,7 +44,6 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Caret;
 import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.SimpleAttributeSet;
-import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 
@@ -63,7 +62,7 @@ import javax.swing.text.StyledDocument;
 
 public final class OurConsole extends JScrollPane {
 
-   /** This silences javac's warning about missing serialVersionUID. */
+   /** This ensures the class can be serialized reliably. */
    private static final long serialVersionUID = 0;
 
    /** The style for default text. */
@@ -91,7 +90,7 @@ public final class OurConsole extends JScrollPane {
    private final JTextPane sub = do_makeTextPane(true, 10, 10, 0);
 
    /** The history of all commands entered so far, plus an extra String representing the user's next command. */
-   private final List<String> history = new ArrayList<String>(Arrays.asList(""));
+   private final List<String> history = new ArrayList<String>(); { history.add(""); }
 
    /** The position in this.history that is currently showing. */
    private int browse = 0;
@@ -111,23 +110,26 @@ public final class OurConsole extends JScrollPane {
     *
     * @param computer - this object is used to evaluate the user input
     *
+    * @param syntaxHighlighting - if true, the "input area" will be syntax-highlighted
+    *
     * @param initialMessages - this is a list of String and Boolean; each String is printed to the screen as is,
     * and Boolean.TRUE will turn subsequent text bold, and Boolean.FALSE will turn subsequent text non-bold.
     */
-   public OurConsole(final Computer computer, final Object... initialMessages) {
+   public OurConsole(final Computer computer, boolean syntaxHighlighting, Object... initialMessages) {
       super(VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED);
+      if (syntaxHighlighting) { sub.setDocument(new OurSyntaxUndoableDocument("Verdana", 14)); }
       setViewportView(main);
       // show the initial message
       AttributeSet st = plain;
       for(Object x: initialMessages) {
-         if (x instanceof Boolean) st = (Boolean.TRUE.equals(x) ? bold : plain); else do_add(-1, x.toString(), st);
+         if (x instanceof Boolean) st = (Boolean.TRUE.equals(x) ? bold : plain); else do_add(-1, String.valueOf(x), st);
       }
       do_add(-1, "\n", plain); // we must add a linebreak to ensure that subsequent text belong to a "different paragraph"
       // insert the divider and the sub JTextPane
       StyledDocument doc = main.getStyledDocument();
       JPanel divider = new JPanel(); divider.setBackground(Color.LIGHT_GRAY); divider.setPreferredSize(new Dimension(1,1));
-      Style dividerStyle = doc.addStyle("divider", null); StyleConstants.setComponent(dividerStyle, divider);
-      Style inputStyle   = doc.addStyle("input",   null); StyleConstants.setComponent(inputStyle, sub);
+      MutableAttributeSet dividerStyle = new SimpleAttributeSet(); StyleConstants.setComponent(dividerStyle, divider);
+      MutableAttributeSet inputStyle   = new SimpleAttributeSet(); StyleConstants.setComponent(inputStyle, sub);
       len = doc.getLength();
       do_add(-1, " \n", dividerStyle); // The space character won't be displayed; it will instead be drawn as a divider
       do_add(-1, " \n", inputStyle);   // The space character won't be displayed; it will instead display the input buffer
@@ -152,13 +154,13 @@ public final class OurConsole extends JScrollPane {
       AbstractAction alloy_copy = new AbstractAction("alloy_copy") {
          static final long serialVersionUID = 0;
          public void actionPerformed(ActionEvent x) {
-            if (sub.getSelectionStart()!=sub.getSelectionEnd()) sub.copy(); else main.copy();
+            if (sub.getSelectionStart() != sub.getSelectionEnd()) sub.copy(); else main.copy();
          }
       };
       AbstractAction alloy_cut = new AbstractAction("alloy_cut") {
          static final long serialVersionUID = 0;
          public void actionPerformed(ActionEvent x) {
-            if (sub.getSelectionStart()!=sub.getSelectionEnd()) sub.cut(); else main.copy();
+            if (sub.getSelectionStart() != sub.getSelectionEnd()) sub.cut(); else main.copy();
          }
       };
       // create the keyboard associations: ctrl-{c,v,x,insert} and shift-{insert,delete}
@@ -191,32 +193,32 @@ public final class OurConsole extends JScrollPane {
       // configure the behavior for PAGE_UP, PAGE_DOWN, UP, DOWN, TAB, and ENTER
       sub.addKeyListener(new KeyListener() {
          public void keyTyped(KeyEvent e) {
-            if (e.getKeyChar()=='\t') { e.consume(); }
-            if (e.getKeyChar()=='\n') { e.consume(); String cmd = sub.getText(); sub.setText(""); do_command(computer, cmd); }
+            if (e.getKeyChar() == '\t') { e.consume(); }
+            if (e.getKeyChar() == '\n') { e.consume(); String cmd = sub.getText(); sub.setText(""); do_command(computer, cmd); }
          }
          public void keyPressed(KeyEvent e) {
-            if (e.getKeyCode()==KeyEvent.VK_ENTER || e.getKeyCode()==KeyEvent.VK_TAB) e.consume();
-            if (e.getKeyCode()==KeyEvent.VK_PAGE_UP) { e.consume(); do_pageup(); }
-            if (e.getKeyCode()==KeyEvent.VK_PAGE_DOWN) { e.consume(); do_pagedown(); }
-            if (e.getKeyCode()==KeyEvent.VK_UP) {
+            if (e.getKeyCode() == KeyEvent.VK_ENTER || e.getKeyCode()==KeyEvent.VK_TAB) e.consume();
+            if (e.getKeyCode() == KeyEvent.VK_PAGE_UP) { e.consume(); do_pageup(); }
+            if (e.getKeyCode() == KeyEvent.VK_PAGE_DOWN) { e.consume(); do_pagedown(); }
+            if (e.getKeyCode() == KeyEvent.VK_UP) {
                e.consume();
-               if (browse==history.size()-1) { history.set(browse, sub.getText()); }
-               if (browse>0 && browse-1<history.size()) { browse--; sub.setText(history.get(browse)); }
+               if (browse == history.size() - 1) { history.set(browse, sub.getText()); }
+               if (browse > 0 && browse - 1 < history.size()) { browse--; sub.setText(history.get(browse)); }
             }
-            if (e.getKeyCode()==KeyEvent.VK_DOWN) {
+            if (e.getKeyCode() == KeyEvent.VK_DOWN) {
                e.consume();
-               if (browse<history.size()-1) { browse++; sub.setText(history.get(browse)); }
+               if (browse < history.size() - 1) { browse++; sub.setText(history.get(browse)); }
             }
          }
          public void keyReleased(KeyEvent e) {
-            if (e.getKeyCode()==KeyEvent.VK_ENTER || e.getKeyCode()==KeyEvent.VK_TAB) e.consume();
+            if (e.getKeyCode() == KeyEvent.VK_ENTER || e.getKeyCode() == KeyEvent.VK_TAB) e.consume();
          }
       });
    }
 
    /** This helper method constructs a JTextPane with the given settings. */
    private static JTextPane do_makeTextPane(boolean editable, int topMargin, int bottomMargin, int otherMargin) {
-      JTextPane x = OurUtil.make(new JTextPane(), Color.BLACK, Color.WHITE, new Font("Verdana", Font.PLAIN, 16));
+      JTextPane x = OurAntiAlias.pane(Color.BLACK, Color.WHITE, new Font("Verdana", Font.PLAIN, 14));
       x.setEditable(editable);
       x.setAlignmentX(0);
       x.setAlignmentY(0);
@@ -240,13 +242,13 @@ public final class OurConsole extends JScrollPane {
       }
       browse = history.size()-1;
       // display the command
-      int old = doc.getLength();   do_add(len, cmd+"\n\n", plain);   len = (doc.getLength() - old + len);
+      int old = doc.getLength();   do_add(len, cmd+"\n\n", plain);   len += (doc.getLength() - old);
       // perform the computation
       boolean isBad = false;
       try { cmd = computer.compute(cmd); } catch(Throwable ex) { cmd = ex.toString(); isBad = true; }
       int savePosition = len;
       // display the outcome
-      old = doc.getLength();   do_add(len, cmd.trim()+"\n\n", (isBad ? bad : good));    len = (doc.getLength() - old + len);
+      old = doc.getLength();   do_add(len, cmd.trim()+"\n\n", (isBad ? bad : good));    len += (doc.getLength() - old);
       // indent the outcome
       main.setSelectionStart(savePosition+1);   main.setSelectionEnd(len);   main.setParagraphAttributes(good, false);
       // redraw then scroll to the bottom

@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -126,7 +126,6 @@ public final class Module extends Browsable {
    public final String path;
 
    /** 1: has seen the "module" line
-    * 2: has seen the "open" lines
     * 3: has seen the "sig/pred/fun/fact/assert/check/run" commands
     */
    private int status = 0;
@@ -556,7 +555,7 @@ public final class Module extends Browsable {
       ArrayList<Browsable> x;
       if (opens.size()>0) {
          x = new ArrayList<Browsable>(opens.size());
-         for(Open e: opens.values()) x.add(e.realModule);
+         for(Open e: opens.values()) if (!x.contains(e.realModule)) x.add(e.realModule);
          ans.add(make("<b>"+x.size()+(x.size()>1?" opens</b>":" open</b>"), x));
       }
       if (sigs.size()>0) {
@@ -813,9 +812,9 @@ public final class Module extends Browsable {
    /** Add an OPEN declaration. */
    void addOpen(Pos pos, Pos isPrivate, ExprVar name, List<ExprVar> args, ExprVar alias) throws Err {
       if (status>2) throw new ErrorSyntax(pos, "The \"open\" declaration must occur before any\n" + "sig/pred/fun/fact/assert/check/run command.");
-      status=2;
       String as = (alias==null ? "" : alias.label);
       if (name.label.length()==0) throw new ErrorSyntax(name.span(), "The filename cannot be empty.");
+      if (as.indexOf('$')>=0) throw new ErrorSyntax(alias==null ? null : alias.span(), "Alias must not contain the \'$\' character");
       if (as.indexOf('@')>=0) throw new ErrorSyntax(alias==null ? null : alias.span(), "Alias must not contain the \'@\' character");
       if (as.indexOf('/')>=0) throw new ErrorSyntax(alias==null ? null : alias.span(), "Alias must not contain the \'/\' character");
       if (as.length()==0) {
@@ -837,14 +836,40 @@ public final class Module extends Browsable {
          if (arg.label.indexOf('@')>=0)  throw new ErrorSyntax(arg.span(), "Argument cannot contain the \'@\' chracter.");
          newlist.add(arg.label);
       }
-      Open x=opens.get(as);
+      Open x = opens.get(as);
       if (x!=null) {
          // we allow this, especially because of util/sequniv
          if (x.args.equals(newlist.makeConst()) && x.filename.equals(name.label)) return;
          throw new ErrorSyntax(pos, "You cannot import two different modules\n" + "using the same alias.");
       }
       x = new Open(pos, isPrivate!=null, as, newlist.makeConst(), name.label);
-      opens.put(as,x);
+      opens.put(as, x);
+   }
+
+   /** Do any post-parsing processig. */
+   void doneParsing() {
+      status = 3;
+      LinkedHashMap<String,Open> copy = new LinkedHashMap<String,Open>(opens);
+      opens.clear();
+      for(Map.Entry<String,Open> e: copy.entrySet()) {
+         String a = e.getKey();
+         Open m = e.getValue();
+         if (a.indexOf('$')>=0) {
+            String base = m.filename;
+            int i = base.lastIndexOf('/');
+            if (i>=0) base = base.substring(i+1);
+            if (!copy.containsKey(base) && !opens.containsKey(base)) {
+               for(i=0; i<base.length(); i++) {
+                  char c = base.charAt(i);
+                  if ((c>='a' && c<='z') || (c>='A' && c<='Z')) continue;
+                  if (i!=0 && ((c>='0' && c<='9') || c=='_' || c=='\'' || c=='\"')) continue;
+                  break;
+               }
+               if (i>=base.length()) a = base;
+            }
+         }
+         opens.put(a, new Open(m.pos, m.isPrivate, a, m.args, m.filename));
+      }
    }
 
    /** Every param in every module will now point to a nonnull Sig. */
@@ -895,7 +920,10 @@ public final class Module extends Browsable {
                if (!a.modulePos.filename.equals(b.modulePos.filename) || !a.params.equals(b.params)) continue;
                chg=true;
                rep.parse("MATCH FOUND ON "+a.modulePos.filename+"\n");
-               if (i!=0 && Util.slashComparator.compare(a.path, b.path)>0) { a=b; b=modules.get(i); modules.set(i,a); }
+               int aa = a.path.indexOf('$'), bb = b.path.indexOf('$');
+               if (i!=0) if (!(aa<0 && bb>=0)) if ((aa>=0 && bb<0) || Util.slashComparator.compare(a.path, b.path)>0) {
+                  a=b; b=modules.get(i); modules.set(i,a);
+               }
                modules.remove(j);
                j--;
                for(Module c:modules) {

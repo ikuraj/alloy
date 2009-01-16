@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -41,6 +41,7 @@ import javax.swing.text.Element;
 import javax.swing.text.StyledEditorKit;
 import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
+import edu.mit.csail.sdg.alloy4.Listener.Event;
 
 /** Graphical syntax-highlighting editor.
  *
@@ -49,10 +50,7 @@ import javax.swing.text.ViewFactory;
 
 public final class OurSyntaxWidget {
 
-   /** The list of events that the OurSyntaxWidget object may fire. */
-   public enum Event { STATUS_CHANGE, FOCUSED, CTRL_PAGE_UP, CTRL_PAGE_DOWN, CARET_MOVED };
-
-   /** The current list of listeners. */
+   /** The current list of listeners; possible events are { STATUS_CHANGE, FOCUSED, CTRL_PAGE_UP, CTRL_PAGE_DOWN, CARET_MOVED }. */
    public final Listeners listeners = new Listeners();
 
    /** The JScrollPane containing everything. */
@@ -65,7 +63,7 @@ public final class OurSyntaxWidget {
    public final JComponent obj2;
 
    /** The underlying StyledDocument being displayed (changes will trigger the STATUS_CHANGE event) */
-   private final OurSyntaxUndoableDocument doc = new OurSyntaxUndoableDocument();
+   private final OurSyntaxUndoableDocument doc = new OurSyntaxUndoableDocument("Monospaced", 14);
 
    /** The underlying JTextPane being displayed. */
    private final JTextPane pane = OurAntiAlias.pane(Color.BLACK, Color.WHITE, new EmptyBorder(1, 1, 1, 1));
@@ -79,7 +77,7 @@ public final class OurSyntaxWidget {
    /** Whether this JTextPane corresponds to an existing disk file (changes will trigger the STATUS_CHANGE event) */
    private boolean isFile;
 
-   /** Caches the most recent background painter. */
+   /** Caches the most recent background painter if nonnull. */
    private OurHighlighter painter;
 
    /** Constructs a syntax-highlighting widget. */
@@ -148,6 +146,7 @@ public final class OurSyntaxWidget {
       component.addFocusListener(new FocusAdapter() {
          @Override public void focusGained(FocusEvent e) { pane.requestFocusInWindow(); }
       });
+      component.setFocusable(false);
       component.setMinimumSize(new Dimension(50, 50));
       component.setViewportView(pane);
       modified = false;
@@ -184,7 +183,7 @@ public final class OurSyntaxWidget {
    /** Enables or disables syntax highlighting. */
    void enableSyntax(boolean flag) { if (doc!=null) doc.do_enableSyntax(flag); }
 
-   /** Return the number of lines represented by the given text (where partial line counts as a line).
+   /** Return the number of lines represented by the current text (where partial line counts as a line).
     * <p> For example: count("")==1, count("x")==1, count("x\n")==2, and count("x\ny")==2
     */
    public int getLineCount()  { return doc.do_getLineCount();  }
@@ -194,7 +193,7 @@ public final class OurSyntaxWidget {
     */
    public int getLineStartOffset(int line) { return doc.do_getLineStartOffset(line); }
 
-   /** Return the line number that the offset is in (If "offset" argument is too large, it will just return do_getLineCount()).
+   /** Return the line number that the offset is in (If "offset" argument is too large, it will just return do_getLineCount()-1).
     * <p> For example: given "ab\ncd\n", offset(0..2)==0, offset(3..5)==1, offset(6..)==2.  Same thing when given "ab\ncd\ne".
     */
    public int getLineOfOffset(int offset) { return doc.do_getLineOfOffset(offset); }
@@ -237,40 +236,50 @@ public final class OurSyntaxWidget {
    /** Paste the current clipboard content. */
    public void paste() { pane.paste(); }
 
-   /** Discard all (ask user for chance to save if modified==true) */
-   boolean discard(Collection<String> bannedNames, boolean askUser) {
-      char ans = (!modified || !askUser) ? 'd' : OurDialog.askSaveDiscardCancel(null, "The file \"" + filename + "\"");
+   /** Discard all; if askUser is true, we'll ask the user whether to save it or not if the modified==true.
+    * @return true if this text buffer is now a fresh empty text buffer
+    */
+   boolean discard(boolean askUser, Collection<String> bannedNames) {
+      char ans = (!modified || !askUser) ? 'd' : OurDialog.askSaveDiscardCancel("The file \"" + filename + "\"");
       if (ans=='c' || (ans=='s' && save(false, bannedNames)==false)) return false;
-      for(int i=1; ; i++) if (!bannedNames.contains(filename = Util.canon("Untitled " + i + ".als"))) break;
-      pane.setText("");  clearUndo();  modified=false;  isFile=false; listeners.fire(this, Event.STATUS_CHANGE);  return true;
+      for(int i=1; ;i++) if (!bannedNames.contains(filename = Util.canon("Untitled " + i + ".als"))) break;
+      pane.setText(""); clearUndo(); modified=false; isFile=false; listeners.fire(this, Event.STATUS_CHANGE);
+      return true;
    }
 
-   /** Discard current content then read the given file. */
+   /** Discard current content then read the given file; return true if the entire operation succeeds. */
    boolean load(String filename) {
-      String x;   try { x = Util.readAll(filename); } catch(Throwable ex) { return false; }
-      pane.setText(x); clearUndo(); isFile=true; modified=false; this.filename=filename; listeners.fire(this, Event.STATUS_CHANGE);
+      String x;
+      try {
+         x = Util.readAll(filename);
+      } catch(Throwable ex) { OurDialog.alert("Error reading the file \"" + filename + "\""); return false; }
+      pane.setText(x); moveCaret(0,0); clearUndo(); modified=false; isFile=true; this.filename=filename;
+      listeners.fire(this, Event.STATUS_CHANGE);
       return true;
    }
 
-   /** Discard (after confirming with the user) current content then reread from disk file; return true if text is now up-to-date. */
-   boolean reload() {
-      if (!isFile) return true; // "untitled" text buffer does not have a on-disk file to refresh from
-      if (modified && !OurDialog.yesno(null, "You have unsaved changes to \"" + filename + "\"\nAre you sure you wish to discard "
-            + "your changes and reload it from disk?", "Discard your changes", "Cancel this operation")) return false;
+   /** Discard (after confirming with the user) current content then reread from disk file. */
+   void reload() {
+      if (!isFile) return; // "untitled" text buffer does not have a on-disk file to refresh from
+      if (modified && !OurDialog.yesno("You have unsaved changes to \"" + filename + "\"\nAre you sure you wish to discard "
+            + "your changes and reload it from disk?", "Discard your changes", "Cancel this operation")) return;
       String t;
-      try { t=Util.readAll(filename); } catch(Throwable ex) { OurDialog.alert(null, "Cannot read \""+filename+"\""); return false; }
+      try { t=Util.readAll(filename); } catch(Throwable ex) { OurDialog.alert("Cannot read \""+filename+"\""); return; }
+      if (modified==false && t.equals(pane.getText())) return; // no text change nor status change
       int c=pane.getCaretPosition();  pane.setText(t);  moveCaret(c,c);  modified=false;  listeners.fire(this, Event.STATUS_CHANGE);
-      return true;
    }
 
    /** Save the current tab content to the file system, and return true if successful. */
    boolean saveAs(String filename, Collection<String> bannedNames) {
       filename = Util.canon(filename);
-      if (bannedNames.contains(filename)) { OurDialog.alert(null, "The filename \""+filename+"\"\nis already open."); return false; }
+      if (bannedNames.contains(filename)) {
+         OurDialog.alert("The filename \""+filename+"\"\nis already open in another tab.");
+         return false;
+      }
       try { Util.writeAll(filename, pane.getText()); }
-      catch (Throwable e) { OurDialog.alert(null, "Error writing to the file \""+filename+"\""); return false; }
-      this.filename=Util.canon(filename); // a new file's canonical name may change
-      modified=false;  isFile=true; listeners.fire(this, Event.STATUS_CHANGE);  return true;
+      catch (Throwable e) { OurDialog.alert("Error writing to the file \""+filename+"\""); return false; }
+      this.filename = Util.canon(filename); // a new file's canonical name may change
+      modified=false; isFile=true; listeners.fire(this, Event.STATUS_CHANGE);  return true;
    }
 
    /** Save the current tab content to the file system and return true if successful.
@@ -279,12 +288,12 @@ public final class OurSyntaxWidget {
    boolean save(boolean alwaysPickNewName, Collection<String> bannedNames) {
       String n = this.filename;
       if (alwaysPickNewName || isFile==false || n.startsWith(Util.jarPrefix())) {
-         File f = OurDialog.askFile(null, false, null, ".als", ".als files");  if (f==null) return false;
-         n = Util.canon(f.getPath());   if (f.exists() && !OurDialog.askOverwrite(null, n)) return false;
+         File f = OurDialog.askFile(false, null, ".als", ".als files");  if (f==null) return false;
+         n = Util.canon(f.getPath());   if (f.exists() && !OurDialog.askOverwrite(n)) return false;
       }
       if (saveAs(n, bannedNames)) {Util.setCurrentDirectory(new File(filename).getParentFile()); return true;} else return false;
    }
 
-   /** This component should request focus. */
-   public void requestFocusInWindow() { if (pane!=null) component.requestFocusInWindow(); }
+   /** Transfer focus to this component. */
+   public void requestFocusInWindow() { if (pane!=null) pane.requestFocusInWindow(); }
 }

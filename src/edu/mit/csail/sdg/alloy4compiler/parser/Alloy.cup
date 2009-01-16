@@ -62,7 +62,6 @@ parser code {:
 
   public Module alloymodule=null;
 
-  @SuppressWarnings("unchecked")
   @Override public Symbol parse() throws java.lang.Exception {
      int act; // current action code
      Symbol lhs_sym = null; // the Symbol/stack element returned by a reduce
@@ -540,6 +539,7 @@ nonterminal ExprVar                    SigRef;
 nonterminal List<ExprVar>              SigRefp;
 nonterminal List<ExprVar>              SigRefs;
 nonterminal List<ExprVar>              SigRefu;
+nonterminal                            File;
 nonterminal                            Spec;
 nonterminal CommandScope               TypeNumber;
 nonterminal CommandScope               Typescope;
@@ -556,14 +556,16 @@ nonterminal Pos                        Vis;
 
 //===========================================================================//
 
+File ::= Spec {: parser.alloymodule.doneParsing(); :};
+
 Spec ::= Spec MODULE:o Name:n                                                  {: nod(n);         parser.alloymodule.addModelName(o.merge(n.pos) , n.label , new ArrayList<ExprVar>()); :};
 Spec ::= Spec MODULE:o Name:n LBRACKET Namex:b RBRACKET:r                      {: nod(n); nod(b); parser.alloymodule.addModelName(o.merge(r)     , n.label , b                       ); :};
 Spec ::= Spec Vis:p OPEN:o Name:a                                              {: nod(a);         parser.alloymodule.addOpen(o.merge(a.pos), p, a, null, null); :};
 Spec ::= Spec Vis:p OPEN:o Name:a                               AS Name:c      {: nod(a); nod(c); parser.alloymodule.addOpen(o.merge(c.pos), p, a, null, c);    :};
 Spec ::= Spec Vis:p OPEN:o Name:a LBRACKET SigRefs:b RBRACKET:c                {: nod(a);         parser.alloymodule.addOpen(o.merge(c),     p, a, b,    null); :};
 Spec ::= Spec Vis:p OPEN:o Name:a LBRACKET SigRefs:b RBRACKET   AS Name:c      {: nod(a); nod(c); parser.alloymodule.addOpen(o.merge(c.pos), p, a, b,    c);    :};
-Spec ::= Spec Vis:p ENUM:o Name:a LBRACE Names:n RBRACE:c                      {: nod(a);         parser.alloymodule.addEnum(o.merge(c),     p, a, n, c);       :};
-Spec ::= Spec Vis   ENUM:o Name   LBRACE         RBRACE:c                      {: if (1==1) throw new ErrorSyntax(o.merge(c), "Enum cannot be empty.");         :};
+Spec ::= Spec Vis:p ENUM:o Name:a LBRACE Names:n RBRACE:c                      {: nod(a);         parser.alloymodule.addEnum(o.merge(c),     p, a, n,    c);    :};
+Spec ::= Spec Vis:p ENUM:o Name:a LBRACE         RBRACE:c                      {: nod(a);         parser.alloymodule.addEnum(o.merge(c),     p, a, null, c);    :};
 Spec ::= Spec       FACT:o          Super:e {:         parser.alloymodule.addFact      (o , ""       , e); :};
 Spec ::= Spec       FACT:o   Name:n Super:e {: nod(n); parser.alloymodule.addFact      (o , n.label  , e); :};
 Spec ::= Spec       FACT:o   STR:n  Super:e {:         parser.alloymodule.addFact      (o , n.string , e); :};

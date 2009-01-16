@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -31,8 +31,8 @@ import javax.swing.event.MenuListener;
 
 public abstract class Runner extends AbstractAction implements Runnable, WindowListener, MenuListener, CaretListener, FocusListener {
 
-   /** This silences javac's warning about missing serialVersionUID. */
-   private static final long serialVersionUID = 1L;
+   /** This ensures the class can be serialized reliably. */
+   private static final long serialVersionUID = 0;
 
    /** Constructs a new runner; you should override the run() and run(arg) method to customize it. */
    public Runner() { }
@@ -85,19 +85,10 @@ public abstract class Runner extends AbstractAction implements Runnable, WindowL
    /** This method is defined in java.awt.event.WindowListener; (this implementation does nothing) */
    public final void windowDeactivated(WindowEvent e) { }
 
-   /** This helper method returns a Runnable whose run() method will call System.exit(n) */
-   public static final Runner createExit(final int n) {
-      return new Runner() {
-         private static final long serialVersionUID = 1L;
-         public final void run()           { System.exit(n); }
-         public final void run(Object arg) { System.exit(n); }
-      };
-   }
-
    /** This helper method returns a Runnable whose run() method will call window.dispose() */
    public static final Runner createDispose(final Window window) {
       return new Runner() {
-         private static final long serialVersionUID = 1L;
+         private static final long serialVersionUID = 0;
          public final void run()           { window.dispose(); }
          public final void run(Object arg) { window.dispose(); }
       };

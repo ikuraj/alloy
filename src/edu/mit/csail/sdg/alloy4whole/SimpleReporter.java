@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -36,6 +36,7 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.MailBug;
+import edu.mit.csail.sdg.alloy4.OurDialog;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
@@ -119,7 +120,7 @@ final class SimpleReporter extends A4Reporter {
             if (msg instanceof Throwable) { Throwable ex = (Throwable)msg; span.logBold(ex.toString().trim()+"\n"); span.flush(); return; }
             if (!(msg instanceof Object[])) return;
             Object[] array = (Object[]) msg;
-            if (array[0].equals("pop")) { span.setLength(len2); String x=(String)(array[1]); if (viz!=null && x.length()>0) viz.doAlert(x); }
+            if (array[0].equals("pop")) { span.setLength(len2); String x=(String)(array[1]); if (viz!=null && x.length()>0) OurDialog.alert(x); }
             if (array[0].equals("declare")) { gui.doSetLatest((String)(array[1])); }
             if (array[0].equals("S2")) { len3=len2=span.getLength(); span.logBold(""+array[1]); }
             if (array[0].equals("R3")) { span.setLength(len3); span.log(""+array[1]); }
@@ -368,7 +369,7 @@ final class SimpleReporter extends A4Reporter {
 
     /** Task that performs solution enumeration. */
     static final class SimpleTask2 implements WorkerTask {
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 0;
         public String filename = "";
         public transient WorkerCallback out = null;
         private void cb(Object... objs) throws Exception { out.callback(objs); }
@@ -419,7 +420,7 @@ final class SimpleReporter extends A4Reporter {
 
     /** Task that perform one command. */
     static final class SimpleTask1 implements WorkerTask {
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 0;
         public A4Options options;
         public String tempdir;
         public boolean bundleWarningNonFatal;

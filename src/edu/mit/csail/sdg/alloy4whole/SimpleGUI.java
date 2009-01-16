@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -47,38 +47,18 @@ import static java.awt.event.KeyEvent.VK_PAGE_DOWN;
 import static java.awt.event.KeyEvent.VK_ALT;
 import static java.awt.event.KeyEvent.VK_SHIFT;
 import static java.awt.event.KeyEvent.VK_A;
-import static java.awt.event.KeyEvent.VK_C;
 import static java.awt.event.KeyEvent.VK_E;
-import static java.awt.event.KeyEvent.VK_F;
-import static java.awt.event.KeyEvent.VK_G;
-import static java.awt.event.KeyEvent.VK_H;
-import static java.awt.event.KeyEvent.VK_L;
-import static java.awt.event.KeyEvent.VK_M;
-import static java.awt.event.KeyEvent.VK_N;
-import static java.awt.event.KeyEvent.VK_O;
-import static java.awt.event.KeyEvent.VK_P;
-import static java.awt.event.KeyEvent.VK_Q;
-import static java.awt.event.KeyEvent.VK_R;
-import static java.awt.event.KeyEvent.VK_S;
-import static java.awt.event.KeyEvent.VK_T;
-import static java.awt.event.KeyEvent.VK_V;
-import static java.awt.event.KeyEvent.VK_W;
-import static java.awt.event.KeyEvent.VK_X;
-import static java.awt.event.KeyEvent.VK_Y;
-import static java.awt.event.KeyEvent.VK_Z;
 import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JDialog;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -146,6 +126,8 @@ import edu.mit.csail.sdg.alloy4viz.VizGUI;
 import edu.mit.csail.sdg.alloy4whole.SimpleReporter.SimpleCallback1;
 import edu.mit.csail.sdg.alloy4whole.SimpleReporter.SimpleTask1;
 import edu.mit.csail.sdg.alloy4whole.SimpleReporter.SimpleTask2;
+import static edu.mit.csail.sdg.alloy4.OurUtil.menu;
+import static edu.mit.csail.sdg.alloy4.OurUtil.menuItem;
 
 /** Simple graphical interface for accessing various features of the analyzer.
  *
@@ -539,7 +521,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
         for(int i=0; i<methods.length; i++) if (methods[i].getName().equals(name)) { m=methods[i]; break; }
         final Method method=m;
         return new Runner() {
-            private static final long serialVersionUID = 1L;
+            private static final long serialVersionUID = 0;
             public void run() {
                 try {
                     method.setAccessible(true);
@@ -562,7 +544,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
         for(int i=0; i<methods.length; i++) if (methods[i].getName().equals(name)) { m=methods[i]; break; }
         final Method method=m;
         return new Runner() {
-            private static final long serialVersionUID = 1L;
+            private static final long serialVersionUID = 0;
             public void run(Object arg) {
                 try {
                     method.setAccessible(true);
@@ -584,13 +566,13 @@ public final class SimpleGUI implements ComponentListener, Listener {
         if (alloyHome!=null) return alloyHome;
         String temp=System.getProperty("java.io.tmpdir");
         if (temp==null || temp.length()==0)
-            OurDialog.fatal(null,"Error. JVM need to specify a temporary directory using java.io.tmpdir property.");
+            OurDialog.fatal("Error. JVM need to specify a temporary directory using java.io.tmpdir property.");
         String username=System.getProperty("user.name");
-        File tempfile=new File(temp+File.separatorChar+"alloy4tmp39-"+(username==null?"":username));
+        File tempfile=new File(temp+File.separatorChar+"alloy4tmp40-"+(username==null?"":username));
         tempfile.mkdirs();
         String ans=Util.canon(tempfile.getPath());
         if (!tempfile.isDirectory()) {
-            OurDialog.fatal(null, "Error. Cannot create the temporary directory "+ans);
+            OurDialog.fatal("Error. Cannot create the temporary directory "+ans);
         }
         if (!Util.onWindows()) {
             String[] args={"chmod", "700", ans};
@@ -629,7 +611,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
         if (temp==null || temp.length()==0) return;
         String username=System.getProperty("user.name");
         if (username==null) username="";
-        for(int i=1; i<39; i++) iterateTemp(temp+File.separatorChar+"alloy4tmp"+i+"-"+username, true);
+        for(int i=1; i<40; i++) iterateTemp(temp+File.separatorChar+"alloy4tmp"+i+"-"+username, true);
     }
 
     /** Helper method for performing either computeTemporarySpaceUsed() or clearTemporarySpace() */
@@ -659,32 +641,30 @@ public final class SimpleGUI implements ComponentListener, Listener {
         try {
             wrap = true;
             filemenu.removeAll();
-            OurUtil.makeMenuItem(filemenu, "New",     VK_N, VK_N, doNew());
-            OurUtil.makeMenuItem(filemenu, "Open...", VK_O, VK_O, doOpen());
+            menuItem(filemenu, "New",     'N', 'N', doNew());
+            menuItem(filemenu, "Open...", 'O', 'O', doOpen());
             if (!Util.onMac())
-                OurUtil.makeMenuItem(filemenu, "Open Sample Models...", VK_ALT, VK_O, doBuiltin());
+               menuItem(filemenu, "Open Sample Models...", VK_ALT, 'O', doBuiltin());
             else
-                OurUtil.makeMenuItem(filemenu, "Open Sample Models...", doBuiltin());
+               menuItem(filemenu, "Open Sample Models...", doBuiltin());
             JMenu recentmenu;
             filemenu.add(recentmenu = new JMenu("Open Recent"));
-            OurUtil.makeMenuItem(filemenu, "Reload all", VK_R, VK_R, doReloadAll());
-            OurUtil.makeMenuItem(filemenu, "Save",       VK_S, VK_S, doSave());
+            menuItem(filemenu, "Reload all", 'R', 'R', doReloadAll());
+            menuItem(filemenu, "Save",       'S', 'S', doSave());
             if (Util.onMac())
-                OurUtil.makeMenuItem(filemenu, "Save As...", VK_SHIFT, VK_S, doSaveAs());
+               menuItem(filemenu, "Save As...", VK_SHIFT, 'S', doSaveAs());
             else
-                OurUtil.makeMenuItem(filemenu, "Save As...", VK_A, doSaveAs());
-            OurUtil.makeMenuItem(filemenu,     "Close",                     VK_W, VK_W,                   doClose());
-            OurUtil.makeMenuItem(filemenu,     "Clear Temporary Directory",                               doClearTemp());
-            OurUtil.makeMenuItem(filemenu,     "Quit",                      VK_Q, (Util.onMac()?-1:VK_Q), doQuit());
-            boolean found=false;
+               menuItem(filemenu, "Save As...", 'A', doSaveAs());
+            menuItem(filemenu, "Close",                     'W', 'W',                         doClose());
+            menuItem(filemenu, "Clear Temporary Directory",                                   doClearTemp());
+            menuItem(filemenu, "Quit",                      'Q', (Util.onMac() ? -1 : 'Q'), doQuit());
+            boolean found = false;
             for(Util.StringPref p: new Util.StringPref[]{ Model0, Model1, Model2, Model3 }) {
-                final String name = p.get();
-                if (name.length()==0) continue;
-                found=true;
-                OurUtil.makeMenuItem(recentmenu, name, doOpenFile(name));
+                String name = p.get();
+                if (name.length()>0) { found = true; menuItem(recentmenu, name, doOpenFile(name)); }
             }
             recentmenu.addSeparator();
-            OurUtil.makeMenuItem(recentmenu, "Clear Menu", doClearRecent());
+            menuItem(recentmenu, "Clear Menu", doClearRecent());
             recentmenu.setEnabled(found);
         } finally {
             wrap = false;
@@ -694,14 +674,14 @@ public final class SimpleGUI implements ComponentListener, Listener {
 
     /** This method performs File->New. */
     private Runner doNew() {
-        if (!wrap) { text.newtab(); notifyChange(); doShow(); }
+        if (!wrap) { text.newtab(null); notifyChange(); doShow(); }
         return wrapMe();
     }
 
     /** This method performs File->Open. */
     private Runner doOpen() {
         if (wrap) return wrapMe();
-        File file=OurDialog.askFile(frame, true, null, ".als", ".als files");
+        File file=OurDialog.askFile(true, null, ".als", ".als files");
         if (file!=null) {
             Util.setCurrentDirectory(file.getParentFile());
             doOpenFile(file.getPath());
@@ -712,7 +692,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
     /** This method performs File->OpenBuiltinModels. */
     private Runner doBuiltin() {
         if (wrap) return wrapMe();
-        File file=OurDialog.askFile(frame, true, alloyHome() + fs + "models", ".als", ".als files");
+        File file=OurDialog.askFile(true, alloyHome() + fs + "models", ".als", ".als files");
         if (file!=null) {
             doOpenFile(file.getPath());
         }
@@ -791,22 +771,22 @@ public final class SimpleGUI implements ComponentListener, Listener {
             boolean canUndo = text.get().canUndo();
             boolean canRedo = text.get().canRedo();
             editmenu.removeAll();
-            OurUtil.makeMenuItem(editmenu, "Undo", VK_Z, VK_Z, doUndo(), canUndo);
+            menuItem(editmenu, "Undo", 'Z', 'Z', doUndo(), canUndo);
             if (Util.onMac())
-                OurUtil.makeMenuItem(editmenu, "Redo", VK_SHIFT, VK_Z, doRedo(), canRedo);
+               menuItem(editmenu, "Redo", VK_SHIFT, 'Z', doRedo(), canRedo);
             else
-                OurUtil.makeMenuItem(editmenu, "Redo", VK_Y, VK_Y, doRedo(), canRedo);
+               menuItem(editmenu, "Redo", 'Y', 'Y', doRedo(), canRedo);
             editmenu.addSeparator();
-            OurUtil.makeMenuItem(editmenu, "Cut",   VK_X, VK_X, doCut());
-            OurUtil.makeMenuItem(editmenu, "Copy",  VK_C, VK_C, doCopy());
-            OurUtil.makeMenuItem(editmenu, "Paste", VK_V, VK_V, doPaste());
+            menuItem(editmenu, "Cut",   'X', 'X', doCut());
+            menuItem(editmenu, "Copy",  'C', 'C', doCopy());
+            menuItem(editmenu, "Paste", 'V', 'V', doPaste());
             editmenu.addSeparator();
-            OurUtil.makeMenuItem(editmenu, "Go To..."      , VK_T,         VK_T,         doGoto());
-            OurUtil.makeMenuItem(editmenu, "Previous File" , VK_PAGE_UP,   VK_PAGE_UP,   doGotoPrevFile(), text.count()>1);
-            OurUtil.makeMenuItem(editmenu, "Next File"     , VK_PAGE_DOWN, VK_PAGE_DOWN, doGotoNextFile(), text.count()>1);
+            menuItem(editmenu, "Go To..."      , 'T',         'T',           doGoto());
+            menuItem(editmenu, "Previous File" , VK_PAGE_UP,   VK_PAGE_UP,   doGotoPrevFile(), text.count()>1);
+            menuItem(editmenu, "Next File"     , VK_PAGE_DOWN, VK_PAGE_DOWN, doGotoNextFile(), text.count()>1);
             editmenu.addSeparator();
-            OurUtil.makeMenuItem(editmenu, "Find...",   VK_F, VK_F, doFind());
-            OurUtil.makeMenuItem(editmenu, "Find Next", VK_G, VK_G, doFindNext());
+            menuItem(editmenu, "Find...",   'F', 'F', doFind());
+            menuItem(editmenu, "Find Next", 'G', 'G', doFindNext());
         } finally {
             wrap = false;
         }
@@ -852,7 +832,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
         c.setMnemonic('c');
         JCheckBox b = new JCheckBox("Search Backward?",!lastFindForward);
         b.setMnemonic('b');
-        if (!OurDialog.getInput(frame, "Find", "Text:", x, " ", c, b)) return null;
+        if (!OurDialog.getInput("Find", "Text:", x, " ", c, b)) return null;
         if (x.getText().length() == 0) return null;
         lastFind = x.getText();
         lastFindCaseSensitive = c.getModel().isSelected();
@@ -885,7 +865,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
         if (wrap) return wrapMe();
         JTextField y = OurUtil.textfield("", 10);
         JTextField x = OurUtil.textfield("", 10);
-        if (!OurDialog.getInput(frame,"Go To","Line Number:", y, "Column Number (optional):", x)) return null;
+        if (!OurDialog.getInput("Go To", "Line Number:", y, "Column Number (optional):", x)) return null;
         try {
             OurSyntaxWidget t = text.get();
             int xx = 1, yy = Integer.parseInt(y.getText()), lineCount = t.getLineCount();
@@ -926,14 +906,12 @@ public final class SimpleGUI implements ComponentListener, Listener {
         try {
             wrap = true;
             runmenu.removeAll();
-            OurUtil.makeMenuItem(runmenu, "Execute Latest Command", VK_E, VK_E, doExecuteLatest());
+            menuItem(runmenu, "Execute Latest Command", 'E', 'E', doExecuteLatest());
             runmenu.add(new JSeparator());
-            OurUtil.makeMenuItem(runmenu, "Show Latest Instance",   VK_L, VK_L, doShowLatest(), latestInstance.length()>0);
-            OurUtil.makeMenuItem(runmenu, "Show Metamodel",         VK_M, VK_M, doShowMetaModel());
-            if (Version.experimental) {
-               OurUtil.makeMenuItem(runmenu, "Show Parse Tree",     VK_P,       doShowParseTree());
-            }
-            OurUtil.makeMenuItem(runmenu, "Open Evaluator",         VK_V,       doLoadEvaluator());
+            menuItem(runmenu, "Show Latest Instance",   'L', 'L', doShowLatest(), latestInstance.length()>0);
+            menuItem(runmenu, "Show Metamodel",         'M', 'M', doShowMetaModel());
+            if (Version.experimental) menuItem(runmenu, "Show Parse Tree", 'P', doShowParseTree());
+            menuItem(runmenu, "Open Evaluator", 'V', doLoadEvaluator());
         } finally {
             wrap = false;
         }
@@ -1149,8 +1127,8 @@ public final class SimpleGUI implements ComponentListener, Listener {
             if (isViz) {
                 viz.addMinMaxActions(w);
             } else {
-                OurUtil.makeMenuItem(w, "Minimize", VK_M, doMinimize(), iconNo);
-                OurUtil.makeMenuItem(w, "Zoom",           doZoom(),     iconNo);
+               menuItem(w, "Minimize", 'M', doMinimize(), iconNo);
+               menuItem(w, "Zoom",          doZoom(),     iconNo);
             }
             w.addSeparator();
             int i = 0;
@@ -1199,19 +1177,19 @@ public final class SimpleGUI implements ComponentListener, Listener {
         try {
             wrap = true;
             optmenu.removeAll();
-            OurUtil.makeMenuItem(optmenu, "Welcome Message at Start Up: "+(Welcome.get() < welcomeLevel ? "Yes" : "No"), doOptWelcome());
+            menuItem(optmenu, "Welcome Message at Start Up: "+(Welcome.get() < welcomeLevel ? "Yes" : "No"), doOptWelcome());
             //
             final SatSolver now = SatSolver.get();
             final JMenu sat = new JMenu("SAT Solver: "+now);
-            for(SatSolver sc:satChoices) { OurUtil.makeMenuItem(sat, ""+sc, doOptSolver(sc), sc==now?iconYes:iconNo); }
+            for(SatSolver sc:satChoices) { menuItem(sat, ""+sc, doOptSolver(sc), sc==now?iconYes:iconNo); }
             optmenu.add(sat);
             //
-            OurUtil.makeMenuItem(optmenu, "Warnings are Fatal: "+(WarningNonfatal.get()?"No":"Yes"), doOptWarning());
+            menuItem(optmenu, "Warnings are Fatal: "+(WarningNonfatal.get()?"No":"Yes"), doOptWarning());
             //
             final int mem = SubMemory.get();
             final JMenu subMemoryMenu = new JMenu("Maximum Memory to Use: " + mem + "M");
             for(int n: allowedMemorySizes) {
-               OurUtil.makeMenuItem(subMemoryMenu, ""+n+"M", doOptMemory(n), n==mem?iconYes:iconNo);
+               menuItem(subMemoryMenu, ""+n+"M", doOptMemory(n), n==mem?iconYes:iconNo);
             }
             optmenu.add(subMemoryMenu);
             //
@@ -1219,43 +1197,43 @@ public final class SimpleGUI implements ComponentListener, Listener {
             final JMenu subStackMenu = new JMenu("Maximum Stack to Use: " + stack + "k");
             boolean debug = "yes".equals(System.getProperty("debug"));
             for(int n: new int[]{16,32,64,128,256,512,1024,2048,4096,8192,16384,32768,65536}) {
-               if (debug || n>=1024) OurUtil.makeMenuItem(subStackMenu, ""+n+"k", doOptStack(n), n==stack?iconYes:iconNo);
+               if (debug || n>=1024) menuItem(subStackMenu, ""+n+"k", doOptStack(n), n==stack?iconYes:iconNo);
             }
             optmenu.add(subStackMenu);
             //
             final Verbosity vnow = Verbosity.get();
             final JMenu verb = new JMenu("Message Verbosity: "+vnow);
-            for(Verbosity vb: Verbosity.values()) { OurUtil.makeMenuItem(verb, ""+vb, doOptVerbosity(vb), vb==vnow?iconYes:iconNo); }
+            for(Verbosity vb: Verbosity.values()) { menuItem(verb, ""+vb, doOptVerbosity(vb), vb==vnow?iconYes:iconNo); }
             optmenu.add(verb);
             //
-            OurUtil.makeMenuItem(optmenu, "Syntax Highlighting: "+(SyntaxDisabled.get()?"No":"Yes"), doOptSyntaxHighlighting());
+            menuItem(optmenu, "Syntax Highlighting: "+(SyntaxDisabled.get()?"No":"Yes"), doOptSyntaxHighlighting());
             //
             final int fontSize = FontSize.get();
             final JMenu size = new JMenu("Font Size: "+fontSize);
             for(int n: new Integer[]{9,10,11,12,14,16,18,20,22,24,26,28,32,36,40,44,48,54,60,66,72}) {
-                OurUtil.makeMenuItem(size, ""+n, doOptFontsize(n), n==fontSize?iconYes:iconNo);
+               menuItem(size, ""+n, doOptFontsize(n), n==fontSize?iconYes:iconNo);
             }
             optmenu.add(size);
             //
-            OurUtil.makeMenuItem(optmenu, "Font: "+FontName.get()+"...", doOptFontname());
+            menuItem(optmenu, "Font: "+FontName.get()+"...", doOptFontname());
             //
-            if (Util.onMac() || Util.onWindows()) OurUtil.makeMenuItem(optmenu, "Use anti-aliasing: Yes", false);
-            else OurUtil.makeMenuItem(optmenu, "Use anti-aliasing: "+(AntiAlias.get()?"Yes":"No"), doOptAntiAlias());
+            if (Util.onMac() || Util.onWindows()) menuItem(optmenu, "Use anti-aliasing: Yes", false);
+            else menuItem(optmenu, "Use anti-aliasing: "+(AntiAlias.get()?"Yes":"No"), doOptAntiAlias());
             //
             final int tabSize = TabSize.get();
             final JMenu tabSizeMenu = new JMenu("Tab Size: "+tabSize);
-            for(int n=1; n<=12; n++) { OurUtil.makeMenuItem(tabSizeMenu, ""+n, doOptTabsize(n), n==tabSize?iconYes:iconNo); }
+            for(int n=1; n<=12; n++) { menuItem(tabSizeMenu, ""+n, doOptTabsize(n), n==tabSize?iconYes:iconNo); }
             optmenu.add(tabSizeMenu);
             //
             final int skDepth = SkolemDepth.get();
             final JMenu skDepthMenu = new JMenu("Skolem Depth: "+skDepth);
-            for(int n=0; n<=4; n++) { OurUtil.makeMenuItem(skDepthMenu, ""+n, doOptSkolemDepth(n), n==skDepth?iconYes:iconNo); }
+            for(int n=0; n<=4; n++) { menuItem(skDepthMenu, ""+n, doOptSkolemDepth(n), n==skDepth?iconYes:iconNo); }
             optmenu.add(skDepthMenu);
             //
             if (Version.experimental) {
               final int unrolls = Unrolls.get();
               final JMenu unrollsMenu = new JMenu("Recursion Depth: "+(unrolls<0 ? "Disabled" : (""+unrolls)));
-              for(int n=(-1); n<=3; n++) { OurUtil.makeMenuItem(unrollsMenu, (n<0 ? "Disabled" : (""+n)), doOptUnrolls(n), n==unrolls?iconYes:iconNo); }
+              for(int n=(-1); n<=3; n++) { menuItem(unrollsMenu, (n<0 ? "Disabled" : (""+n)), doOptUnrolls(n), n==unrolls?iconYes:iconNo); }
               optmenu.add(unrollsMenu);
             }
             //
@@ -1263,13 +1241,13 @@ public final class SimpleGUI implements ComponentListener, Listener {
             final String[] minLabelLong=new String[]{"Slow (guarantees local minimum)", "Medium", "Fast (initial unsat core)"};
             final String[] minLabelShort=new String[]{"Slow", "Medium", "Fast"};
             final JMenu cmMenu = new JMenu("Unsat Core Minimization Strategy: "+minLabelShort[min]);
-            for(int n=0; n<=2; n++) { OurUtil.makeMenuItem(cmMenu, minLabelLong[n], doOptCore(n), n==min?iconYes:iconNo); }
+            for(int n=0; n<=2; n++) { menuItem(cmMenu, minLabelLong[n], doOptCore(n), n==min?iconYes:iconNo); }
             if (now!=SatSolver.MiniSatProverJNI) cmMenu.setEnabled(false);
             optmenu.add(cmMenu);
             //
-            OurUtil.makeMenuItem(optmenu, "Visualize Automatically: "+(AutoVisualize.get()?"Yes":"No"), doOptAutoVisualize());
-            OurUtil.makeMenuItem(optmenu, "Record the Kodkod Input/Output: "+(RecordKodkod.get()?"Yes":"No"), doOptRecordKodkod());
-            if (Version.experimental) OurUtil.makeMenuItem(optmenu, "Enable \"implicit this\" name resolution: "+(ImplicitThis.get()?"Yes":"No"), doOptImplicitThis());
+            menuItem(optmenu, "Visualize Automatically: "+(AutoVisualize.get()?"Yes":"No"), doOptAutoVisualize());
+            menuItem(optmenu, "Record the Kodkod Input/Output: "+(RecordKodkod.get()?"Yes":"No"), doOptRecordKodkod());
+            if (Version.experimental) menuItem(optmenu, "Enable \"implicit this\" name resolution: "+(ImplicitThis.get()?"Yes":"No"), doOptImplicitThis());
         } finally {
             wrap = false;
         }
@@ -1316,7 +1294,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
     private Runner doOptFontname() {
         if (wrap) return wrapMe();
         int size=FontSize.get();
-        String f = OurDialog.askFont(frame);
+        String f = OurDialog.askFont();
         if (f.length()>0) {
            FontName.set(f);
            text.setFont(f, size, TabSize.get());
@@ -1401,32 +1379,25 @@ public final class SimpleGUI implements ComponentListener, Listener {
 
     /** This method displays the about box. */
     private Runner doAbout() {
-        if (wrap) return wrapMe();
-        Icon icon = OurUtil.loadIcon("images/logo.gif");
-        JButton dismiss = new JButton(Util.onMac() ? "Dismiss" : "Close");
-        Object[] array = {
-            icon,
-            "Alloy Analyzer "+Version.version(),
-            "Build date: "+Version.buildDate(),
-            " ",
-            "Lead developer: Felix Chang",
-            "Engine developer: Emina Torlak",
-            "Graphic design: Julie Pelaez",
-            "Project lead: Daniel Jackson",
-            " ",
-            "More information at: http://alloy.mit.edu/",
-            "Comments and questions to: alloy@mit.edu",
-            " ",
-            "Thanks to: Ilya Shlyakhter, Manu Sridharan, Derek Rayside, Jonathan Edwards, Gregory Dennis,",
-            "Robert Seater, Edmond Lau, Vincent Yeung, Sam Daitch, Andrew Yip, Jongmin Baek, Ning Song,",
-            "Arturo Arizpe, Li-kuo (Brian) Lin, Joseph Cohen, Jesse Pavel, Ian Schechter, and Uriel Schafer.",
-            OurUtil.makeH(null,dismiss,null)};
-        final JOptionPane about = new JOptionPane(array,
-            JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION, null, new Object[]{});
-        final JDialog dialog = about.createDialog(null, "About Alloy Analyzer "+Version.version());
-        dismiss.addActionListener(Runner.createDispose(dialog));
-        dialog.setVisible(true);
-        return null;
+       if (wrap) return wrapMe();
+       OurDialog.showmsg("About Alloy Analyzer " + Version.version(),
+             OurUtil.loadIcon("images/logo.gif"),
+             "Alloy Analyzer " + Version.version(),
+             "Build date: " + Version.buildDate(),
+             " ",
+             "Lead developer: Felix Chang",
+             "Engine developer: Emina Torlak",
+             "Graphic design: Julie Pelaez",
+             "Project lead: Daniel Jackson",
+             " ",
+             "More information at: http://alloy.mit.edu/",
+             "Comments and questions to: alloy@mit.edu",
+             " ",
+             "Thanks to: Ilya Shlyakhter, Manu Sridharan, Derek Rayside, Jonathan Edwards, Gregory Dennis,",
+             "Robert Seater, Edmond Lau, Vincent Yeung, Sam Daitch, Andrew Yip, Jongmin Baek, Ning Song,",
+             "Arturo Arizpe, Li-kuo (Brian) Lin, Joseph Cohen, Jesse Pavel, Ian Schechter, and Uriel Schafer."
+       );
+       return null;
     }
 
     /** This method displays the help html. */
@@ -1475,13 +1446,13 @@ public final class SimpleGUI implements ComponentListener, Listener {
     /** This method displays the license box. */
     private Runner doLicense() {
         if (wrap) return wrapMe();
-        JButton dismiss = new JButton(Util.onMac() ? "Dismiss" : "Close");
         final String JAR = Util.jarPrefix();
         String alloytxt;
-        try {alloytxt=Util.readAll(JAR + "LICENSES" + File.separator + "Alloy.txt");} catch(IOException ex) {return null;}
+        try { alloytxt = Util.readAll(JAR + "LICENSES" + File.separator + "Alloy.txt"); } catch(IOException ex) { return null; }
         final JTextArea text = OurUtil.textarea(alloytxt, 15, 85, false, false, new EmptyBorder(2, 2, 2, 2), new Font("Monospaced", Font.PLAIN, 12));
+        final JScrollPane scroll = OurUtil.scrollpane(text, new LineBorder(Color.DARK_GRAY, 1));
         final JComboBox combo = new OurCombobox(new String[]{"Alloy","Kodkod","JavaCup","SAT4J","ZChaff","MiniSat"}) {
-            private static final long serialVersionUID = 1L;
+            private static final long serialVersionUID = 0;
             @Override public void do_changed(Object value) {
               if (value instanceof String) {
                  try {
@@ -1494,22 +1465,17 @@ public final class SimpleGUI implements ComponentListener, Listener {
               text.setCaretPosition(0);
            }
         };
-        JScrollPane scroll = OurUtil.scrollpane(text, new LineBorder(Color.DARK_GRAY, 1));
-        Object[] array = {
-           "The source code for the Alloy Analyzer is available under the MIT license.",
-           " ",
-           "The Alloy Analyzer utilizes several third-party packages whose code may",
-           "be distributed under a different license. We are extremely grateful to",
-           "the authors of these packages for making their source code freely available.",
-           " ",
-           OurUtil.makeH(null, "See the copyright notice for: ", combo, null),
-           " ",
-           scroll,
-           OurUtil.makeH(null, dismiss, null)};
-        final JOptionPane about = new JOptionPane(array, JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION, null, new Object[]{});
-        final JDialog dialog = about.createDialog(null, "The Copyright Notices");
-        dismiss.addActionListener(Runner.createDispose(dialog));
-        dialog.setVisible(true);
+        OurDialog.showmsg("Copyright Notices",
+              "The source code for the Alloy Analyzer is available under the MIT license.",
+              " ",
+              "The Alloy Analyzer utilizes several third-party packages whose code may",
+              "be distributed under a different license. We are extremely grateful to",
+              "the authors of these packages for making their source code freely available.",
+              " ",
+              OurUtil.makeH(null, "See the copyright notice for: ", combo, null),
+              " ",
+              scroll
+        );
         return null;
     }
 
@@ -1727,7 +1693,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
 
     /** Create a dummy task object for testing purpose. */
     private static final WorkerEngine.WorkerTask dummyTask = new WorkerEngine.WorkerTask() {
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 0;
         public void run(WorkerCallback out) { }
     };
 
@@ -1763,9 +1729,12 @@ public final class SimpleGUI implements ComponentListener, Listener {
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         frame.pack();
         if (!Util.onMac() && !Util.onWindows()) {
-           // many Window managers do not respect ICCCM2; this should help avoid the Title Bar being shifted "off screen"
-           if (x<30) { if (x<0) x=0; width=width-(30-x);   x=30; }
-           if (y<30) { if (y<0) y=0; height=height-(30-y); y=30; }
+           String gravity = System.getenv("_JAVA_AWT_WM_STATIC_GRAVITY");
+           if (gravity==null || gravity.length()==0) {
+              // many Window managers do not respect ICCCM2; this should help avoid the Title Bar being shifted "off screen"
+              if (x<30) { if (x<0) x=0; width=width-(30-x);   x=30; }
+              if (y<30) { if (y<0) y=0; height=height-(30-y); y=30; }
+           }
            if (width<100) width=100;
            if (height<100) height=100;
         }
@@ -1846,16 +1815,16 @@ public final class SimpleGUI implements ComponentListener, Listener {
         JMenuBar bar = new JMenuBar();
         try {
             wrap = true;
-            filemenu = OurUtil.makeMenu(bar, "File", VK_F, doRefreshFile());
-            editmenu = OurUtil.makeMenu(bar, "Edit", VK_E, doRefreshEdit());
-            runmenu = OurUtil.makeMenu(bar, "Execute", VK_X, doRefreshRun());
-            optmenu = OurUtil.makeMenu(bar, "Options", VK_O, doRefreshOption());
-            windowmenu = OurUtil.makeMenu(bar, "Window", VK_W, doRefreshWindow(false));
-            windowmenu2 = OurUtil.makeMenu(null, "Window", VK_W, doRefreshWindow(true));
-            helpmenu = OurUtil.makeMenu(bar, "Help", VK_H, null);
-            if (!Util.onMac()) OurUtil.makeMenuItem(helpmenu, "About Alloy...", VK_A, doAbout());
-            OurUtil.makeMenuItem(helpmenu, "Quick Guide",                       VK_Q, doHelp());
-            OurUtil.makeMenuItem(helpmenu, "See the Copyright Notices...",      VK_L, doLicense());
+            filemenu    = menu(bar,  "&File",    doRefreshFile());
+            editmenu    = menu(bar,  "&Edit",    doRefreshEdit());
+            runmenu     = menu(bar,  "E&xecute", doRefreshRun());
+            optmenu     = menu(bar,  "&Options", doRefreshOption());
+            windowmenu  = menu(bar,  "&Window",  doRefreshWindow(false));
+            windowmenu2 = menu(null, "&Window",  doRefreshWindow(true));
+            helpmenu    = menu(bar,  "&Help",    null);
+            if (!Util.onMac()) menuItem(helpmenu, "About Alloy...", 'A', doAbout());
+            menuItem(helpmenu, "Quick Guide",                       'Q', doHelp());
+            menuItem(helpmenu, "See the Copyright Notices...",      'L', doLicense());
         } finally {
             wrap = false;
         }
@@ -1996,30 +1965,30 @@ public final class SimpleGUI implements ComponentListener, Listener {
 
         // Launch the welcome screen if needed
         if (!"yes".equals(System.getProperty("debug")) && Welcome.get() < welcomeLevel) {
-            String dismiss = Util.onMac() ? "Dismiss" : "Close";
-            JCheckBox again = new JCheckBox("Show this message every time you start the Alloy Analyzer");
-            again.setSelected(true);
-            JOptionPane.showOptionDialog(frame, new Object[]{
-                "Thank you for using the Alloy Analyzer "+Version.version(),
-                " ",
-                "Version 4 of the Alloy Analyzer is a complete rewrite,",
-                "offering improvements in robustness, performance and usability.",
-                "Models written in Alloy 3 will require some small alterations to run in Alloy 4.",
-                " ",
-                "Here are some quick tips:",
-                " ",
-                "* Function calls now use [ ] instead of ( )",
-                "  For more details, please see http://alloy.mit.edu/alloy4/quickguide/",
-                " ",
-                "* The Execute button always executes the latest command.",
-                "  To choose which command to execute, go to the Execute menu.",
-                " ",
-                "* The Alloy Analyzer comes with a variety of sample models.",
-                "  To see them, go to the File menu and click Open Sample Models.",
-                " ",
-                again
-            }, "Welcome", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new Object[]{dismiss}, dismiss);
-            if (!again.isSelected()) Welcome.set(welcomeLevel);
+           JCheckBox again = new JCheckBox("Show this message every time you start the Alloy Analyzer");
+           again.setSelected(true);
+           OurDialog.showmsg("Welcome",
+                 "Thank you for using the Alloy Analyzer "+Version.version(),
+                 " ",
+                 "Version 4 of the Alloy Analyzer is a complete rewrite,",
+                 "offering improvements in robustness, performance and usability.",
+                 "Models written in Alloy 3 will require some small alterations to run in Alloy 4.",
+                 " ",
+                 "Here are some quick tips:",
+                 " ",
+                 "* Function calls now use [ ] instead of ( )",
+                 "  For more details, please see http://alloy.mit.edu/alloy4/quickguide/",
+                 " ",
+                 "* The Execute button always executes the latest command.",
+                 "  To choose which command to execute, go to the Execute menu.",
+                 " ",
+                 "* The Alloy Analyzer comes with a variety of sample models.",
+                 "  To see them, go to the File menu and click Open Sample Models.",
+                 " ",
+                 again
+           );
+           doShow();
+           if (!again.isSelected()) Welcome.set(welcomeLevel);
         }
 
         // Periodically ask the MailBug thread to see if there is a newer version or not
@@ -2043,8 +2012,8 @@ public final class SimpleGUI implements ComponentListener, Listener {
     }
 
     /** {@inheritDoc} */
-   public boolean do_action(Object sender, Enum<? extends Enum<?>> e) {
-      if (e instanceof OurTabbedSyntaxWidget.Event) switch((OurTabbedSyntaxWidget.Event)e) {
+   public Object do_action(Object sender, Event e) {
+      if (sender instanceof OurTabbedSyntaxWidget) switch(e) {
          case FOCUSED: notifyFocusGained(); break;
          case STATUS_CHANGE: notifyChange(); break;
       }
@@ -2052,8 +2021,8 @@ public final class SimpleGUI implements ComponentListener, Listener {
    }
 
    /** {@inheritDoc} */
-   public boolean do_action(Object sender, Enum<? extends Enum<?>> e, Object arg) {
-      if (e==OurTree.Event.SELECT && arg instanceof Browsable) {
+   public Object do_action(Object sender, Event e, Object arg) {
+      if (sender instanceof OurTree && e==Event.CLICK && arg instanceof Browsable) {
         Pos p = ((Browsable)arg).pos();
         if (p==Pos.UNKNOWN) p = ((Browsable)arg).span();
         text.shade(p);

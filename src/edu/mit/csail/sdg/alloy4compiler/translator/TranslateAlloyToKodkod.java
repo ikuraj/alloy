@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -150,9 +150,10 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
 
     /** Associate the given formula with the given expression, then return the formula as-is. */
     private Formula k2pos(Formula f, Expr e) throws Err {
-        if (frame!=null) frame.k2pos(f, e);
+        if (k2pos_enabled) if (frame!=null) frame.k2pos(f, e);
         return f;
     }
+    private boolean k2pos_enabled = true;
 
     /** Returns the expression corresponding to the given sig. */
     private Expression a2k(Sig x)     throws Err { if (a2k!=null) return a2k.get(x); else return frame.a2k(x); }
@@ -179,6 +180,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
       // add the field facts and appended facts
       for(Sig s: frame.getAllReachableSigs()) {
          for(Decl d: s.getFieldDecls()) {
+            k2pos_enabled = false;
             for(ExprHasName n: d.names) {
                Field f = (Field)n;
                Expr form = s.decl.get().join(f).in(d.expr);
@@ -199,11 +201,13 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             }
             if (d.names.size()>1 && d.disjoint!=null) {  frame.addFormula(cform(ExprList.makeDISJOINT(d.disjoint, null, d.names)), d.disjoint);  }
          }
+         k2pos_enabled = true;
          for(Expr f: s.getFacts()) {
             Expr form = s.isOne==null ? f.forAll(s.decl) : ExprLet.make(null, (ExprVar)(s.decl.get()), s, f);
             frame.addFormula(cform(form), f);
          }
       }
+      k2pos_enabled = true;
       recursiveAddFormula(facts);
    }
 
@@ -549,7 +553,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         switch(x.op) {
           case MIN: return IntConstant.constant(min);
           case MAX: return IntConstant.constant(max);
-          case NEXT: return A4Solution.SIGINT_NEXT;
+          case NEXT: return A4Solution.KK_NEXT;
           case TRUE: return Formula.TRUE;
           case FALSE: return Formula.FALSE;
           case EMPTYNESS: return Expression.NONE;
@@ -871,7 +875,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         if (ab.op==ExprBinary.Op.ISSEQ_ARROW_LONE) {
             Expression rr=r;
             while(rr.arity()>1) rr=rr.join(Relation.UNIV);
-            ans=rr.difference(rr.join(A4Solution.SIGINT_NEXT)).in(A4Solution.SIGINT_ZERO).and(ans);
+            ans=rr.difference(rr.join(A4Solution.KK_NEXT)).in(A4Solution.KK_ZERO).and(ans);
         }
         return ans;
     }

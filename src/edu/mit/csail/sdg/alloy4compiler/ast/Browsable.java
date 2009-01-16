@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -84,9 +84,7 @@ public abstract class Browsable {
              return "<html> <span" + c + x + "</span></html>";
          }
          @Override public List<?> do_ask(Object parent) {
-            ArrayList<Browsable> ans = new ArrayList<Browsable>();
-            if (parent instanceof Browsable) for(Browsable x: ((Browsable)parent).getSubnodes()) ans.add(x);
-            return ans;
+            if (parent instanceof Browsable) return ((Browsable)parent).getSubnodes(); else return new ArrayList<Browsable>();
          }
          @Override public Object do_root() { return Browsable.this; }
       };

@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -31,7 +31,7 @@ import javax.swing.JPanel;
 
 public abstract class OurCheckbox extends JPanel {
 
-   /** This silences javac's warning about missing serialVersionUID. */
+   /** This ensures the class can be serialized reliably. */
    private static final long serialVersionUID = 0;
 
    /** The icon to use when the checkbox is off. */
@@ -69,7 +69,7 @@ public abstract class OurCheckbox extends JPanel {
       jbox.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent e) {
             Icon icon = do_action();
-            if (icon != null && icon != jbox.getIcon()) jbox.setIcon(icon);
+            if (icon != jbox.getIcon()) jbox.setIcon(icon);
          }
       });
       jbox.setMaximumSize(jbox.getPreferredSize());
@@ -86,6 +86,7 @@ public abstract class OurCheckbox extends JPanel {
    @Override public final void setEnabled(boolean enabled) {
       if (jbox != null) jbox.setEnabled(enabled);
       if (jlabel != null) jlabel.setEnabled(enabled);
+      // jbox and jlabel may be null if during the constructor, some method call causes Swing to call this method early
    }
 
    /** This method is called by Swing to change its background color. */
@@ -93,5 +94,6 @@ public abstract class OurCheckbox extends JPanel {
       super.setBackground(color);
       if (jbox != null) jbox.setBackground(color);
       if (jlabel != null) jlabel.setBackground(color);
+      // jbox and jlabel may be null if during the constructor, some method call causes Swing to call this method early
    }
 }

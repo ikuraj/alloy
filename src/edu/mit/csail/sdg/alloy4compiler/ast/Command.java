@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -177,7 +177,7 @@ public final class Command extends Browsable {
     }
 
     /** Return a modifiable copy of the set of all String constants used in this command or in any facts embedded in this command. */
-    public Set<String> getAllStringConstants() throws Err {
+    public Set<String> getAllStringConstants(Iterable<Sig> sigs) throws Err {
         final Set<String> set = new HashSet<String>();
         final VisitQuery<Object> findString = new VisitQuery<Object>() {
             @Override public final Object visit(ExprConstant x) throws Err {
@@ -186,6 +186,10 @@ public final class Command extends Browsable {
             }
         };
         for(Command c=this; c!=null; c=c.parent) c.formula.accept(findString);
+        for(Sig s: sigs) {
+           for(Expr e: s.getFacts()) e.accept(findString);
+           for(Decl d: s.getFieldDecls()) d.expr.accept(findString);
+        }
         return set;
     }
 

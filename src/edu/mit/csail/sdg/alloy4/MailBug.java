@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -28,9 +28,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.awt.Color;
 import java.awt.Dimension;
-import javax.swing.JOptionPane;
-import static javax.swing.JOptionPane.ERROR_MESSAGE;
-import static javax.swing.JOptionPane.YES_OPTION;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -100,15 +97,11 @@ public final class MailBug implements UncaughtExceptionHandler, Runnable {
    private static String prepareCrashReport (Thread thread, Throwable ex, String email, String problem) {
       StringWriter sw = new StringWriter();
       PrintWriter pw = new PrintWriter(sw);
-      pw.printf("\nAlloy Analyzer %s crash report (Build Date = %s)\n\n", Version.version(), Version.buildDate());
-      pw.printf("========================= Email ============================\n%s\n\n", Util.convertLineBreak(email).trim());
-      pw.printf("========================= Problem ==========================\n%s\n\n", Util.convertLineBreak(problem).trim());
-      pw.printf("========================= Thread Name ======================\n%s\n\n", thread.getName().trim());
-      if (ex!=null) {
-         pw.printf("========================= Exception ========================\n");
-         pw.printf("%s: %s\n\n", ex.getClass().toString(), ex.toString().trim());
-         pw.printf("========================= Stack Trace ======================\n%s\n", dump(ex));
-      }
+      pw.printf("Alloy Analyzer %s crash report (Build Date = %s)\n", Version.version(), Version.buildDate());
+      pw.printf("\n========================= Email ============================\n%s\n", Util.convertLineBreak(email).trim());
+      pw.printf("\n========================= Problem ==========================\n%s\n", Util.convertLineBreak(problem).trim());
+      pw.printf("\n========================= Thread Name ======================\n%s\n", thread.getName().trim());
+      if (ex!=null) pw.printf("\n========================= Stack Trace ======================\n%s\n", dump(ex));
       pw.printf("\n========================= Preferences ======================\n");
       try {
          for(String key: Preferences.userNodeForPackage(Util.class).keys()) {
@@ -118,12 +111,12 @@ public final class MailBug implements UncaughtExceptionHandler, Runnable {
       } catch(BackingStoreException bse) {
          pw.printf("BackingStoreException occurred: %s\n", bse.toString().trim());
       }
-      pw.printf("\n========================= System Properties ================");
-      pw.printf("\nRuntime.freeMemory() = " + Runtime.getRuntime().freeMemory());
-      pw.printf("\nRuntime.totalMemory() = " + Runtime.getRuntime().totalMemory());
+      pw.printf("\n========================= System Properties ================\n");
+      pw.println("Runtime.freeMemory() = " + Runtime.getRuntime().freeMemory());
+      pw.println("nRuntime.totalMemory() = " + Runtime.getRuntime().totalMemory());
       for(Map.Entry<Object,Object> e: System.getProperties().entrySet()) {
          String k = String.valueOf(e.getKey()), v = String.valueOf(e.getValue());
-         pw.printf("\n%s = %s", k.trim(), v.trim());
+         pw.printf("%s = %s\n", k.trim(), v.trim());
       }
       pw.printf("\n========================= The End ==========================\n\n");
       pw.close();
@@ -204,9 +197,8 @@ public final class MailBug implements UncaughtExceptionHandler, Runnable {
                });
             }
          }).start();
-         JOptionPane.showMessageDialog(null, new Object[] {status}, "Sending the bug report... please wait...", ERROR_MESSAGE);
-         System.exit(1);
-      } catch(Throwable exception) {
+         OurDialog.showmsg("Sending the bug report... please wait...", status);
+      } finally {
          System.exit(1);
       }
    }
@@ -230,60 +222,50 @@ public final class MailBug implements UncaughtExceptionHandler, Runnable {
       final JTextField email = OurUtil.textfield("", 20, new LineBorder(Color.DARK_GRAY));
       final JTextArea problem = OurUtil.textarea("", 50, 50, true, false, new EmptyBorder(0,0,0,0));
       final JScrollPane scroll = OurUtil.scrollpane(problem, new LineBorder(Color.DARK_GRAY), new Dimension(300, 200));
-      for(Throwable ex2=ex; ex2!=null; ex2=ex2.getCause()) {
-         if (ex2 instanceof StackOverflowError) {
-            JOptionPane.showMessageDialog(null, new Object[] {
-                  "Sorry. The Alloy Analyzer has run out of stack space.",
-                  " ",
-                  "Try simplifying your model or reducing the scope.",
-                  "And try reducing Options->SkolemDepth to 0.",
-                  "And try increasing Options->Stack.",
-                  " ",
-                  "There is no way for Alloy to continue execution, so pressing OK will shut down Alloy."
-            }, "Fatal Error", ERROR_MESSAGE);
-            System.exit(1);
-         }
-         if (ex2 instanceof OutOfMemoryError) {
-            JOptionPane.showMessageDialog(null, new Object[] {
-                  "Sorry. The Alloy Analyzer has run out of memory.",
-                  " ",
-                  "Try simplifying your model or reducing the scope.",
-                  "And try reducing Options->SkolemDepth to 0.",
-                  "And try increasing Options->Memory.",
-                  " ",
-                  "There is no way for Alloy to continue execution, so pressing OK will shut down Alloy."
-            }, "Fatal Error", ERROR_MESSAGE);
-            System.exit(1);
-         }
-      }
-      if (ver > Version.buildNumber()) {
-         JOptionPane.showMessageDialog(null, new Object[] {
-               "Sorry. A fatal error has occurred.",
+      for(Throwable ex2 = ex; ex2 != null; ex2 = ex2.getCause()) {
+         if (ex2 instanceof StackOverflowError) OurDialog.fatal(new Object[] {
+               "Sorry. The Alloy Analyzer has run out of stack space.",
                " ",
-               "You are running Alloy Analyzer " + Version.version(),
-               "but the most recent is Alloy Analyzer "+ name,
-               " ",
-               "Please try to upgrade to the newest version",
-               "as the problem may have already been fixed.",
+               "Try simplifying your model or reducing the scope.",
+               "And try reducing Options->SkolemDepth to 0.",
+               "And try increasing Options->Stack.",
                " ",
                "There is no way for Alloy to continue execution, so pressing OK will shut down Alloy."
-         }, "Fatal Error", ERROR_MESSAGE);
-      } else {
-         if (JOptionPane.showOptionDialog(null, new Object[] {
-               "Sorry. A fatal internal error has occurred.",
+         });
+         if (ex2 instanceof OutOfMemoryError) OurDialog.fatal(new Object[] {
+               "Sorry. The Alloy Analyzer has run out of memory.",
                " ",
-               "You may submit a bug report (via HTTP).",
-               "The error report will include your system",
-               "configuration, but no other information.",
+               "Try simplifying your model or reducing the scope.",
+               "And try reducing Options->SkolemDepth to 0.",
+               "And try increasing Options->Memory.",
                " ",
-               "If you'd like to be notified about a fix,",
-               "please describe the problem and enter your email address.",
-               " ",
-               OurUtil.makeHT("Email:", 5, email, null),
-               OurUtil.makeHT("Problem:", 5, scroll, null)
-         }, "Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
-         null, new Object[]{yes, no}, no) == YES_OPTION) { sendCrashReport(thread, ex, email.getText(), problem.getText()); return; }
+               "There is no way for Alloy to continue execution, so pressing OK will shut down Alloy."
+         });
       }
+      if (ver > Version.buildNumber()) OurDialog.fatal(new Object[] {
+            "Sorry. A fatal error has occurred.",
+            " ",
+            "You are running Alloy Analyzer " + Version.version(),
+            "but the most recent is Alloy Analyzer "+ name,
+            " ",
+            "Please try to upgrade to the newest version",
+            "as the problem may have already been fixed.",
+            " ",
+            "There is no way for Alloy to continue execution, so pressing OK will shut down Alloy."
+      });
+      if (OurDialog.yesno(new Object[] {
+            "Sorry. A fatal internal error has occurred.",
+            " ",
+            "You may submit a bug report (via HTTP).",
+            "The error report will include your system",
+            "configuration, but no other information.",
+            " ",
+            "If you'd like to be notified about a fix,",
+            "please describe the problem and enter your email address.",
+            " ",
+            OurUtil.makeHT("Email:", 5, email, null),
+            OurUtil.makeHT("Problem:", 5, scroll, null)
+      }, yes, no)) sendCrashReport(thread, ex, email.getText(), problem.getText());
       System.exit(1);
    }
 }

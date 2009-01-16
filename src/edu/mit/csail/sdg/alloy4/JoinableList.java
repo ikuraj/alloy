@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -18,7 +18,7 @@ package edu.mit.csail.sdg.alloy4;
 import java.io.Serializable;
 import java.util.AbstractList;
 
-/** Immutable; implements a list where it is cheap to join or append; null values are NOT allowed. */
+/** Immutable; implements a list where it is combine them; null values are NOT allowed. */
 
 public final class JoinableList<E> extends AbstractList<E> implements Serializable {
 
@@ -30,14 +30,10 @@ public final class JoinableList<E> extends AbstractList<E> implements Serializab
     */
    private final int count;
 
-   /** The list of items before "this.item"; may be null.
-    * <p> <b>Invariant:</b> pre!=null iff pre.count!=0
-    */
+   /** The list of items before "this.item"; may be null. */
    private final JoinableList<E> pre;
 
-   /** The list of items after "this.item"; may be null.
-    * <p> <b>Invariant:</b> post!=null iff post.count!=0
-    */
+   /** The list of items after "this.item"; may be null. */
    private final JoinableList<E> post;
 
    /** If nonnull, it stores an item. */
@@ -67,7 +63,7 @@ public final class JoinableList<E> extends AbstractList<E> implements Serializab
 
    /** Returns a list that represents the result of appending newItem onto this list; if newItem==null we return this list as-is. */
    public JoinableList<E> make(E newItem) {
-      if (newItem == null) return this; else if (count == 0) return new JoinableList<E>(newItem);
+      if (newItem == null) return this;
       int sum = count + 1; // integer overflow
       if (sum < 1) throw new OutOfMemoryError();
       if (post != null) return new JoinableList<E>(sum, this, newItem, null);

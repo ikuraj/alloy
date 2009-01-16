@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -60,11 +60,11 @@ public final class MacUtil {
          @Override public void handleOpenFile(ApplicationEvent arg) {
             final String filename = arg.getFilename();
             SwingUtilities.invokeLater(new Runnable() {
-               public final void run() { open.run(filename); }
+               public void run() { open.run(filename); }
             });
          }
          @Override public void handleQuit(ApplicationEvent arg) {
-            try { SwingUtilities.invokeAndWait(quit); } catch (Exception e) { } // Nothing much we can do
+            try { SwingUtilities.invokeAndWait(quit); } catch (Throwable e) { } // Nothing we can do; already trying to quit!
             arg.setHandled(false);
          }
       };

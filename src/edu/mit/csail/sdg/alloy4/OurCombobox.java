@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -35,7 +35,7 @@ import javax.swing.border.EmptyBorder;
 
 public class OurCombobox extends JComboBox {
 
-   /** This silences javac's warning about missing serialVersionUID. */
+   /** This ensures the class can be serialized reliably. */
    private static final long serialVersionUID = 0;
 
    /** This caches a preconstructed JLabel that is used for the rendering of each Combo value. */

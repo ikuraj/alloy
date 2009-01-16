@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -188,6 +188,7 @@ final class ScopeComputer {
         boolean changed=false;
         final int overall = (cmd.overall<0 && cmd.scope.size()==0) ? 3 : cmd.overall;
         for(Sig s:sigs) if (!s.builtin && s.isTopLevel() && sig2scope(s)<0) {
+            if (s.isEnum!=null) { sig2scope(s, 0); continue; } // enum without children should get the empty set
             if (overall<0) throw new ErrorSyntax(cmd.pos, "You must specify a scope for sig \""+s+"\"");
             sig2scope(s, overall);
             changed=true;
@@ -278,6 +279,7 @@ final class ScopeComputer {
                continue;
             }
             if (s==NONE) throw new ErrorSyntax(cmd.pos, "You cannot set a scope on \"none\".");
+            if (s.isEnum!=null) throw new ErrorSyntax(cmd.pos, "You cannot set a scope on the enum \""+s.label+"\"");
             if (s.isOne!=null && scope!=1) throw new ErrorSyntax(cmd.pos,
                 "Sig \""+s+"\" has the multiplicity of \"one\", so its scope must be 1, and cannot be "+scope);
             if (s.isLone!=null && scope>1) throw new ErrorSyntax(cmd.pos,
@@ -341,7 +343,7 @@ final class ScopeComputer {
      */
     static Pair<A4Solution,ScopeComputer> compute (A4Reporter rep, A4Options opt, Iterable<Sig> sigs, Command cmd) throws Err {
         ScopeComputer sc = new ScopeComputer(rep, sigs, cmd);
-        Set<String> set = cmd.getAllStringConstants();
+        Set<String> set = cmd.getAllStringConstants(sigs);
         if (sc.maxstring>=0 && set.size()>sc.maxstring) rep.scope("Sig String expanded to contain all "+set.size()+" String constant(s) referenced by this command.\n");
         for(int i=0; set.size()<sc.maxstring; i++) set.add("\"String" + i + "\"");
         sc.atoms.addAll(set);

@@ -1,4 +1,4 @@
-/* Alloy Analyzer 4 -- Copyright (c) 2006-2008, Felix Chang
+/* Alloy Analyzer 4 -- Copyright (c) 2006-2009, Felix Chang
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
  * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify,
@@ -30,7 +30,7 @@ final class WriteCNF implements SATSolver {
     /** This runtime exception is thrown when the CNF file has been written successfully. */
     public static final class WriteCNFCompleted extends RuntimeException {
         /** This ensures the class can be serialized reliably. */
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 0;
         /** This constructs a new WriteCNFCompleted exception. */
         public WriteCNFCompleted() { super("CNF written successfully."); }
     }
