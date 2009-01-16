@@ -64,7 +64,6 @@ public final class MacUtil {
             });
          }
          @Override public void handleQuit(ApplicationEvent arg) {
-            System.out.println("J"); System.out.flush();
             try { SwingUtilities.invokeAndWait(quit); } catch (Throwable e) { } // Nothing we can do; already trying to quit!
             arg.setHandled(false);
          }
