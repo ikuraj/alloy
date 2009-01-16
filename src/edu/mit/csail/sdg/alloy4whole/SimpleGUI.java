@@ -2015,7 +2015,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
    public Object do_action(Object sender, Event e) {
       if (sender instanceof OurTabbedSyntaxWidget) switch(e) {
          case FOCUSED: notifyFocusGained(); break;
-         case STATUS_CHANGE: System.out.print("X"); System.out.flush(); notifyChange(); break;
+         case STATUS_CHANGE: notifyChange(); break;
       }
       return true;
    }
