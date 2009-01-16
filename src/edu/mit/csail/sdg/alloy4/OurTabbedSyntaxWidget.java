@@ -94,8 +94,8 @@ public final class OurTabbedSyntaxWidget {
          if (sender instanceof OurSyntaxWidget) switch(e) {
             case FOCUSED:        listeners.fire(me, e); break;
             case CARET_MOVED:    listeners.fire(me, Event.STATUS_CHANGE); break;
-            case CTRL_PAGE_UP:   prev(); listeners.fire(me, Event.STATUS_CHANGE); break;
-            case CTRL_PAGE_DOWN: next(); listeners.fire(me, Event.STATUS_CHANGE); break;
+            case CTRL_PAGE_UP:   prev(); break;
+            case CTRL_PAGE_DOWN: next(); break;
             case STATUS_CHANGE:
                clearShade();
                OurSyntaxWidget t = (OurSyntaxWidget)sender;
@@ -161,7 +161,7 @@ public final class OurTabbedSyntaxWidget {
       tabs.get(me).requestFocusInWindow();
       tabBar.scrollRectToVisible(new Rectangle(0,0,0,0)); // Forces recalculation
       tabBar.scrollRectToVisible(new Rectangle(tabs.get(me).obj2.getX(), 0, tabs.get(me).obj2.getWidth()+200, 1));
-      listeners.fire(me, Event.STATUS_CHANGE);
+      listeners.fire(this, Event.STATUS_CHANGE);
    }
 
    /** Refresh all tabs. */
@@ -290,7 +290,7 @@ public final class OurTabbedSyntaxWidget {
       if (text!=null) { text.moveCaret(0, 0); text.moveCaret(c, c); } // Move to 0 ensures we'll scroll to the highlighted section
       get().requestFocusInWindow();
       adjustLabelColor();
-      listeners.fire(me, Event.STATUS_CHANGE);
+      listeners.fire(this, Event.STATUS_CHANGE);
    }
 
    /** Highlights the text editor, based on the location information in the Pos object. */
