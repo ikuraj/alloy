@@ -34,14 +34,14 @@ public final class ByteBuffer {
    /** The size per chunk. */
    private static final int SIZE = 65536;
 
-   /** The list of chunks allocated so far; every chunk is always exactly of size SIZE. */
-   private final LinkedList<byte[]> list = new LinkedList<byte[]>();  { list.add(new byte[SIZE]); }
+   /** The list of chunks allocated so far; always has at least one chunk; every chunk is always exactly of size SIZE. */
+   private final LinkedList<byte[]> list = new LinkedList<byte[]>();
 
    /** The number of bytes stored in the latest chunk; every chunk before that is always fully filled. */
    private int n = 0;
 
    /** Construct an empty byte buffer. */
-   public ByteBuffer() { }
+   public ByteBuffer() { list.add(new byte[SIZE]); }
 
    /** Write the given byte into this byte buffer. */
    private ByteBuffer w(int b) {
@@ -66,7 +66,7 @@ public final class ByteBuffer {
       }
    }
 
-   /** Write the given String into this byte buffer (by converting the String into its UTF-8 representation if necessary) */
+   /** Write the given String into this byte buffer (by converting the String into its UTF-8 representation) */
    public ByteBuffer write(String string) {
       if (string.length() == 0) return this;
       byte[] b;
@@ -82,9 +82,9 @@ public final class ByteBuffer {
    /** Write the given number into this byte buffer (truncated to the range -32767..+32767), followed by a space. */
    public strictfp ByteBuffer writes(double x) {
       // These extreme values shouldn't happen, but we want to protect against them
-      if (Double.isNaN(x)) return write("0 ");
+      if (Double.isNaN(x)) return write("0 "); else if (x>32767) return write("32767 "); else if (x<-32767) return write("-32767 ");
       long num = (long)(x * 1000000);
-      if (x>=32767 || num>=32767000000L) return write("32767 "); else if (x<=-32767 || num<=(-32767000000L)) return write("-32767 ");
+      if (num>=32767000000L) return write("32767 "); else if (num<=(-32767000000L)) return write("-32767 ");
       // Now, regular doubles... let's allow up to 6 digits after the decimal point
       if (num<0) { w('-'); num = -num; }
       String str = Long.toString(num);
@@ -110,13 +110,18 @@ public final class ByteBuffer {
          }
          if (it==null && zip.finished()) break;
          int count = zip.deflate(output);
-         if (count > 0) { ans = ans + count; os.write(output, 0, count); }
+         if (count > 0) {
+            ans = ans + count;
+            os.write(output, 0, count);
+            if (ans < 0) throw new IOException("Data too large to be written to the output file.");
+         }
       }
       return ans;
    }
 
-   /** Write the current ByteBuffer content into the given output file as-is, then return the number of bytes written. */
+   /** Write the entire content into the given file as-is, then return the number of bytes written. */
    public long dump(RandomAccessFile os) throws IOException {
+      if (list.size() >= (Long.MAX_VALUE / SIZE)) throw new IOException("Data too large to be written to the output file.");
       byte[] last = list.getLast();
       for(byte[] x: list) if (x!=last) os.write(x);
       if (n>0) os.write(last, 0, n);

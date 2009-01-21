@@ -30,7 +30,6 @@ import java.io.RandomAccessFile;
 
 public final strictfp class OurPDFWriter {
 
-   // FIXTHIS: too many 'q' compared to 'Q'
    // FIXTHIS: try writing PS or EPS also
 
    /** The filename. */
@@ -59,9 +58,10 @@ public final strictfp class OurPDFWriter {
       this.filename = filename;
       width = dpi*8L + (dpi/2L); // "8.5 inches"
       height = dpi*11L;          // "11 inches"
-      // Write the default settings, and flip (0, 0) into the top-left corner of the page, then scale the page
+      // Write the default settings, and flip (0, 0) into the top-left corner of the page, scale the page, then leave 0.5" margin
       buf.write("q\n" + "1 J\n" + "1 j\n" + "[] 0 d\n" + "1 w\n" + "1 0 0 -1 0 ").writes(height).write("cm\n");
       buf.writes(scale).write("0 0 ").writes(scale).writes(dpi/2.0).writes(dpi/2.0).write("cm\n");
+      buf.write("1 0 0 1 ").writes(dpi/2.0).writes(dpi/2.0).write("cm\n"); // FIXTHIS: is this right?
    }
 
    /** Changes the color for subsequent graphical drawing. */
@@ -241,6 +241,7 @@ public final strictfp class OurPDFWriter {
          offset[2] = now;
          now += out(out, contentID + " 0 obj << /Length " + space
                + (compressOrNot ? " /Filter /FlateDecode" : "") + " >> stream\r\n");
+         buf.write("Q\n");
          final long ct = compressOrNot ? buf.dumpFlate(out) : buf.dump(out);
          now += ct + out(out, "endstream endobj\n\n");
          // Page

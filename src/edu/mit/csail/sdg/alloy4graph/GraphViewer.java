@@ -211,7 +211,7 @@ public final strictfp class GraphViewer extends JPanel {
     private final Color badColor = new Color(255,200,200);
 
     /** This synchronized field stores the most recent DPI value. */
-    private static volatile double oldDPI=300;
+    private static volatile double oldDPI=72;
 
     /** True if we are currently in the middle of a DocumentListener already. */
     private boolean recursive=false;
@@ -344,7 +344,7 @@ public final strictfp class GraphViewer extends JPanel {
              if (dpi<50 || dpi>3000) { OurDialog.alert("The DPI must be between 50 and 3000."); continue; }
              myScale=0; // This field is unused for PDF generation
           } else {
-             dpi=300;
+             dpi=72;
              myScale=scale;
           }
           break;
