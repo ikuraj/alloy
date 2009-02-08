@@ -33,12 +33,15 @@ import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
+import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
+import edu.mit.csail.sdg.alloy4compiler.ast.Decl;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprHasName;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprITE;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprLet;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprList;
@@ -50,6 +53,8 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
+import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 
 /** Mutable; represents an instance. */
 
@@ -771,5 +776,83 @@ public final class SimInstance extends VisitReturn<Object> {
          if (!isIn(ans, ab.left)) return false;
        }
        return true;
+    }
+
+    /** Checks whether this instance satisfies every fact defined in the given model.
+     * @param world - this must be the root of the Alloy model
+     * @return an empty String if yes, nonempty String if no
+     */
+    public String validate(Module world) {
+       try {
+          for(Sig s: world.getAllReachableSigs()) if (!s.builtin) {
+             if (s.isLone!=null && !(visit(s).longsize()<=1)) return "There can be at most one "+s;
+             if (s.isOne !=null && !(visit(s).longsize()==1)) return "There must be exactly one "+s;
+             if (s.isSome!=null && !(visit(s).longsize()>=1)) return "There must be at least one "+s;
+             if (s instanceof SubsetSig) {
+                SubsetSig p = (SubsetSig)s;
+                Expr sum = null;
+                for(Sig par: p.parents) sum = par.plus(sum);
+                if (p.exact) {
+                   if (!equal(s, sum)) return "Sig "+s+" must be equal to the union of its parents "+p.parents;
+                } else {
+                   if (!isIn(s, sum)) return "Sig "+s+" must be equal or subset of its parents "+p.parents;
+                }
+             } else if (s != Sig.UNIV && s != Sig.NONE) {
+                PrimSig p = (PrimSig)s;
+                if (!isIn(s, p.parent)) return "Sig "+s+" must be equal or subset of its parent "+p.parent;
+             }
+             if (s.isAbstract!=null) {
+                Expr sum = null;
+                for(Sig x: ((PrimSig)s).children()) sum = x.plus(sum);
+                if (sum!=null && !equal(s, sum)) return "Abstract sig "+s+" must be equal to the union of its subsigs";
+             }
+             for(Decl d: s.getFieldDecls()) for(ExprHasName f: d.names) if (!((Field)f).defined) {
+                if (!cform(s.decl.get().join(f).in(d.expr).forAll(s.decl))) {
+                   return "Field "+f+" violated its bound: " + visit((Field)f) + "\n" + d.expr;
+                }
+                SimTupleset setS = visit(s);
+                SimTupleset setF = visit((Field)f);
+                for(SimAtom x:setF.getAllAtoms(0)) if (!setS.has(x)) return "Field "+f+" first column has extra atom: "+setF+" not in "+setS;
+             }
+             for(Decl d: s.getFieldDecls()) {
+                if (d.disjoint!=null && d.names.size()>0) {
+                   if (!cform(ExprList.makeDISJOINT(null, null, d.names))) return "Fields must be disjoint.";
+                }
+                if (d.disjoint2!=null) for(ExprHasName f: d.names) {
+                   Decl that = s.oneOf("that");
+                   Expr formula = s.decl.get().equal(that.get()).not().implies(s.decl.get().join(f).intersect(that.get().join(f)).no());
+                   if (!cform(formula.forAll(that).forAll(s.decl))) return "Fields must be disjoint.";
+                }
+             }
+             for(Expr f: s.getFacts()) {
+                if (!cform(f.forAll(s.decl))) {
+                   f = f.deNOP(); if (f instanceof ExprUnary) {
+                      ExprUnary u = (ExprUnary)f;
+                      f = u.sub.deNOP();
+                      if (f instanceof ExprBinary) {
+                         ExprBinary b = (ExprBinary)f;
+                         if (b.op == ExprBinary.Op.JOIN && b.left.isSame(s.decl.get()) && b.right.deNOP() instanceof Field) {
+                            String n = ((Field)(b.right.deNOP())).label;
+                            if (u.op == ExprUnary.Op.SOME) return "The "+n+" cannot be empty.";
+                            if (u.op == ExprUnary.Op.LONE) return "The "+n+" cannot have more than one value.";
+                            if (u.op == ExprUnary.Op.ONE)  return "The "+n+" must have exactly one value.";
+                            if (u.op == ExprUnary.Op.NO)   return "The "+n+" must be empty.";
+                         }
+                      }
+                   }
+                   return "Cannot violate a consistency constraint";
+                }
+             }
+          }
+          for(Module m: world.getAllReachableModules()) for(Pair<String,Expr> f: m.getAllFacts()) if (!cform(f.b)) {
+             String err = f.a;
+             if (err.matches("^fact\\$[0-9][0-9]*")) err = f.b.toString();
+             if (err.length()>=2 && err.startsWith("\"") && err.endsWith("\"")) err = err.substring(1, err.length()-1);
+             return "Violation: " + err;
+          }
+          return "";
+       } catch(Err ex) {
+          return "An internal error has occured:\n" + ex.dump();
+       }
     }
 }
