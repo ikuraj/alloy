@@ -30,8 +30,6 @@ import java.io.RandomAccessFile;
 
 public final strictfp class OurPDFWriter {
 
-   // FIXTHIS: try writing PS or EPS also
-
    /** The filename. */
    private final String filename;
 
@@ -61,7 +59,7 @@ public final strictfp class OurPDFWriter {
       // Write the default settings, and flip (0, 0) into the top-left corner of the page, scale the page, then leave 0.5" margin
       buf.write("q\n" + "1 J\n" + "1 j\n" + "[] 0 d\n" + "1 w\n" + "1 0 0 -1 0 ").writes(height).write("cm\n");
       buf.writes(scale).write("0 0 ").writes(scale).writes(dpi/2.0).writes(dpi/2.0).write("cm\n");
-      buf.write("1 0 0 1 ").writes(dpi/2.0).writes(dpi/2.0).write("cm\n"); // FIXTHIS: is this right?
+      buf.write("1 0 0 1 ").writes(dpi/2.0).writes(dpi/2.0).write("cm\n");
    }
 
    /** Changes the color for subsequent graphical drawing. */
