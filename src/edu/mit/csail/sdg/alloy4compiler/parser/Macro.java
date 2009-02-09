@@ -29,7 +29,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBad;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCustom;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
-import edu.mit.csail.sdg.alloy4compiler.parser.Module.Context;
+import edu.mit.csail.sdg.alloy4compiler.parser.CompModule.Context;
 
 /** Immutable; this class represents a macro. */
 
@@ -39,7 +39,7 @@ final class Macro extends ExprCustom {
     final Pos isPrivate;
 
     /** The module that defined this. */
-    private final Module realModule;
+    private final CompModule realModule;
 
     /** The name of the macro. */
     private final String name;
@@ -54,7 +54,7 @@ final class Macro extends ExprCustom {
     private final Expr body;
 
     /** Construct a new Macro object. */
-    private Macro(Pos pos, Pos isPrivate, Module realModule, String name, List<ExprVar> params, List<Expr> args, Expr body) {
+    private Macro(Pos pos, Pos isPrivate, CompModule realModule, String name, List<ExprVar> params, List<Expr> args, Expr body) {
         super(pos, new ErrorFatal(pos, "Incomplete call on the macro \""+name+"\""));
         this.realModule = realModule;
         this.isPrivate = isPrivate;
@@ -65,7 +65,7 @@ final class Macro extends ExprCustom {
     }
 
     /** Construct a new Macro object. */
-    Macro(Pos pos, Pos isPrivate, Module realModule, String name, List<ExprVar> params, Expr body) {
+    Macro(Pos pos, Pos isPrivate, CompModule realModule, String name, List<ExprVar> params, Expr body) {
         this(pos, isPrivate, realModule, name, params, null, body);
     }
 
@@ -90,7 +90,7 @@ final class Macro extends ExprCustom {
         Context cx2 = new Context(realModule, warnings, cx.unrolls-1);
         for(int n=params.size(), i=0; i<n; i++) {
             Expr tmp = args.get(i);
-            if (!(tmp instanceof Macro)) tmp = tmp.resolve(tmp.type, warnings);
+            if (!(tmp instanceof Macro)) tmp = tmp.resolve(tmp.type(), warnings);
             cx2.put(params.get(i).label, tmp);
         }
         return cx2.check(body);

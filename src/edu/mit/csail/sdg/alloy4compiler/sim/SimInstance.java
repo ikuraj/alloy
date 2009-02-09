@@ -54,11 +54,14 @@ import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
-import edu.mit.csail.sdg.alloy4compiler.parser.Module;
+import edu.mit.csail.sdg.alloy4compiler.ast.Module;
 
 /** Mutable; represents an instance. */
 
 public final class SimInstance extends VisitReturn<Object> {
+
+    /** The root module associated with this instance. */
+    public final Module root;
 
     /** This maps the current local variables (LET, QUANT, Function Param) to the actual SimTupleset/Integer/Boolean */
     private Env<ExprVar,Object> env = new Env<ExprVar,Object>();
@@ -175,7 +178,7 @@ public final class SimInstance extends VisitReturn<Object> {
     }
 
     /** Construct a new simulation context by reading the given file. */
-    public static synchronized SimInstance read(String filename, List<Sig> sigs, List<ExprVar> vars) throws Err, IOException {
+    public static synchronized SimInstance read(Module root, String filename, List<ExprVar> vars) throws Err, IOException {
         FileInputStream fis = null;
         BufferedInputStream bis = null;
         try {
@@ -188,7 +191,7 @@ public final class SimInstance extends VisitReturn<Object> {
             if (!readkey(bis).equals("bitwidth")) throw new IOException("Expecting bitwidth = ...");
             int bitwidth = readNonNegativeIntThenLinebreak(bis);
             // construct the SimInstance object with no atoms and no relations
-            SimInstance ans = new SimInstance(bitwidth, maxseq);
+            SimInstance ans = new SimInstance(root, bitwidth, maxseq);
             // parse all the relations
             Map<String,SimTupleset> sfs = new HashMap<String,SimTupleset>();
             while(true) {
@@ -197,7 +200,7 @@ public final class SimInstance extends VisitReturn<Object> {
                 sfs.put(key, SimTupleset.read(bis));
             }
             // now for each user-supplied sig, if we saw its value earlier, then assign its value in the new SimInstance's sfs map
-            if (sigs!=null) for(final Sig s: sigs) if (!s.builtin) {
+            for(final Sig s: root.getAllReachableSigs()) if (!s.builtin) {
                 SimTupleset ts = sfs.get("sig " + s.label);
                 if (ts!=null) ans.sfs.put(s, ts);
                 for(final Field f: s.getFields()) if (!f.defined) {
@@ -226,8 +229,9 @@ public final class SimInstance extends VisitReturn<Object> {
     }
 
     /** Construct a new simulation context with the given bitwidth and the given maximum sequence length. */
-    public SimInstance(int bitwidth, int maxseq) throws Err {
+    public SimInstance(Module root, int bitwidth, int maxseq) throws Err {
         if (bitwidth<1 || bitwidth>32) throw new ErrorType("Bitwidth must be between 1 and 32.");
+        this.root = root;
         this.bitwidth = bitwidth;
         this.maxseq = maxseq;
         this.callbacks = new HashMap<Func,SimCallback>();
@@ -237,8 +241,9 @@ public final class SimInstance extends VisitReturn<Object> {
         shiftmask = (1 << (32 - Integer.numberOfLeadingZeros(bitwidth-1))) - 1;
     }
 
-    /** Construct a deep copy. */
+    /** Construct a deep copy of this instance (except that it shares the same root Module object as the old instance) */
     public SimInstance(SimInstance old) throws Err {
+        root = old.root;
         bitwidth = old.bitwidth;
         maxseq = old.maxseq;
         min = old.min;
@@ -328,7 +333,7 @@ public final class SimInstance extends VisitReturn<Object> {
      */
     public void init(Field field, SimTupleset value) throws Err {
         if (value==null) { sfs.remove(field); return; }
-        if (!value.empty() && value.arity()!=field.type.arity()) throw new ErrorType("Evaluator encountered an error: field "+field.label+" arity must not be " + value.arity());
+        if (!value.empty() && value.arity()!=field.type().arity()) throw new ErrorType("Evaluator encountered an error: field "+field.label+" arity must not be " + value.arity());
         if (field.defined) throw new ErrorAPI("Evaluator cannot prebind the value of a defined field.");
         sfs.put(field, value);
         cacheUNIV = null;
@@ -341,7 +346,7 @@ public final class SimInstance extends VisitReturn<Object> {
      */
     public void init(ExprVar var, SimTupleset value) throws Err {
         if (value==null) { sfs.remove(var); return; }
-        if (!value.empty() && value.arity()!=var.type.arity()) throw new ErrorType("Evaluator encountered an error: skolem "+var.label+" arity must not be " + value.arity());
+        if (!value.empty() && value.arity()!=var.type().arity()) throw new ErrorType("Evaluator encountered an error: skolem "+var.label+" arity must not be " + value.arity());
         sfs.put(var, value);
         cacheUNIV = null;
         cacheSTRING = null;
@@ -432,9 +437,9 @@ public final class SimInstance extends VisitReturn<Object> {
               if (a instanceof ExprConstant && ((ExprConstant)a).op==ExprConstant.Op.NUMBER && ((ExprConstant)a).num()==0)
                  if (b instanceof ExprConstant && ((ExprConstant)b).op==ExprConstant.Op.NUMBER && ((ExprConstant)b).num()==max+1)
                     return min;
-              if (x.left.type.is_int) return trunc(cint(x.left)-cint(x.right)); else return cset(x.left).difference(cset(x.right));
+              if (x.left.type().is_int) return trunc(cint(x.left)-cint(x.right)); else return cset(x.left).difference(cset(x.right));
           case PLUS:
-              if (x.left.type.is_int) return trunc(cint(x.left)+cint(x.right)); else return cset(x.left).union(cset(x.right));
+              if (x.left.type().is_int) return trunc(cint(x.left)+cint(x.right)); else return cset(x.left).union(cset(x.right));
           case PLUSPLUS:
               return cset(x.left).override(cset(x.right));
           case MUL:
@@ -479,7 +484,7 @@ public final class SimInstance extends VisitReturn<Object> {
         final Object candidate = n==0 ? cacheForConstants.get(f) : null;
         if (candidate!=null) return candidate;
         final Expr body = f.getBody();
-        if (body.type.arity()<0 || body.type.arity()!=f.returnDecl.type.arity()) throw new ErrorType(body.span(), "Function return value not fully resolved.");
+        if (body.type().arity()<0 || body.type().arity()!=f.returnDecl.type().arity()) throw new ErrorType(body.span(), "Function return value not fully resolved.");
         for(Func ff:current_function) if (ff==f) throw new ErrorSyntax(x.span(), ""+f+" cannot call itself recursively!");
         Env<ExprVar,Object> newenv = new Env<ExprVar,Object>();
         List<SimTupleset> list = new ArrayList<SimTupleset>(x.args.size());
@@ -691,7 +696,7 @@ public final class SimInstance extends VisitReturn<Object> {
         }
         if (b instanceof ExprBinary && ((ExprBinary)b).op==ExprBinary.Op.ARROW) {
            Expr left = ((ExprBinary)b).left, right = ((ExprBinary)b).right;
-           int ll = left.type.arity(), rr = right.type.arity();
+           int ll = left.type().arity(), rr = right.type().arity();
            if (ll <= rr) return isIn(a.head(ll), left) && isIn(a.tail(rr), right);
            return isIn(a.tail(rr), right) && isIn(a.head(ll), left);
         }
@@ -706,15 +711,15 @@ public final class SimInstance extends VisitReturn<Object> {
 
     /** Helper method that evaluates the formula "a = b" */
     public boolean equal(Expr a, Expr b) throws Err {
-        if (a.type.is_bool) return cform(a)==cform(b);
-        if (a.type.is_int) return cint(a)==cint(b);
-        if (a.type.arity()<=0 || a.type.arity()!=b.type.arity()) return false; // type mismatch
+        if (a.type().is_bool) return cform(a)==cform(b);
+        if (a.type().is_int) return cint(a)==cint(b);
+        if (a.type().arity()<=0 || a.type().arity()!=b.type().arity()) return false; // type mismatch
         if (a.isSame(b)) return true; else return cset(a).equals(cset(b));
     }
 
     /** Helper method that evaluates the formula "a in b" */
     public boolean isIn(Expr a, Expr b) throws Err {
-        if (a.type.arity()<=0 || a.type.arity()!=b.type.arity()) return false; // type mismatch
+        if (a.type().arity()<=0 || a.type().arity()!=b.type().arity()) return false; // type mismatch
         if (b.isSame(Sig.UNIV)) return true; // everything is a subset of UNIV
         if (a.isSame(b)) return true; // if a==b then a is a subset of b
         return isIn(cset(a), b);

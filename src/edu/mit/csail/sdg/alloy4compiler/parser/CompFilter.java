@@ -110,7 +110,7 @@ final class CompFilter implements Scanner {
    }
 
    /** Construct a filter for the tokens from the given file. */
-   public CompFilter(Module module, List<Object> seenDollar, String filename, int lineOffset, Reader i) throws Err {
+   public CompFilter(CompModule module, List<Object> seenDollar, String filename, int lineOffset, Reader i) throws Err {
       final CompLexer L = new CompLexer(i);
       L.alloy_module = module;
       L.alloy_filename = filename;

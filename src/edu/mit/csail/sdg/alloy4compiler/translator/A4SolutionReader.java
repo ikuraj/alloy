@@ -203,13 +203,13 @@ public final class A4SolutionReader {
        Expr type = null;
        for(XMLNode sub:node) if (sub.is("types")) { Expr t=parseType(sub); if (type==null) type=t; else type=type.plus(t); }
        int arity;
-       if (type==null || (arity=type.type.arity())<2) throw new IOException("Field "+label+" is maltyped.");
+       if (type==null || (arity=type.type().arity())<2) throw new IOException("Field "+label+" is maltyped.");
        String parentID = node.getAttribute("parentID");
        Sig parent = id2sig.get(parentID);
        if (parent==null) throw new IOException("ID "+parentID+" is not a sig.");
        Field field = null;
        for(Field f: parent.getFields())
-           if (f.label.equals(label) && f.type.arity()==arity && choices.contains(f))
+           if (f.label.equals(label) && f.type().arity()==arity && choices.contains(f))
               { field=f; choices.remove(f); break; }
        if (field==null) field = parent.addTrickyField(Pos.UNKNOWN, isPrivate, null, null, isMeta, new String[] {label}, UNIV.join(type)) [0];
        TupleSet ts = parseTuples(node, arity);
@@ -226,8 +226,8 @@ public final class A4SolutionReader {
        Expr type = null;
        for(XMLNode sub:node) if (sub.is("types")) { Expr t=parseType(sub); if (type==null) type=t; else type=type.plus(t); }
        int arity;
-       if (type==null || (arity=type.type.arity())<1) throw new IOException("Skolem "+label+" is maltyped.");
-       ExprVar var = ExprVar.make(Pos.UNKNOWN, label, type.type);
+       if (type==null || (arity=type.type().arity())<1) throw new IOException("Skolem "+label+" is maltyped.");
+       ExprVar var = ExprVar.make(Pos.UNKNOWN, label, type.type());
        TupleSet ts = parseTuples(node, arity);
        expr2ts.put(var, ts);
        return var;
@@ -280,7 +280,7 @@ public final class A4SolutionReader {
           sol.addSig(s, r);
           for(Field f: s.getFields()) {
               ts = expr2ts.remove(f);
-              if (ts==null) ts=factory.noneOf(f.type.arity()); // If the field was NOT mentioned in the XML file...
+              if (ts==null) ts=factory.noneOf(f.type().arity()); // If the field was NOT mentioned in the XML file...
               r = sol.addRel(s.label+"."+f.label, ts, ts);
               sol.addField(f, r);
           }
@@ -289,7 +289,7 @@ public final class A4SolutionReader {
           ExprVar v = (ExprVar)(e.getKey());
           TupleSet ts = e.getValue();
           Relation r = sol.addRel(v.label, ts, ts);
-          sol.kr2type(r, v.type);
+          sol.kr2type(r, v.type());
        }
        // Done!
        sol.solve(null, null, null, false);

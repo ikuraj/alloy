@@ -190,7 +190,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
                // Thus, we need to add a bound that the first column is a subset of s.
                if (s.isOne==null) {
                    Expression sr = a2k(s), fr = a2k(f);
-                   for(int i=f.type.arity(); i>1; i--) fr=fr.join(Relation.UNIV);
+                   for(int i=f.type().arity(); i>1; i--) fr=fr.join(Relation.UNIV);
                    frame.addFormula(fr.in(sr), f);
                }
             }
@@ -432,7 +432,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
      * @param expr - this is the Alloy expression we want to translate
      */
     public static Object alloy2kodkod(A4Solution sol, Expr expr) throws Err {
-        if (expr.ambiguous && !expr.errors.isEmpty()) expr = expr.resolve(expr.type, null);
+        if (expr.ambiguous && !expr.errors.isEmpty()) expr = expr.resolve(expr.type(), null);
         if (!expr.errors.isEmpty()) throw expr.errors.pick();
         TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(sol.getBitwidth(), sol.unrolls(), sol.a2k(), sol.s2k());
         Object ans;
@@ -649,7 +649,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         final Object candidate = f.count()==0 ? cacheForConstants.get(f) : null;
         if (candidate!=null) return candidate;
         final Expr body = f.getBody();
-        if (body.type.arity()<0 || body.type.arity()!=f.returnDecl.type.arity()) throw new ErrorType(body.span(), "Function return value not fully resolved.");
+        if (body.type().arity()<0 || body.type().arity()!=f.returnDecl.type().arity()) throw new ErrorType(body.span(), "Function return value not fully resolved.");
         final int n = f.count();
         int maxRecursion = unrolls;
         for(Func ff:current_function) if (ff==f) {
@@ -657,7 +657,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
                 throw new ErrorSyntax(x.span(), ""+f+" cannot call itself recursively!");
             }
             if (maxRecursion==0) {
-                Type t = f.returnDecl.type;
+                Type t = f.returnDecl.type();
                 if (t.is_bool) return Formula.FALSE;
                 if (t.is_int) return IntConstant.constant(0);
                 int i = t.arity();
@@ -894,7 +894,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
                default: break;
             }
         }
-        return (x.type.arity()!=1) ? x : ExprUnary.Op.ONEOF.make(x.span(), x);
+        return (x.type().arity()!=1) ? x : ExprUnary.Op.ONEOF.make(x.span(), x);
     }
 
    /** Helper method that translates the quantification expression "op vars | sub" */
@@ -906,7 +906,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
          boolean ok = true;
          for(int i=0; i<xvars.size(); i++) {
             Expr v = addOne(xvars.get(i).expr).deNOP();
-            if (v.type.arity()!=1 || v.mult()!=ExprUnary.Op.ONEOF) { ok=false; break; }
+            if (v.type().arity()!=1 || v.mult()!=ExprUnary.Op.ONEOF) { ok=false; break; }
          }
          if (op==ExprQt.Op.ONE && ok) return ((Expression) visit_qt(ExprQt.Op.COMPREHENSION, xvars, sub)).one();
          if (op==ExprQt.Op.LONE && ok) return ((Expression) visit_qt(ExprQt.Op.COMPREHENSION, xvars, sub)).lone();
@@ -935,10 +935,10 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         final Expr dexexpr = addOne(dep.expr);
         final Expression dv = cset(dexexpr);
         for(ExprHasName dex: dep.names) {
-           final Variable v = Variable.nary(skolem(dex.label), dex.type.arity());
+           final Variable v = Variable.nary(skolem(dex.label), dex.type().arity());
            final kodkod.ast.Decl newd;
            env.put((ExprVar)dex, v);
-           if (dex.type.arity()!=1) {
+           if (dex.type().arity()!=1) {
               guards.add(isIn(v, dexexpr));
               newd = v.setOf(dv);
            } else switch(dexexpr.mult()) {
@@ -947,7 +947,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
               case LONEOF: newd = v.loneOf(dv); break;
               default: newd = v.oneOf(dv);
            }
-           if (frame!=null) frame.kv2typepos(v, dex.type, dex.pos);
+           if (frame!=null) frame.kv2typepos(v, dex.type(), dex.pos);
            if (dd==null) dd = newd; else dd = dd.and(newd);
         }
       }

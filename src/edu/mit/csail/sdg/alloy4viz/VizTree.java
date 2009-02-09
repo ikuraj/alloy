@@ -83,7 +83,7 @@ public final class VizTree extends OurTree {
             for(Sig s: instance.getAllReachableSigs()) for(Field f: s.getFields()) for(A4Tuple t: instance.eval(f)) {
                if (t.atom(0).equals(atom)) { ans.add(new Pair<String,ExprHasName>(atom, f)); break; }
             }
-            for(ExprVar f: instance.getAllSkolems()) if (f.type.arity()>1) for(A4Tuple t: (A4TupleSet)(instance.eval(f))) {
+            for(ExprVar f: instance.getAllSkolems()) if (f.type().arity()>1) for(A4Tuple t: (A4TupleSet)(instance.eval(f))) {
                if (t.atom(0).equals(atom)) { ans.add(new Pair<String,ExprHasName>(atom, f)); break; }
             }
          } else if (parent instanceof Pair) {
@@ -136,7 +136,7 @@ public final class VizTree extends OurTree {
       this.onWindows = Util.onWindows();
       ArrayList<Object> toplevel = new ArrayList<Object>();
       for(Sig s: instance.getAllReachableSigs()) if (s!=Sig.UNIV && s!=Sig.SEQIDX && s!=Sig.NONE) toplevel.add(s);
-      for(ExprVar v: instance.getAllSkolems()) if (v.type.arity()==1 && v.label.startsWith("$")) toplevel.add(v);
+      for(ExprVar v: instance.getAllSkolems()) if (v.type().arity()==1 && v.label.startsWith("$")) toplevel.add(v);
       Collections.sort(toplevel, new Comparator<Object>() {
          public int compare(Object a, Object b) {
             String t1, t2;

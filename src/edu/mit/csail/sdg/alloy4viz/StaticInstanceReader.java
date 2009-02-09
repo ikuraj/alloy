@@ -180,7 +180,7 @@ public final class StaticInstanceReader {
 
    /** Construct an AlloySet or AlloyRelation corresponding to the given expression. */
    private void setOrRel(A4Solution sol, String label, Expr expr, boolean isPrivate, boolean isMeta) throws Err {
-      for(List<PrimSig> ps:expr.type.fold()) {
+      for(List<PrimSig> ps:expr.type().fold()) {
          if (ps.size()==1) {
             PrimSig t = ps.get(0);
             AlloySet set = makeSet(label, isPrivate, isMeta, sig(t));
@@ -239,7 +239,7 @@ public final class StaticInstanceReader {
          sigMETA(Sig.UNIV);
          for(Sig s:sol.getAllReachableSigs()) if (s instanceof SubsetSig) sigMETA((SubsetSig)s);
          for(Sig s:sol.getAllReachableSigs()) for(Field f:s.getFields()) {
-            for(List<PrimSig> ps:f.type.fold()) {
+            for(List<PrimSig> ps:f.type().fold()) {
                List<AlloyType> types = new ArrayList<AlloyType>(ps.size());
                AlloyAtom[] tuple = new AlloyAtom[ps.size()];
                for(int i=0; i<ps.size(); i++) {

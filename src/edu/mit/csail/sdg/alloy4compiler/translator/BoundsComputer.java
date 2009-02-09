@@ -276,7 +276,7 @@ final class BoundsComputer {
                     continue;
                  }
               }
-              Type t = isOne ? Sig.UNIV.type.join(f.type) : f.type;
+              Type t = isOne ? Sig.UNIV.type().join(f.type()) : f.type();
               TupleSet ub = factory.noneOf(t.arity());
               for(List<PrimSig> p:t.fold()) {
                  TupleSet upper=null;

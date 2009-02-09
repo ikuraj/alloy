@@ -34,7 +34,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprHasName;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
-import edu.mit.csail.sdg.alloy4compiler.parser.Module;
+import edu.mit.csail.sdg.alloy4compiler.ast.Module;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
@@ -161,7 +161,7 @@ public final class SimpleCLI {
                     for(Sig x:m.getAllSigs()) {
                         sb.append("\nSig ").append(x.label).append(" at position ").append(x.pos).append("\n");
                         for(Decl d:x.getFieldDecls()) for(ExprHasName f:d.names) {
-                            sb.append("\nField ").append(f.label).append(" with type ").append(f.type).append("\n");
+                            sb.append("\nField ").append(f.label).append(" with type ").append(f.type()).append("\n");
                             d.expr.toString(sb, 2);
                         }
                         rep.flush();

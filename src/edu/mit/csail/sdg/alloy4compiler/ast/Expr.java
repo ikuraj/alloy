@@ -49,7 +49,10 @@ public abstract class Expr extends Browsable {
    public final Pos closingBracket;
 
    /** The type for this node; EMPTY if it is not well-typed. */
-   public final Type type;
+   final Type type;
+
+   /** Return the type for this node; EMPTY if it is not well-typed. */
+   public final Type type() { return type; }
 
    /** The list of errors on this node; nonempty iff this.type==EMPTY */
    public final JoinableList<Err> errors;

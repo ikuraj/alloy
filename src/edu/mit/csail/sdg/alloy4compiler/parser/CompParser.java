@@ -17991,7 +17991,7 @@ final class CompParser extends java_cup_11a.runtime.lr_parser {
 
 
 
-  public Module alloymodule=null;
+  public CompModule alloymodule=null;
 
   @Override public Symbol parse() throws java.lang.Exception {
      int act; // current action code
@@ -18183,14 +18183,14 @@ final class CompParser extends java_cup_11a.runtime.lr_parser {
     }
   }
 
-  static Module alloy_parseStream (List<Object> seenDollar,
-  Map<String,String> loaded, Map<String,String> fc, Module root,
+  static CompModule alloy_parseStream (List<Object> seenDollar,
+  Map<String,String> loaded, Map<String,String> fc, CompModule root,
   int lineOffset, String filename, String prefix, int initialResolutionMode) throws Err, FileNotFoundException, IOException {
     Reader isr=null;
     try {
         if (root==null && prefix.length()!=0) throw new ErrorFatal("Internal error (parse subfile with root==null)");
         if (root!=null && prefix.length()==0) throw new ErrorFatal("Internal error (parse topfile with root!=null)");
-        Module u = new Module(root, filename, prefix);
+        CompModule u = new CompModule(root, filename, prefix);
         u.resolution = initialResolutionMode;
         String content = fc!=null ? fc.get(filename) : null;
         if (content==null && loaded!=null) content = loaded.get(filename);
@@ -20722,7 +20722,7 @@ class CUP$CompParser$actions {
             {
               Decl RESULT =null;
         Pos k = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
-         if (1==1) throw Module.hint(k, "exh");
+         if (1==1) throw CompModule.hint(k, "exh");
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Declb",11, RESULT);
             }
           return CUP$CompParser$result;
@@ -20732,7 +20732,7 @@ class CUP$CompParser$actions {
             {
               Decl RESULT =null;
         Pos k = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
-         if (1==1) throw Module.hint(k, "part");
+         if (1==1) throw CompModule.hint(k, "part");
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Declb",11, RESULT);
             }
           return CUP$CompParser$result;
@@ -20785,7 +20785,7 @@ class CUP$CompParser$actions {
             {
               Decl RESULT =null;
         Pos k = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
-         if (1==1) throw Module.hint(k, "exh");
+         if (1==1) throw CompModule.hint(k, "exh");
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Declb",11, RESULT);
             }
           return CUP$CompParser$result;
@@ -20795,7 +20795,7 @@ class CUP$CompParser$actions {
             {
               Decl RESULT =null;
         Pos k = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
-         if (1==1) throw Module.hint(k, "part");
+         if (1==1) throw CompModule.hint(k, "part");
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Declb",11, RESULT);
             }
           return CUP$CompParser$result;
@@ -20867,7 +20867,7 @@ class CUP$CompParser$actions {
             {
               Decl RESULT =null;
         Pos k = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
-         if (1==1) throw Module.hint(k, "exh");
+         if (1==1) throw CompModule.hint(k, "exh");
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Decla",10, RESULT);
             }
           return CUP$CompParser$result;
@@ -20877,7 +20877,7 @@ class CUP$CompParser$actions {
             {
               Decl RESULT =null;
         Pos k = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
-         if (1==1) throw Module.hint(k, "part");
+         if (1==1) throw CompModule.hint(k, "part");
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Decla",10, RESULT);
             }
           return CUP$CompParser$result;
@@ -20935,7 +20935,7 @@ class CUP$CompParser$actions {
             {
               Decl RESULT =null;
         Pos k = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
-         if (1==1) throw Module.hint(k, "exh");
+         if (1==1) throw CompModule.hint(k, "exh");
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Decla",10, RESULT);
             }
           return CUP$CompParser$result;
@@ -20945,7 +20945,7 @@ class CUP$CompParser$actions {
             {
               Decl RESULT =null;
         Pos k = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
-         if (1==1) throw Module.hint(k, "part");
+         if (1==1) throw CompModule.hint(k, "part");
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Decla",10, RESULT);
             }
           return CUP$CompParser$result;

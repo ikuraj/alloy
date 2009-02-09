@@ -33,7 +33,8 @@ import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
-import edu.mit.csail.sdg.alloy4compiler.parser.Module.Open;
+import edu.mit.csail.sdg.alloy4compiler.ast.Module;
+import edu.mit.csail.sdg.alloy4compiler.parser.CompModule.Open;
 
 /** This class provides convenience methods for calling the parser and the compiler. */
 
@@ -101,8 +102,8 @@ public final class CompUtil {
      * @param prefix - the prefix for the file we are about to parse
      * @param thispath - the set of filenames involved in the current chain_of_file_opening
      */
-    private static Module parseRecursively
-    (List<Object> seenDollar, Map<String,String> loaded, Map<String,String> fc, Pos pos, String filename, Module root, String prefix, Set<String> thispath, int initialResolution)
+    private static CompModule parseRecursively
+    (List<Object> seenDollar, Map<String,String> loaded, Map<String,String> fc, Pos pos, String filename, CompModule root, String prefix, Set<String> thispath, int initialResolution)
     throws Err, FileNotFoundException, IOException {
         // Add the filename into a ArrayList, so that we can detect cycles in the module import graph
         // How? I'll argue that (filename appears > 1 time along a chain) <=> (infinite loop in the import graph)
@@ -116,7 +117,7 @@ public final class CompUtil {
            "Circular dependency in module import. The file \""+(new File(filename)).getName()+"\" is imported infinitely often.");
         thispath.add(filename);
         // No cycle detected so far. So now we parse the file.
-        Module u = CompParser.alloy_parseStream(seenDollar, loaded, fc, root, 0, filename, prefix, initialResolution);
+        CompModule u = CompParser.alloy_parseStream(seenDollar, loaded, fc, root, 0, filename, prefix, initialResolution);
         if (prefix.length()==0) root = u;
         // Here, we recursively open the included files
         for(Open x: u.getOpens()) {
@@ -137,7 +138,7 @@ public final class CompUtil {
                 }
             }
             loaded.put(cp, content);
-            Module y = parseRecursively(seenDollar, loaded, fc, x.pos, cp, root, (prefix.length()==0 ? x.alias : prefix+"/"+x.alias), thispath, initialResolution);
+            CompModule y = parseRecursively(seenDollar, loaded, fc, x.pos, cp, root, (prefix.length()==0 ? x.alias : prefix+"/"+x.alias), thispath, initialResolution);
             x.connect(y);
         }
         thispath.remove(filename); // Remove this file from the CYCLE DETECTION LIST.
@@ -153,7 +154,7 @@ public final class CompUtil {
         try {
             Map<String,String> fc = new LinkedHashMap<String,String>();
             fc.put("", content);
-            Module u=CompParser.alloy_parseStream(new ArrayList<Object>(), null, fc, null, 0, "", "", 1);
+            CompModule u=CompParser.alloy_parseStream(new ArrayList<Object>(), null, fc, null, 0, "", "", 1);
             return ConstList.make(u.getAllCommands());
         } catch(IOException ex) {
             throw new ErrorFatal("IOException occurred: "+ex.getMessage(), ex);
@@ -169,7 +170,7 @@ public final class CompUtil {
      */
     public static ConstList<Command> parseOneModule_fromFile(String filename) throws Err {
         try {
-            Module u = CompParser.alloy_parseStream(new ArrayList<Object>(), null, null, null, 0, filename, "", 1);
+           CompModule u = CompParser.alloy_parseStream(new ArrayList<Object>(), null, null, null, 0, filename, "", 1);
             return ConstList.make(u.getAllCommands());
         } catch(IOException ex) {
             throw new ErrorFatal("IOException occurred: "+ex.getMessage(), ex);
@@ -205,7 +206,7 @@ public final class CompUtil {
      * @throws Err if an error occurred
      * <p> And if loaded!=null, it will contain all the files needed for this parse, and furthermore, other entries will be deleted.
      */
-    public static Module parseEverything_fromFile (A4Reporter rep, Map<String,String> loaded, String filename) throws Err {
+    public static CompModule parseEverything_fromFile (A4Reporter rep, Map<String,String> loaded, String filename) throws Err {
         try {
             filename = Util.canon(filename);
             Set<String> thispath = new LinkedHashSet<String>();
@@ -213,9 +214,9 @@ public final class CompUtil {
             Map<String,String> fc = new LinkedHashMap<String,String>(loaded);
             loaded.clear();
             List<Object> seenDollar = new ArrayList<Object>();
-            Module root = parseRecursively(seenDollar, loaded, fc, new Pos(filename,1,1), filename, null, "", thispath, 1);
+            CompModule root = parseRecursively(seenDollar, loaded, fc, new Pos(filename,1,1), filename, null, "", thispath, 1);
             root.seenDollar = seenDollar.size()>0;
-            return Module.resolveAll(rep==null ? A4Reporter.NOP : rep, root);
+            return CompModule.resolveAll(rep==null ? A4Reporter.NOP : rep, root);
         } catch(FileNotFoundException ex) {
             throw new ErrorSyntax("File cannot be found.\n"+ex.getMessage(), ex);
         } catch(IOException ex) {
@@ -230,11 +231,11 @@ public final class CompUtil {
      * @param loaded - a cache of files that have been pre-fetched (can be null if there were no prefetching)
      * @param filename - the main module we are parsing
      * @param initialResolutionMode - use 1 for the historical behavior, and 2 for Alloy 4.2's new "universal implicit this" name resolution behavior
-     * @return the root Module which contains pointers to all submodules
+     * @return the root CompModule which contains pointers to all submodules
      * @throws Err if an error occurred
      * <p> And if loaded!=null, it will contain all the files needed for this parse, and furthermore, other entries will be deleted.
      */
-    public static Module parseEverything_fromFile (A4Reporter rep, Map<String,String> loaded, String filename, int initialResolutionMode) throws Err {
+    public static CompModule parseEverything_fromFile (A4Reporter rep, Map<String,String> loaded, String filename, int initialResolutionMode) throws Err {
         try {
             filename = Util.canon(filename);
             Set<String> thispath = new LinkedHashSet<String>();
@@ -242,9 +243,9 @@ public final class CompUtil {
             Map<String,String> fc = new LinkedHashMap<String,String>(loaded);
             loaded.clear();
             List<Object> seenDollar = new ArrayList<Object>();
-            Module root = parseRecursively(seenDollar, loaded, fc, new Pos(filename,1,1), filename, null, "", thispath, initialResolutionMode);
+            CompModule root = parseRecursively(seenDollar, loaded, fc, new Pos(filename,1,1), filename, null, "", thispath, initialResolutionMode);
             root.seenDollar = seenDollar.size()>0;
-            return Module.resolveAll(rep==null ? A4Reporter.NOP : rep, root);
+            return CompModule.resolveAll(rep==null ? A4Reporter.NOP : rep, root);
         } catch(FileNotFoundException ex) {
             throw new ErrorSyntax("File cannot be found.\n"+ex.getMessage(), ex);
         } catch(IOException ex) {

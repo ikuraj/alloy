@@ -43,7 +43,7 @@ public final class A4Tuple {
     /** Returns the type constructed by taking the product for each sig in this tuple. */
     public Type type() {
         Type ans = null;
-        for(int i=0; i<tuple.arity(); i++) if (ans==null) ans=sig(0).type; else ans=ans.product(sig(i).type);
+        for(int i=0; i<tuple.arity(); i++) if (ans==null) ans=sig(0).type(); else ans=ans.product(sig(i).type());
         return ans;
     }
 

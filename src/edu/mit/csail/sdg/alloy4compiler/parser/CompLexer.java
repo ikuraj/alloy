@@ -373,7 +373,7 @@ final class CompLexer implements java_cup_11a.runtime.Scanner {
  public String alloy_filename="";
  public int alloy_lineoffset=0; // If not zero, it is added to the current LINE NUMBER
  public List<Object> alloy_seenDollar;
- public Module alloy_module;
+ public CompModule alloy_module;
  private final Pos alloy_here(String txt) {
     return new Pos(alloy_filename,yycolumn+1,yyline+1+alloy_lineoffset,yycolumn+txt.length(),yyline+1);
  }

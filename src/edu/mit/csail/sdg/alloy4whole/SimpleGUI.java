@@ -85,7 +85,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
-import edu.mit.csail.sdg.alloy4compiler.parser.Module;
+import edu.mit.csail.sdg.alloy4compiler.ast.Module;
 import edu.mit.csail.sdg.alloy4compiler.sim.SimInstance;
 import edu.mit.csail.sdg.alloy4compiler.sim.SimTuple;
 import edu.mit.csail.sdg.alloy4compiler.sim.SimTupleset;
@@ -1604,8 +1604,8 @@ public final class SimpleGUI implements ComponentListener, Listener {
     }
 
     /** Converts an A4Solution into a SimInstance object. */
-    private static SimInstance convert(A4Solution ans) throws Err {
-       SimInstance ct = new SimInstance(ans.getBitwidth(), ans.getMaxSeq());
+    private static SimInstance convert(Module root, A4Solution ans) throws Err {
+       SimInstance ct = new SimInstance(root, ans.getBitwidth(), ans.getMaxSeq());
         for(Sig s: ans.getAllReachableSigs()) {
             if (!s.builtin) ct.init(s, convert(ans.eval(s)));
             for(Field f: s.getFields())  if (!f.defined)  ct.init(f, convert(ans.eval(f)));
@@ -1650,7 +1650,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
             try {
                 Expr e = CompUtil.parseOneExpression_fromString(root, str);
                 if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG)
-                   return convert(ans).visitThis(e).toString();
+                   return convert(root, ans).visitThis(e).toString();
                 else
                    return ans.eval(e).toString();
             } catch(HigherOrderDeclException ex) {

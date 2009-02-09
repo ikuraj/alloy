@@ -28,7 +28,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
-import edu.mit.csail.sdg.alloy4compiler.parser.Module;
+import edu.mit.csail.sdg.alloy4compiler.ast.Module;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionReader;
@@ -76,7 +76,7 @@ final class InternalTest {
         SafeList<ExprVar> skolems = new SafeList<ExprVar>(sol.getAllSkolems());
         check(skolems.size()==1);
         check(skolems.get(0).label, "$Deadlock_s");
-        check(skolems.get(0).type, state.type);
+        check(skolems.get(0).type(), state.type());
         //
         Sig state2 = new Sig.PrimSig("State");
         Field field2 = state2.addField("len", Sig.SIGINT);
@@ -84,7 +84,7 @@ final class InternalTest {
         SafeList<ExprVar> skolems2 = new SafeList<ExprVar>(sol.getAllSkolems());
         check(skolems2.size()==1);
         check(skolems2.get(0).label, "$Deadlock_s");
-        check(skolems2.get(0).type, state2.type);
+        check(skolems2.get(0).type(), state2.type());
         check(""+sol.eval(field2.cardinality()), "-2");
     }
 
@@ -108,7 +108,7 @@ final class InternalTest {
         SafeList<ExprVar> skolems = new SafeList<ExprVar>(sol.getAllSkolems());
         check(skolems.size()==1);
         check(skolems.get(0).label, "$x");
-        check(skolems.get(0).type, Sig.SEQIDX.type.product(activity.type));
+        check(skolems.get(0).type(), Sig.SEQIDX.type().product(activity.type()));
     }
 
     static void test3() throws Exception {

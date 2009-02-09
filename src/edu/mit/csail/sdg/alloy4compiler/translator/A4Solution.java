@@ -430,7 +430,7 @@ public final class A4Solution {
      */
     void addField(Field f, Expression expr) throws ErrorFatal {
        if (solved) throw new ErrorFatal("Cannot add an additional field since solve() has completed.");
-       if (expr.arity()!=f.type.arity()) throw new ErrorFatal("Field "+f+" must be associated with an "+f.type.arity()+"-ary relational value.");
+       if (expr.arity()!=f.type().arity()) throw new ErrorFatal("Field "+f+" must be associated with an "+f.type().arity()+"-ary relational value.");
        if (a2k.containsKey(f)) return;
        a2k.put(f, expr);
     }
@@ -568,7 +568,7 @@ public final class A4Solution {
     /** Return the A4TupleSet for the given field (if solution not yet solved, or unsatisfiable, or field not found, then return an empty tupleset) */
     public A4TupleSet eval(Field field) {
        try {
-          if (!solved || eval==null) return new A4TupleSet(factory.noneOf(field.type.arity()), this);
+          if (!solved || eval==null) return new A4TupleSet(factory.noneOf(field.type().arity()), this);
           A4TupleSet ans = evalCache.get(field);
           if (ans!=null) return ans;
           TupleSet ts = eval.evaluate((Expression) TranslateAlloyToKodkod.alloy2kodkod(this, field));
@@ -576,7 +576,7 @@ public final class A4Solution {
           evalCache.put(field, ans);
           return ans;
        } catch(Err er) {
-          return new A4TupleSet(factory.noneOf(field.type.arity()), this);
+          return new A4TupleSet(factory.noneOf(field.type().arity()), this);
        }
     }
 
@@ -587,7 +587,7 @@ public final class A4Solution {
            if (expr instanceof Field) return eval((Field)expr);
            if (!solved) throw new ErrorAPI("This solution is not yet solved, so eval() is not allowed.");
            if (eval==null) throw new ErrorAPI("This solution is unsatisfiable, so eval() is not allowed.");
-           if (expr.ambiguous && !expr.errors.isEmpty()) expr = expr.resolve(expr.type, null);
+           if (expr.ambiguous && !expr.errors.isEmpty()) expr = expr.resolve(expr.type(), null);
            if (!expr.errors.isEmpty()) throw expr.errors.pick();
            Object result = TranslateAlloyToKodkod.alloy2kodkod(this, expr);
            if (result instanceof IntExpression) return eval.evaluate((IntExpression)result);
@@ -728,7 +728,7 @@ public final class A4Solution {
             for(Map.Entry<Relation,Type> e: frame.rel2type.entrySet()) {
                Relation r = e.getKey(); if (!frame.eval.instance().contains(r)) continue;
                Type t = e.getValue();   if (t.arity() > r.arity()) continue; // Something is wrong; let's skip it
-               while (t.arity() < r.arity()) t = UNIV.type.product(t);
+               while (t.arity() < r.arity()) t = UNIV.type().product(t);
                String n = Util.tail(r.name());
                while(n.length()>0 && n.charAt(0)=='$') n = n.substring(1);
                skolems.add(n);
@@ -765,7 +765,7 @@ public final class A4Solution {
            i++;
            frame.atom2sig.put(t.atom(0), s);
            frame.atom2name.put(t.atom(0), x);
-           ExprVar v = ExprVar.make(null, x, s.type);
+           ExprVar v = ExprVar.make(null, x, s.type());
            TupleSet ts = t.universe().factory().range(t, t);
            Relation r = Relation.unary(x);
            frame.eval.instance().add(r, ts);

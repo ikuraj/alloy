@@ -62,6 +62,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprQt;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
+import edu.mit.csail.sdg.alloy4compiler.ast.Module;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
@@ -83,7 +84,7 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 
 /** Mutable; this class represents an Alloy module; equals() uses object identity. */
 
-public final class Module extends Browsable {
+public final class CompModule extends Browsable implements Module {
 
    // These fields are shared by all Modules that point to each other
 
@@ -96,11 +97,11 @@ public final class Module extends Browsable {
    /** Maps each parser-generated Sig to its original appended facts. */
    private final LinkedHashMap<Sig,Expr> old2appendedfacts;
 
-   /** Maps each Sig to the Module it belongs to. */
-   private final HashMap<Sig,Module> sig2module;
+   /** Maps each Sig to the CompModule it belongs to. */
+   private final HashMap<Sig,CompModule> sig2module;
 
-   /** The list of modules. */
-   private final List<Module> allModules;
+   /** The list of CompModules. */
+   private final List<CompModule> allModules;
 
    /** The list of sigs in the entire world whose scope shall be deemed "exact" */
    private final Set<Sig> exactSigs;
@@ -119,11 +120,14 @@ public final class Module extends Browsable {
    /** This field is used during a depth-first search of the dag-of-module(s) to mark which modules have been visited. */
    private Object visitedBy = null;
 
-   /** The world that this Module belongs to. */
-   private final Module world;
+   /** The world that this CompModule belongs to. */
+   private final CompModule world;
 
    /** The simplest path pointing to this Module ("" if this is the main module) */
    public final String path;
+
+   /** Return the simplest path pointing to this Module ("" if this is the main module) */
+   public String path() { return path; }
 
    /** 1: has seen the "module" line
     * 3: has seen the "sig/pred/fun/fact/assert/check/run" commands
@@ -178,7 +182,7 @@ public final class Module extends Browsable {
       private List<ErrorWarning> warns;
 
       /** The module that the current context is in. */
-      final Module rootmodule;
+      final CompModule rootmodule;
 
       /** Nonnull if we are typechecking a field declaration or a sig appended facts. */
       Sig rootsig = null;
@@ -209,12 +213,12 @@ public final class Module extends Browsable {
       }
 
       /** Construct a new Context with an empty lexical scope. */
-      Context(Module rootModule, List<ErrorWarning> warns) {
+      Context(CompModule rootModule, List<ErrorWarning> warns) {
          this(rootModule, warns, 20); // 20 is a reasonable threshold; deeper than this would likely be too big to solve anyway
       }
 
       /** Construct a new Context with an empty lexical scope. */
-      Context(Module rootModule, List<ErrorWarning> warns, int unrolls) {
+      Context(CompModule rootModule, List<ErrorWarning> warns, int unrolls) {
          this.rootmodule = rootModule;
          this.unrolls = unrolls;
          this.warns = warns;
@@ -224,7 +228,7 @@ public final class Module extends Browsable {
       public Expr resolve(final Pos pos, final String name) {
          if (name.indexOf('/') >= 0) {
             String n = name.startsWith("this/") ? name.substring(5) : name;
-            Module mod = rootmodule;
+            CompModule mod = rootmodule;
             while(true) {
                int i = n.indexOf('/');
                if (i<0) {
@@ -242,7 +246,7 @@ public final class Module extends Browsable {
          if (match==null) {
             boolean ambiguous = false;
             StringBuilder sb = new StringBuilder();
-            for(Module m: rootmodule.getAllNameableModules()) {
+            for(CompModule m: rootmodule.getAllNameableModules()) {
                Macro mac = m.macros.get(name);
                if (mac==null) continue;
                if (match!=null) ambiguous=true; else match=mac;
@@ -262,7 +266,7 @@ public final class Module extends Browsable {
          TempList<String> re = new TempList<String>();
          Expr ans = rootmodule.populate(ch, re, rootfield, rootsig, rootfunparam, rootfunbody, pos, name, th);
          if (ans!=null) return ans;
-         if (ch.size()==0) return new ExprBad(pos, name, Module.hint(pos, name)); else return ExprChoice.make(pos, ch.makeConst(), re.makeConst());
+         if (ch.size()==0) return new ExprBad(pos, name, hint(pos, name)); else return ExprChoice.make(pos, ch.makeConst(), re.makeConst());
       }
 
       Expr check(Expr x) throws Err {
@@ -276,7 +280,7 @@ public final class Module extends Browsable {
          if (f.count() > args.size()) return false;
          int i=0;
          for(ExprVar d: f.params()) {
-            Type param=d.type, arg=args.get(i).type;
+            Type param=d.type(), arg=args.get(i).type();
             i++;
             // The reason we don't directly compare "arg.arity()" with "param.arity()"
             // is because the arguments may not be fully resolved yet.
@@ -338,7 +342,7 @@ public final class Module extends Browsable {
          // If it's a macro invocation, instantiate it
          if (right instanceof Macro) return ((Macro)right).addArg(left).instantiate(this, warns);
          // check to see if it is the special builtin function "Int[]"
-         if (left.type.is_int && right.isSame(Sig.SIGINT)) return left.cast2sigint();
+         if (left.type().is_int && right.isSame(Sig.SIGINT)) return left.cast2sigint();
          // otherwise, process as regular join or as method call
          left = left.typecheck_as_set();
          if (!left.errors.isEmpty() || !(right instanceof ExprChoice)) return ExprBinary.Op.JOIN.make(x.pos, x.closingBracket, left, right);
@@ -353,7 +357,7 @@ public final class Module extends Browsable {
             // If it's a macro invocation, instantiate it
             if (right instanceof Macro) return ((Macro)right).addArg(left).instantiate(this, warns);
             // check to see if it is the special builtin function "Int[]"
-            if (left.type.is_int && right.isSame(Sig.SIGINT)) return left.cast2sigint();
+            if (left.type().is_int && right.isSame(Sig.SIGINT)) return left.cast2sigint();
             // otherwise, process as regular join or as method call
             left = left.typecheck_as_set();
             if (!left.errors.isEmpty() || !(right instanceof ExprChoice)) return x.op.make(x.pos, x.closingBracket, left, right);
@@ -365,8 +369,8 @@ public final class Module extends Browsable {
       /** {@inheritDoc} */
       @Override public Expr visit(ExprLet x) throws Err {
          Expr right = visitThis(x.expr);
-         right = right.resolve(right.type, warns);
-         ExprVar left = ExprVar.make(x.var.pos, x.var.label, right.type);
+         right = right.resolve(right.type(), warns);
+         ExprVar left = ExprVar.make(x.var.pos, x.var.label, right.type());
          put(left.label, left);
          Expr sub = visitThis(x.sub);
          remove(left.label);
@@ -374,7 +378,7 @@ public final class Module extends Browsable {
       }
 
       private boolean isOneOf(Expr x) {
-         if (x.mult!=1 || x.type.arity()!=1) return false;
+         if (x.mult!=1 || x.type().arity()!=1) return false;
          while (x instanceof ExprUnary && ((ExprUnary)x).op==ExprUnary.Op.NOOP) x=((ExprUnary)x).sub;
          return (x instanceof ExprUnary && ((ExprUnary)x).op==ExprUnary.Op.ONEOF);
       }
@@ -385,11 +389,11 @@ public final class Module extends Browsable {
          boolean isMetaSig=false, isMetaField=false;
          for(Decl d: x.decls) {
             Expr exp = visitThis(d.expr).resolve_as_set(warns);
-            if (exp.mult==0 && exp.type.arity()==1) exp = ExprUnary.Op.ONEOF.make(null, exp);
+            if (exp.mult==0 && exp.type().arity()==1) exp = ExprUnary.Op.ONEOF.make(null, exp);
             if (exp.errors.isEmpty()) {
-               if (exp.type.isSubtypeOf(rootmodule.metaSig().plus(rootmodule.metaField()).type)) {
-                  isMetaSig = exp.type.intersects(rootmodule.metaSig().type);
-                  isMetaField = exp.type.intersects(rootmodule.metaField().type);
+               if (exp.type().isSubtypeOf(rootmodule.metaSig().plus(rootmodule.metaField()).type())) {
+                  isMetaSig = exp.type().intersects(rootmodule.metaSig().type());
+                  isMetaField = exp.type().intersects(rootmodule.metaField().type());
                }
             }
             // Below is a special case to allow more fine-grained typechecking when we see "all x:field$" or "some x:field$"
@@ -401,7 +405,7 @@ public final class Module extends Browsable {
                warns = null;
                // Now duplicate the body for each possible Meta Atom binding
                Expr answer = null;
-               if (isMetaSig) for(PrimSig child: rootmodule.metaSig().children()) if (child.type.intersects(exp.type)) {
+               if (isMetaSig) for(PrimSig child: rootmodule.metaSig().children()) if (child.type().intersects(exp.type())) {
                   put(v.label, child);
                   Expr sub = visitThis(x.sub);
                   remove(v.label);
@@ -409,7 +413,7 @@ public final class Module extends Browsable {
                   else if (some) answer = child.in(exp).and(sub).or(answer);
                   else answer = child.in(exp).implies(sub).and(answer);
                }
-               if (isMetaField) for(PrimSig child: rootmodule.metaField().children()) if (child.type.intersects(exp.type)) {
+               if (isMetaField) for(PrimSig child: rootmodule.metaField().children()) if (child.type().intersects(exp.type())) {
                   put(v.label, child);
                   Expr sub = visitThis(x.sub);
                   remove(v.label);
@@ -417,9 +421,9 @@ public final class Module extends Browsable {
                   else if (some) answer = child.in(exp).and(sub).or(answer);
                   else answer = child.in(exp).implies(sub).and(answer);
                }
-               if (answer==null) answer = (compre ? Sig.NONE : (some ? ExprConstant.FALSE : ExprConstant.TRUE)); else answer = answer.resolve(answer.type, null);
+               if (answer==null) answer = (compre ? Sig.NONE : (some ? ExprConstant.FALSE : ExprConstant.TRUE)); else answer = answer.resolve(answer.type(), null);
                // Now, wrap the body in an ExprLet expression to prevent any more warnings by outer code
-               ExprVar combinedAnswer = ExprVar.make(Pos.UNKNOWN, "", answer.type);
+               ExprVar combinedAnswer = ExprVar.make(Pos.UNKNOWN, "", answer.type());
                Expr returnValue = ExprLet.make(Pos.UNKNOWN, combinedAnswer, answer, combinedAnswer);
                // Restore the "warns" array, then return the answer
                warns = saved;
@@ -427,7 +431,7 @@ public final class Module extends Browsable {
             }
             // Above is a special case to allow more fine-grained typechecking when we see "all x:field$" or "some x:field$"
             TempList<ExprVar> n = new TempList<ExprVar>(d.names.size());
-            for(ExprHasName v: d.names) n.add(ExprVar.make(v.pos, v.label, exp.type));
+            for(ExprHasName v: d.names) n.add(ExprVar.make(v.pos, v.label, exp.type()));
             Decl dd = new Decl(d.isPrivate, d.disjoint, d.disjoint2, n.makeConst(), exp);
             for(ExprHasName newname: dd.names) put(newname.label, newname);
             decls.add(dd);
@@ -483,10 +487,10 @@ public final class Module extends Browsable {
       final boolean isPrivate;
 
       /** The actual Module object that it points to; null until we resolve it. */
-      private Module realModule = null;
+      private CompModule realModule = null;
 
       /** Returns the actual Module object that it points to; null if we have not resolved it. */
-      public Module getRealModule() { return realModule; }
+      public CompModule getRealModule() { return realModule; }
 
       /** Constructs an Open object. */
       private Open(Pos pos, boolean isPrivate, String alias, ConstList<String> args, String filename) {
@@ -494,7 +498,7 @@ public final class Module extends Browsable {
       }
 
       /** Connect this OPEN statement to a module that it points to. */
-      void connect(Module realModule) throws Err {
+      void connect(CompModule realModule) throws Err {
          if (this.realModule!=null && this.realModule!=realModule) throw new ErrorFatal("Internal error (import mismatch)");
          this.realModule=realModule;
       }
@@ -502,20 +506,20 @@ public final class Module extends Browsable {
 
    //============================================================================================================================//
 
-   /** Constructs a new Module object
-    * @param world - the world that this Module belongs to (null if this is the beginning of a new World)
+   /** Constructs a new CompModule object
+    * @param world - the world that this CompModule belongs to (null if this is the beginning of a new World)
     * @param filename - the filename corresponding to this module
     * @param path - one of the path pointing to this module
     */
-   Module(Module world, String filename, String path) throws Err {
+   CompModule(CompModule world, String filename, String path) throws Err {
       if (world==null) {
          if (path.length()>0) throw new ErrorFatal("Root module misparsed by parser.");
          this.world        = this;
          new2old           = new LinkedHashMap<Sig, Sig>();
          old2fields        = new LinkedHashMap<Sig, List<Decl>>();
          old2appendedfacts = new LinkedHashMap<Sig, Expr>();
-         sig2module        = new HashMap<Sig, Module>();
-         allModules        = new ArrayList<Module>();
+         sig2module        = new HashMap<Sig, CompModule>();
+         allModules        = new ArrayList<CompModule>();
          exactSigs         = new LinkedHashSet<Sig>();
          globals           = new LinkedHashMap<String,Expr>();
          metaSig           = new PrimSig("this/sig$", Attr.ABSTRACT, Attr.META);
@@ -614,16 +618,16 @@ public final class Module extends Browsable {
       return new ErrorSyntax(pos, msg);
    }
 
-   /** Return the untypechecked body of the first func/pred in this module; return null if there has not been any fun/pred. */
-   Expr parseOneExpressionFromString(String input) throws Err, FileNotFoundException, IOException {
+   /** Parse one expression by starting fromt this module as the root module. */
+   public Expr parseOneExpressionFromString(String input) throws Err, FileNotFoundException, IOException {
       Map<String,String> fc = new LinkedHashMap<String,String>();
       fc.put("", "run {\n"+input+"}"); // We prepend the line "run{"
-      Module m = CompParser.alloy_parseStream(new ArrayList<Object>(), null, fc, null, -1, "", "", 1);
+      CompModule m = CompParser.alloy_parseStream(new ArrayList<Object>(), null, fc, null, -1, "", "", 1);
       if (m.funcs.size()==0) throw new ErrorSyntax("The input does not correspond to an Alloy expression.");
       Expr body = m.funcs.values().iterator().next().get(0).getBody();
       Context cx = new Context(this, null);
       body = cx.check(body);
-      body = body.resolve(body.type, null);
+      body = body.resolve(body.type(), null);
       if (body.errors.size()>0) throw body.errors.pick(); else return body;
    }
 
@@ -665,26 +669,33 @@ public final class Module extends Browsable {
    }
 
    /** Returns a list containing THIS MODULE and all modules reachable from this module. */
-   private void getHelper(int level, SafeList<Module> ans, Object key) {
+   private void getHelper(int level, SafeList<CompModule> ans, Object key) {
       if (visitedBy==key) return;
       visitedBy=key;
       ans.add(this);
       for(Open i: opens.values()) if (!(level>0 && i.isPrivate)) {
-         Module m = i.realModule;
+         CompModule m = i.realModule;
          if (m!=null) m.getHelper(level<0 ? (-1) : (level+1), ans, key);
       }
    }
 
    /** Return the list containing THIS MODULE and all modules reachable from this module. */
-   public SafeList<Module> getAllReachableModules() {
-      SafeList<Module> ans=new SafeList<Module>();
+   public SafeList<CompModule> getAllReachableModules() {
+      SafeList<CompModule> ans=new SafeList<CompModule>();
       getHelper(-1, ans, new Object()); // The object must be new, since we need it to be a unique key
       return ans.dup();
    }
 
+   /** Return the list of all relative filenames included from this MODULE. */
+   public List<String> getAllReachableModulesFilenames() {
+      Set<String> set = new LinkedHashSet<String>();
+      for(Open o: opens.values()) set.add(o.filename);
+      return new ArrayList<String>(set);
+   }
+
    /** Return the list containing THIS MODULE and all modules nameable from this module. */
-   private SafeList<Module> getAllNameableModules() {
-      SafeList<Module> ans=new SafeList<Module>();
+   private SafeList<CompModule> getAllNameableModules() {
+      SafeList<CompModule> ans=new SafeList<CompModule>();
       getHelper(0, ans, new Object()); // The object must be new, since we need it to be a unique key
       return ans.dup();
    }
@@ -697,15 +708,15 @@ public final class Module extends Browsable {
       x.add(SEQIDX);
       x.add(STRING);
       x.add(NONE);
-      for(Module m:getAllReachableModules()) x.addAll(m.sigs.values());
+      for(CompModule m:getAllReachableModules()) x.addAll(m.sigs.values());
       return x.makeConst();
    }
 
    /** Lookup non-fully-qualified Sig/Func/Assertion from the current module; it skips PARAMs. */
-   private List<Object> getRawNQS (Module start, final int r, String name) {
+   private List<Object> getRawNQS (CompModule start, final int r, String name) {
       // (r&1)!=0 => Sig,   (r&2) != 0 => assertion,   (r&4)!=0 => Func
       List<Object> ans=new ArrayList<Object>();
-      for(Module m:getAllNameableModules()) {
+      for(CompModule m:getAllNameableModules()) {
          if ((r&1)!=0) { Sig x=m.sigs.get(name); if (x!=null) if (m==start || x.isPrivate==null) ans.add(x); }
          if ((r&2)!=0) { Expr x=m.asserts.get(name); if (x!=null) ans.add(x); }
          if ((r&4)!=0) { ArrayList<Func> x=m.funcs.get(name); if (x!=null) for(Func y:x) if (m==start || y.isPrivate==null) ans.add(y); }
@@ -717,7 +728,7 @@ public final class Module extends Browsable {
    private List<Object> getRawQS (final int r, String name) {
       // (r&1)!=0 => Sig,   (r&2) != 0 => assertion,   (r&4)!=0 => Func
       List<Object> ans=new ArrayList<Object>();
-      Module u=this;
+      CompModule u=this;
       if (name.startsWith("this/")) name=name.substring(5);
       for(int level=0; ;level++) {
          int i=name.indexOf('/');
@@ -767,7 +778,7 @@ public final class Module extends Browsable {
    //============================================================================================================================//
 
    /** Returns a pointer to the root module in this world. */
-   public Module getRootModule() { return world; }
+   public CompModule getRootModule() { return world; }
 
    /** Returns the text of the "MODULE" line at the top of the file; "unknown" if the line has not be parsed from the file yet. */
    public String getModelName() { return moduleName; }
@@ -873,13 +884,13 @@ public final class Module extends Browsable {
    }
 
    /** Every param in every module will now point to a nonnull Sig. */
-   private static void resolveParams(A4Reporter rep, List<Module> modules) throws Err {
+   private static void resolveParams(A4Reporter rep, List<CompModule> modules) throws Err {
       while(true) {
          boolean chg=false;
          Open missing=null;
          String missingName="";
-         for(Module mod: modules) for(Open open: mod.opens.values()) {
-            Module sub = open.realModule;
+         for(CompModule mod: modules) for(Open open: mod.opens.values()) {
+            CompModule sub = open.realModule;
             if (open.args.size()!=sub.params.size())
                throw new ErrorSyntax(open.pos,
                      "You supplied "+open.args.size()+" arguments to the open statement, but the imported module requires "
@@ -905,7 +916,7 @@ public final class Module extends Browsable {
    }
 
    /** Modules with same filename and instantiating arguments will be merged. */
-   private static void resolveModules(A4Reporter rep, List<Module> modules) {
+   private static void resolveModules(A4Reporter rep, List<CompModule> modules) {
       // Before merging, the only pointers that go between Module objects are
       // (1) a module's "params" may point to a sig in another module
       // (2) a module's "imports" may point to another module
@@ -914,9 +925,9 @@ public final class Module extends Browsable {
       while(true) {
          boolean chg=false;
          for(int i=0; i<modules.size(); i++) {
-            Module a=modules.get(i);
+            CompModule a=modules.get(i);
             for(int j=i+1; j<modules.size(); j++) {
-               Module b=modules.get(j);
+               CompModule b=modules.get(j);
                if (!a.modulePos.filename.equals(b.modulePos.filename) || !a.params.equals(b.params)) continue;
                chg=true;
                rep.parse("MATCH FOUND ON "+a.modulePos.filename+"\n");
@@ -926,7 +937,7 @@ public final class Module extends Browsable {
                }
                modules.remove(j);
                j--;
-               for(Module c:modules) {
+               for(CompModule c:modules) {
                   for(Map.Entry<String,Sig> p:c.params.entrySet())
                      if (isin(p.getValue(), b.sigs)) p.setValue(a.sigs.get(base(p.getValue())));
                   for(Open p: c.opens.values())
@@ -988,11 +999,11 @@ public final class Module extends Browsable {
    }
 
    /** The given Sig will now point to a nonnull Sig. */
-   private static Sig resolveSig(Module res, Set<Object> topo, Sig oldS) throws Err {
+   private static Sig resolveSig(CompModule res, Set<Object> topo, Sig oldS) throws Err {
       if (res.new2old.containsKey(oldS)) return oldS;
       Sig realSig;
       final Pos pos = oldS.pos;
-      final Module u = res.sig2module.get(oldS);
+      final CompModule u = res.sig2module.get(oldS);
       final String name = base(oldS);
       final String fullname = (u.path.length()==0) ? ("this/"+name) : (u.path+"/"+name);
       if (!topo.add(oldS)) throw new ErrorType(pos, "Sig "+oldS+" is involved in a cyclic inheritance.");
@@ -1016,7 +1027,7 @@ public final class Module extends Browsable {
       }
       res.new2old.put(realSig, oldS);
       res.sig2module.put(realSig, u);
-      for(Module m: res.allModules) {
+      for(CompModule m: res.allModules) {
          for(Map.Entry<String,Sig> e: m.sigs.entrySet()) if (e.getValue()==oldS) e.setValue(realSig);
          for(Map.Entry<String,Sig> e: m.params.entrySet()) if (e.getValue()==oldS) e.setValue(realSig);
       }
@@ -1087,10 +1098,10 @@ public final class Module extends Browsable {
                Expr val = cx.check(d.expr).resolve_as_set(warns);
                if (!val.errors.isEmpty()) { err = true; errors = errors.make(val.errors); }
                for(ExprHasName n: d.names) {
-                  ExprVar v = ExprVar.make(n.span(), n.label, val.type);
+                  ExprVar v = ExprVar.make(n.span(), n.label, val.type());
                   cx.put(n.label, v);
                   tmpvars.add(v);
-                  rep.typecheck((f.isPred?"pred ":"fun ")+fullname+", Param "+n.label+": "+v.type+"\n");
+                  rep.typecheck((f.isPred?"pred ":"fun ")+fullname+", Param "+n.label+": "+v.type()+"\n");
                }
                tmpdecls.add(new Decl(d.isPrivate, d.disjoint, d.disjoint2, tmpvars.makeConst(), val));
             }
@@ -1103,7 +1114,7 @@ public final class Module extends Browsable {
             try {
                f = new Func(f.pos, f.isPrivate, fullname, tmpdecls.makeConst(), ret, f.getBody());
                list.set(listi, f);
-               rep.typecheck("" + f + ", RETURN: " + f.returnDecl.type + "\n");
+               rep.typecheck("" + f + ", RETURN: " + f.returnDecl.type() + "\n");
             } catch(Err ex) { errors = errors.make(ex); }
          }
       }
@@ -1121,17 +1132,17 @@ public final class Module extends Browsable {
          errors = errors.make(newBody.errors);
          if (!newBody.errors.isEmpty()) continue;
          try { ff.setBody(newBody); } catch(Err er) {errors = errors.make(er); continue;}
-         if (warns!=null && ff.returnDecl.type.hasTuple() && newBody.type.hasTuple() && !newBody.type.intersects(ff.returnDecl.type))
+         if (warns!=null && ff.returnDecl.type().hasTuple() && newBody.type().hasTuple() && !newBody.type().intersects(ff.returnDecl.type()))
             warns.add(new ErrorWarning(newBody.span(),
                   "Function return value is disjoint from its return type.\n"
-                  +"Function body has type "+newBody.type + "\n" + "but the return type is "+ff.returnDecl.type));
+                  +"Function body has type "+newBody.type() + "\n" + "but the return type is "+ff.returnDecl.type()));
          //else if (warns!=null && Version.experimental && !newBody.type.isSubtypeOf(ff.returnDecl.type))
          //  warns.add(new ErrorWarning(newBody.span(),
          //      "Function may return a tuple not in its declared return type.\n"
          //      +"The Alloy Analyzer's analysis may be unsound\n"
          //      +"if it returns a tuple outside its declared return type.\n"
          //      +"Function body has type "+newBody.type+"\nbut the return type is "+ff.returnDecl.type));
-         rep.typecheck(ff.toString()+", BODY:"+newBody.type+"\n");
+         rep.typecheck(ff.toString()+", BODY:"+newBody.type()+"\n");
       }
       return errors;
    }
@@ -1166,7 +1177,7 @@ public final class Module extends Browsable {
          expr = cx.check(expr).resolve_as_formula(warns);
          if (expr.errors.isEmpty()) {
             e.setValue(expr);
-            rep.typecheck("Assertion " + e.getKey() + ": " + expr.type+"\n");
+            rep.typecheck("Assertion " + e.getKey() + ": " + expr.type()+"\n");
          } else errors = errors.make(expr.errors);
       }
       return errors;
@@ -1191,7 +1202,7 @@ public final class Module extends Browsable {
    }
 
    /** Each fact name now points to a typechecked Expr rather than an untypechecked Exp; we'll also add the sig appended facts. */
-   private JoinableList<Err> resolveFacts(Module res, A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
+   private JoinableList<Err> resolveFacts(CompModule res, A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
       Context cx = new Context(this, warns);
       for(int i=0; i<facts.size(); i++) {
          String name = facts.get(i).a;
@@ -1199,7 +1210,7 @@ public final class Module extends Browsable {
          expr = cx.check(expr).resolve_as_formula(warns);
          if (expr.errors.isEmpty()) {
             facts.set(i, new Pair<String,Expr>(name, expr));
-            rep.typecheck("Fact " + name + ": " + expr.type+"\n");
+            rep.typecheck("Fact " + name + ": " + expr.type()+"\n");
          } else errors = errors.make(expr.errors);
       }
       for(Sig s: sigs.values()) {
@@ -1216,7 +1227,7 @@ public final class Module extends Browsable {
             formula = cx.check(f).resolve_as_formula(warns);
          }
          cx.remove("this");
-         if (formula.errors.size()>0) errors = errors.make(formula.errors); else { s.addFact(formula);  rep.typecheck("Fact "+s+"$fact: " + formula.type+"\n");  }
+         if (formula.errors.size()>0) errors = errors.make(formula.errors); else { s.addFact(formula);  rep.typecheck("Fact "+s+"$fact: " + formula.type()+"\n");  }
       }
       return errors;
    }
@@ -1229,7 +1240,7 @@ public final class Module extends Browsable {
    /** Return the conjunction of all facts in this module and all reachable submodules (not including field constraints, nor including sig appended constraints) */
    public Expr getAllReachableFacts() {
       ArrayList<Expr> facts = new ArrayList<Expr>();
-      for(Module m: world.getAllReachableModules()) for(Pair<String,Expr> f: m.facts) facts.add(f.b);
+      for(CompModule m: world.getAllReachableModules()) for(Pair<String,Expr> f: m.facts) facts.add(f.b);
       if (facts.size()==0) return ExprConstant.TRUE; else return ExprList.make(null, null, ExprList.Op.AND, facts);
    }
 
@@ -1316,7 +1327,7 @@ public final class Module extends Browsable {
 
    //============================================================================================================================//
 
-   private static void resolveFieldDecl(Module res, final A4Reporter rep, final Sig s, final List<ErrorWarning> warns, boolean defined) throws Err {
+   private static void resolveFieldDecl(CompModule res, final A4Reporter rep, final Sig s, final List<ErrorWarning> warns, boolean defined) throws Err {
       // When typechecking each field:
       // * it is allowed to refer to earlier fields in the same SIG or in any visible ancestor sig
       // * it is allowed to refer to visible sigs
@@ -1325,7 +1336,7 @@ public final class Module extends Browsable {
       // then B/SIGX's fields cannot refer to A/SIGY, nor any fields in A/SIGY)
       final List<Decl> oldDecls = res.old2fields.get(res.new2old.get(s));
       if (oldDecls==null) return;
-      final Module m = res.sig2module.get(s);
+      final CompModule m = res.sig2module.get(s);
       final Context cx = new Context(m, warns);
       final ExprHasName dup = Decl.findDuplicateName(oldDecls);
       if (dup!=null) throw new ErrorSyntax(dup.span(), "sig \""+s+"\" cannot have 2 fields named \""+dup.label+"\"");
@@ -1340,24 +1351,24 @@ public final class Module extends Browsable {
          String[] names = new String[d.names.size()];  for(int i=0; i<names.length; i++) names[i] = d.names.get(i).label;
          Field[] fields = s.addTrickyField(d.span(), d.isPrivate, d.disjoint, d.disjoint2, null, names, bound);
          for(Field f: fields) {
-            rep.typecheck("Sig "+s+", Field "+f.label+": "+f.type+"\n");
+            rep.typecheck("Sig "+s+", Field "+f.label+": "+f.type()+"\n");
          }
       }
    }
 
    //============================================================================================================================//
 
-   private static void rejectNameClash(final List<Module> modules) throws Err {
+   private static void rejectNameClash(final List<CompModule> modules) throws Err {
       // The Alloy language forbids two overlapping sigs from having fields with the same name.
       // In other words: if 2 fields have the same name, then their type's first column must not intersect.
       final Map<String,List<Field>> fieldname2fields=new LinkedHashMap<String,List<Field>>();
-      for(Module m: modules) {
+      for(CompModule m: modules) {
          for(Sig sig: m.sigs.values()) {
             for(Field field: sig.getFields()) {
                List<Field> peers=fieldname2fields.get(field.label);
                if (peers==null) { peers=new ArrayList<Field>(); fieldname2fields.put(field.label, peers); }
                for(Field field2: peers)
-                  if (field.type.firstColumnOverlaps(field2.type))
+                  if (field.type().firstColumnOverlaps(field2.type()))
                      throw new ErrorType(field.pos,
                            "Two overlapping signatures cannot have\n" + "two fields with the same name \""+field.label
                            +"\":\n\n1) one is in sig \""+field.sig+"\"\n"+field.pos
@@ -1370,14 +1381,14 @@ public final class Module extends Browsable {
 
    //============================================================================================================================//
 
-   private static void resolveMeta(final Module root) throws Err {
+   private static void resolveMeta(final CompModule root) throws Err {
       // Now, add the meta sigs and fields if needed
       Map<Sig,PrimSig> sig2meta = new LinkedHashMap<Sig,PrimSig>();
       Map<Field,PrimSig> field2meta = new LinkedHashMap<Field,PrimSig>();
       boolean hasMetaSig = false, hasMetaField = false;
       root.new2old.put(root.metaSig, root.metaSig);     root.sigs.put(base(root.metaSig), root.metaSig);
       root.new2old.put(root.metaField, root.metaField); root.sigs.put(base(root.metaField), root.metaField);
-      for(Module m: root.allModules) for(Sig s: new ArrayList<Sig>(m.sigs.values())) if (m!=root || (s!=root.metaSig && s!=root.metaField)) {
+      for(CompModule m: root.allModules) for(Sig s: new ArrayList<Sig>(m.sigs.values())) if (m!=root || (s!=root.metaSig && s!=root.metaField)) {
          PrimSig ka = new PrimSig(s.label+"$", root.metaSig, Attr.ONE, PRIVATE.makenull(s.isPrivate), Attr.META);
          sig2meta.put(s, ka);
          ka.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "value", s);
@@ -1426,12 +1437,12 @@ public final class Module extends Browsable {
    //============================================================================================================================//
 
    /** This method resolves the entire world; NOTE: if it throws an exception, it may leave the world in an inconsistent state! */
-   static Module resolveAll(final A4Reporter rep, final Module root) throws Err {
+   static CompModule resolveAll(final A4Reporter rep, final CompModule root) throws Err {
       final List<ErrorWarning> warns = new ArrayList<ErrorWarning>();
-      for(Module m: root.getAllReachableModules()) root.allModules.add(m);
+      for(CompModule m: root.getAllReachableModules()) root.allModules.add(m);
       resolveParams(rep, root.allModules);
       resolveModules(rep, root.allModules);
-      for(Module m: root.allModules) for(Sig s: m.sigs.values()) root.sig2module.put(s, m);
+      for(CompModule m: root.allModules) for(Sig s: m.sigs.values()) root.sig2module.put(s, m);
       // Resolves SigAST -> Sig, and topologically sort the sigs into the "sorted" array
       root.new2old.put(UNIV,UNIV);
       root.new2old.put(SIGINT,SIGINT);
@@ -1439,12 +1450,12 @@ public final class Module extends Browsable {
       root.new2old.put(STRING,STRING);
       root.new2old.put(NONE,NONE);
       HashSet<Object> topo = new HashSet<Object>();
-      for(Module m: root.allModules) for(Sig s: m.sigs.values()) resolveSig(root, topo, s);
+      for(CompModule m: root.allModules) for(Sig s: m.sigs.values()) resolveSig(root, topo, s);
       // Add the non-defined fields to the sigs in topologically sorted order (since fields in subsigs are allowed to refer to parent's fields)
       for(Sig oldS: root.new2old.keySet()) resolveFieldDecl(root, rep, oldS, warns, false);
       // Typecheck the function declarations
       JoinableList<Err> errors = new JoinableList<Err>();
-      for(Module x: root.allModules) errors = x.resolveFuncDecls(rep, errors, warns);
+      for(CompModule x: root.allModules) errors = x.resolveFuncDecls(rep, errors, warns);
       if (!errors.isEmpty()) throw errors.pick();
       // Typecheck the defined fields
       for(Sig oldS: root.new2old.keySet()) resolveFieldDecl(root, rep, oldS, warns, true);
@@ -1452,7 +1463,7 @@ public final class Module extends Browsable {
       // Reject name clash
       rejectNameClash(root.allModules);
       // Typecheck the function bodies, assertions, and facts (which can refer to function declarations)
-      for(Module x: root.allModules) {
+      for(CompModule x: root.allModules) {
          errors = x.resolveFuncBody(rep, errors, warns);
          errors = x.resolveAssertions(rep, errors, warns);
          errors = x.resolveFacts(root, rep, errors, warns);
@@ -1503,7 +1514,7 @@ public final class Module extends Browsable {
             Func f = (Func)x;
             int fn = f.count();
             int penalty = 0;
-            if (resolution==1 && fn>0 && rootsig!=null && THIS!=null && THIS.type.hasArity(1) && f.get(0).type.intersects(THIS.type)) {
+            if (resolution==1 && fn>0 && rootsig!=null && THIS!=null && THIS.type().hasArity(1) && f.get(0).type().intersects(THIS.type())) {
                // If we're inside a sig, and there is a unary variable bound to "this",
                // we should consider it as a possible FIRST ARGUMENT of a fun/pred call
                ConstList<Expr> t = Util.asList(THIS);
@@ -1514,7 +1525,7 @@ public final class Module extends Browsable {
                ch.add(fn==0 ? ExprCall.make(pos, null, f, null, penalty) : ExprBadCall.make(pos, null, f, null, penalty));
                re.add((f.isPred?"pred ":"fun ")+f.label);
             }
-            if (resolution==2 && f!=rootfunbody && THIS!=null && fullname.charAt(0)!='@' && fn>0 && f.get(0).type.intersects(THIS.type)) {
+            if (resolution==2 && f!=rootfunbody && THIS!=null && fullname.charAt(0)!='@' && fn>0 && f.get(0).type().intersects(THIS.type())) {
                // If there is some value bound to "this", we should consider it as a possible FIRST ARGUMENT of a fun/pred call
                ConstList<Expr> t = Util.asList(THIS);
                ch.add(fn==1 ? ExprCall.make(pos, null, f, t, 0) : ExprBadCall.make(pos, null, f, t, 0));
@@ -1536,7 +1547,7 @@ public final class Module extends Browsable {
       // (1) Cannot call
       // (2) But can refer to anything else visible.
       // All else: we can call, and can refer to anything visible.
-      for(Module m: getAllNameableModules())
+      for(CompModule m: getAllNameableModules())
          for(Sig s: m.sigs.values()) if (m==this || s.isPrivate==null)
             for(Field f: s.getFields()) if (f.isMeta==null && (m==this || f.isPrivate==null) && f.label.equals(name))
                if (resolution==1) {
@@ -1550,7 +1561,7 @@ public final class Module extends Browsable {
                   if (x!=null) { ch.add(x); re.add("field "+f.sig.label+" <: "+f.label); }
                } else if (rootfield==null || rootsig.isSameOrDescendentOf(f.sig)) {
                   Expr x0 = ExprUnary.Op.NOOP.make(pos, f, null, 0);
-                  if (resolution==2 && THIS!=null && fullname.charAt(0)!='@' && f.type.firstColumnOverlaps(THIS.type)) {
+                  if (resolution==2 && THIS!=null && fullname.charAt(0)!='@' && f.type().firstColumnOverlaps(THIS.type())) {
                      ch.add(THIS.join(x0));
                      re.add("field "+f.sig.label+" <: this."+f.label);
                      if (rootsig!=null) continue;
