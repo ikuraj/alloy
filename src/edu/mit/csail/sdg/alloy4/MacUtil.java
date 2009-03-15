@@ -67,7 +67,7 @@ public final class MacUtil {
             try {
                if (SwingUtilities.isEventDispatchThread()) quit.run(); else SwingUtilities.invokeAndWait(quit);
             } catch (Throwable e) {
-               // Nothing we can do; we're already trying to quit!  
+               // Nothing we can do; we're already trying to quit!
             }
             arg.setHandled(false);
          }
