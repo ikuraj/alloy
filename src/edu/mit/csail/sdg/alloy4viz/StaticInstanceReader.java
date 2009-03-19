@@ -168,13 +168,13 @@ public final class StaticInstanceReader {
       Expr sum=Sig.NONE;
       for(PrimSig c:s.children()) { sum=sum.plus(c); atoms(sol, c); }
       A4TupleSet ts = (A4TupleSet) (sol.eval(s.minus(sum))); // This ensures that atoms will be associated with the most specific sig
-      int i=0;
       for(A4Tuple z: ts) {
          String atom = z.atom(0);
+         int i, dollar = atom.lastIndexOf('$');
+         try { i = Integer.parseInt(dollar>=0 ? atom.substring(dollar+1) : atom); } catch(NumberFormatException ex) { i = Integer.MAX_VALUE; }
          AlloyAtom at = new AlloyAtom(sig(s), ts.size()==1 ? Integer.MAX_VALUE : i, atom);
          atom2sets.put(at, new LinkedHashSet<AlloySet>());
          string2atom.put(atom, at);
-         i++;
       }
    }
 

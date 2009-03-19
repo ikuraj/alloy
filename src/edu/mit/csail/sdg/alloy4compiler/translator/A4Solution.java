@@ -319,7 +319,7 @@ public final class A4Solution {
              if (e.getKey() instanceof Sig || e.getKey() instanceof Field)
                 a2k.put(e.getKey(), e.getValue());
            UniqueNameGenerator un = new UniqueNameGenerator();
-           rename(this, null, un);
+           rename(this, null, null, un);
            a2k = ConstMap.make(a2k);
         } else {
            skolems = old.skolems;
@@ -719,8 +719,37 @@ public final class A4Solution {
 
     //===================================================================================================//
 
-    /** Helper method that chooses a name for each atom based on its most specific sig; (external caller should call this method with s==null) */
-    private static void rename (A4Solution frame, PrimSig s, UniqueNameGenerator un) throws Err {
+    /** Helper method to determine if a given binary relation is a total order over a given unary relation. */
+    private static List<Tuple> isOrder(TupleSet b, TupleSet u) {
+       // Size check
+       final int n = u.size();
+       final List<Tuple> list = new ArrayList<Tuple>(n);
+       if (b.size() == 0 && n <= 1) return list;
+       if (b.size() != n-1) return null;
+       // Find the starting element
+       Tuple head = null;
+       TupleSet right = b.project(1);
+       for(Tuple x: u) if (!right.contains(x)) {head = x; break;}
+       if (head==null) return null;
+       final TupleFactory f = head.universe().factory();
+       // Form the list
+       list.add(head);
+       while(true) {
+          // Find head.next
+          Tuple headnext = null;
+          for(Tuple x: b) if (x.atom(0)==head.atom(0)) { headnext = f.tuple(x.atom(1)); break; }
+          // If we've reached the end of the chain, and indeed we've formed exactly n elements (and all are in u), we're done
+          if (headnext==null) return list.size()==n ? list : null;
+          // If we've accumulated more than n elements, or if we reached an element not in u, then we declare failure
+          if (list.size()==n || !u.contains(headnext)) return null;
+          // Move on to the next step
+          head = headnext;
+          list.add(head);
+       }
+    }
+
+    /** Helper method that chooses a name for each atom based on its most specific sig; (external caller should call this method with s==null and nexts==null) */
+    private static void rename (A4Solution frame, PrimSig s, Map<Sig,List<Tuple>> nexts, UniqueNameGenerator un) throws Err {
         if (s==null) {
             for(ExprVar sk:frame.skolems) un.seen(sk.label);
             // Store up the skolems
@@ -735,11 +764,51 @@ public final class A4Solution {
                skolems.add(t);
                skolems.add(r);
             }
+            // Find all suitable "next" or "prev" relations
+            nexts = new LinkedHashMap<Sig,List<Tuple>>();
+            for(Sig sig:frame.sigs) for(Field f: sig.getFields()) if (f.label.compareToIgnoreCase("next")==0) {
+               List<List<PrimSig>> fold = f.type().fold();
+               if (fold.size()==1) {
+                  List<PrimSig> t = fold.get(0);
+                  if (t.size()==3 && t.get(0).isOne!=null && t.get(1)==t.get(2) && !nexts.containsKey(t.get(1))) {
+                     TupleSet set = frame.eval.evaluate(frame.a2k(t.get(1)));
+                     if (set.size()<=1) continue;
+                     TupleSet next = frame.eval.evaluate(frame.a2k(t.get(0)).join(frame.a2k(f)));
+                     List<Tuple> test = isOrder(next, set);
+                     if (test!=null) nexts.put(t.get(1), test);
+                  } else if (t.size()==2 && t.get(0)==t.get(1) && !nexts.containsKey(t.get(0))) {
+                     TupleSet set = frame.eval.evaluate(frame.a2k(t.get(0)));
+                     if (set.size()<=1) continue;
+                     TupleSet next = frame.eval.evaluate(frame.a2k(f));
+                     List<Tuple> test = isOrder(next, set);
+                     if (test!=null) nexts.put(t.get(1), test);
+                  }
+               }
+            }
+            for(Sig sig:frame.sigs) for(Field f: sig.getFields()) if (f.label.compareToIgnoreCase("prev")==0) {
+               List<List<PrimSig>> fold = f.type().fold();
+               if (fold.size()==1) {
+                  List<PrimSig> t = fold.get(0);
+                  if (t.size()==3 && t.get(0).isOne!=null && t.get(1)==t.get(2) && !nexts.containsKey(t.get(1))) {
+                     TupleSet set = frame.eval.evaluate(frame.a2k(t.get(1)));
+                     if (set.size()<=1) continue;
+                     TupleSet next = frame.eval.evaluate(frame.a2k(t.get(0)).join(frame.a2k(f)).transpose());
+                     List<Tuple> test = isOrder(next, set);
+                     if (test!=null) nexts.put(t.get(1), test);
+                  } else if (t.size()==2 && t.get(0)==t.get(1) && !nexts.containsKey(t.get(0))) {
+                     TupleSet set = frame.eval.evaluate(frame.a2k(t.get(0)));
+                     if (set.size()<=1) continue;
+                     TupleSet next = frame.eval.evaluate(frame.a2k(f).transpose());
+                     List<Tuple> test = isOrder(next, set);
+                     if (test!=null) nexts.put(t.get(1), test);
+                  }
+               }
+            }
             // Assign atom->name and atom->MostSignificantSig
             for(Tuple t:frame.eval.evaluate(Relation.INTS)) { frame.atom2sig.put(t.atom(0), SIGINT); }
             for(Tuple t:frame.eval.evaluate(KK_SEQIDX))     { frame.atom2sig.put(t.atom(0), SEQIDX); }
             for(Tuple t:frame.eval.evaluate(KK_STRING))     { frame.atom2sig.put(t.atom(0), STRING); }
-            for(Sig sig:frame.sigs) if (sig instanceof PrimSig && !sig.builtin && ((PrimSig)sig).isTopLevel()) rename(frame, (PrimSig)sig, un);
+            for(Sig sig:frame.sigs) if (sig instanceof PrimSig && !sig.builtin && ((PrimSig)sig).isTopLevel()) rename(frame, (PrimSig)sig, nexts, un);
             // These are redundant atoms that were not chosen to be in the final instance
             int unused=0;
             for(Tuple tuple:frame.eval.evaluate(Relation.UNIV)) {
@@ -756,10 +825,14 @@ public final class A4Solution {
             }
             return;
         }
-        for(PrimSig c: s.children()) rename(frame, c, un);
+        for(PrimSig c: s.children()) rename(frame, c, nexts, un);
         String signame = un.make(s.label.startsWith("this/") ? s.label.substring(5) : s.label);
+        List<Tuple> list = new ArrayList<Tuple>();
+        for(Tuple t: frame.eval.evaluate(frame.a2k(s))) list.add(t);
+        List<Tuple> order = nexts.get(s);
+        if (order!=null && order.size()==list.size() && order.containsAll(list)) { list=order; }
         int i = 0;
-        for(Tuple t: frame.eval.evaluate(frame.a2k(s))) {
+        for(Tuple t: list) {
            if (frame.atom2sig.containsKey(t.atom(0))) continue; // This means one of the subsig has already claimed this atom.
            String x = signame + "$" + i;
            i++;
@@ -789,7 +862,7 @@ public final class A4Solution {
            }
            for(Relation r: bounds.relations()) inst.add(r, bounds.lowerBound(r));
            eval = new Evaluator(inst, solver.options());
-           rename(this, null, new UniqueNameGenerator());
+           rename(this, null, null, new UniqueNameGenerator());
            solved();
            return this;
         }
@@ -890,7 +963,7 @@ public final class A4Solution {
         // If satisfiable, then add/rename the atoms and skolems
         if (inst!=null) {
            eval = new Evaluator(inst, solver.options());
-           rename(this, null, new UniqueNameGenerator());
+           rename(this, null, null, new UniqueNameGenerator());
         }
         // report the result
         solved();
