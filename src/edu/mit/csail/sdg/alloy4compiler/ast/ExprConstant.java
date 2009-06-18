@@ -157,7 +157,7 @@ public final class ExprConstant extends Expr {
     public int getDepth() { return 1; }
 
     /** {@inheritDoc} */
-    @Override public String getDescription() {
+    @Override public String getHTML() {
         switch(op) {
           case TRUE: return "<b>true</b>";
           case FALSE: return "<b>false</b>";

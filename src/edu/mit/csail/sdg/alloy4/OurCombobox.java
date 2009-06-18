@@ -41,10 +41,10 @@ public class OurCombobox extends JComboBox {
    /** This caches a preconstructed JLabel that is used for the rendering of each Combo value. */
    private static JLabel jlabel;
 
-   /** Subclass can override this method to provide the custom text for any given value (or "" if no text is needed) */
+   /** Subclass can override this method to provide the custom text for any given value (It should return "" if no text is needed) */
    public String do_getText(Object value) { return String.valueOf(value); }
 
-   /** Subclass can override this method to provide the custom icon for any given value (or null if no icon is needed) */
+   /** Subclass can override this method to provide the custom icon for any given value (It should return null if no icon is needed) */
    public Icon do_getIcon(Object value) { return null; }
 
    /** Subclass can override this method to react upon selection change. */
@@ -66,8 +66,8 @@ public class OurCombobox extends JComboBox {
    /** Constructs a new OurCombobox object.
     * @param addNull - whether we should prepend null onto the beginning of the list of allowed values
     * @param list - the list of allowed values
-    * @param width - the width to use (if width==0 && height==0, then we ignore this parameter)
-    * @param height - the height to use (if width==0 && height==0, then we ignore this parameter)
+    * @param width - the width to use (if width==0 and height==0, then we ignore this parameter)
+    * @param height - the height to use (if width==0 and height==0, then we ignore this parameter)
     * @param initialValue - if nonnull it is the initial value to choose in this combo box
     */
    public OurCombobox (boolean addNull, Object[] list, int width, int height, Object initialValue) {
@@ -83,13 +83,13 @@ public class OurCombobox extends JComboBox {
             return jlabel;
          }
       });
-      if (width>0 && height>0) { // Make some platform-specific adjustments which should make the combobox look nicer
-         if (Util.onWindows() && height>25) height = 25; // Otherwise, the height is too high on Windows
+      if (width != 0 || height != 0) { // Make some platform-specific adjustments which should make the combobox look nicer
+         if (Util.onWindows() && height > 25) height = 25; // Otherwise, the height is too big on Windows
          setPreferredSize(new Dimension(width, height));
          setMaximumSize(new Dimension(width, height));
          if (!Util.onWindows() && !Util.onMac()) setBorder(new EmptyBorder(4, 3, 4, 0));
       }
-      if (initialValue!=null) { setSelectedItem(initialValue); }
+      if (initialValue != null) { setSelectedItem(initialValue); }
       addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent e) { do_changed(getSelectedItem()); }
       });

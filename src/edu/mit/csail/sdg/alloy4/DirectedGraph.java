@@ -32,7 +32,7 @@ public final class DirectedGraph<N> {
    /** This substitutes for null nodes. This allows hasPath() method to use put() to both insert and test membership in one step. */
    private static final Object NULL = new Object();
 
-   /** This field maps each node X to a list of "neighbor nodes" that X can reach by following one or more directed edges. */
+   /** This field maps each node X to a list of "neighbor nodes" that X can reach by following directed edges zero or more times. */
    private final Map<Object,List<Object>> nodeToTargets = new IdentityHashMap<Object,List<Object>>();
 
    /** Constructs an empty graph. */
@@ -54,7 +54,7 @@ public final class DirectedGraph<N> {
       }
    }
 
-   /** Returns whether there is a directed path from start node to end node by following 0 or more directed edges (breath-first). */
+   /** Returns whether there is a directed path from start node to end node by following directed edges 0 or more times (breath-first). */
    public boolean hasPath (N start, N end) {
       if (start == end) return true;
       Object a = (start==null ? NULL : start);

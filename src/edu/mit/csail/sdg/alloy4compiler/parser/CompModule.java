@@ -547,7 +547,7 @@ public final class CompModule extends Browsable implements Module {
    @Override public final Pos span() { return modulePos; }
 
    /** {@inheritDoc} */
-   @Override public String getDescription() {
+   @Override public String getHTML() {
       StringBuilder sb = new StringBuilder("<b>module</b> ").append(path).append(" <i>");
       Util.encodeXML(sb, modulePos.filename);
       return sb.append("</i>").toString();

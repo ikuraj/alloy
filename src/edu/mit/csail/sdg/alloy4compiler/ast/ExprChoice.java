@@ -198,7 +198,7 @@ public final class ExprChoice extends Expr {
     }
 
     /** {@inheritDoc} */
-    @Override public String getDescription() { return "<b>error</b> (parser or typechecker failed)"; }
+    @Override public String getHTML() { return "<b>error</b> (parser or typechecker failed)"; }
 
     /** {@inheritDoc} */
     @Override public List<? extends Browsable> getSubnodes() { return new ArrayList<Browsable>(0); }

@@ -112,8 +112,8 @@ public final class ByteBuffer {
          int count = zip.deflate(output);
          if (count > 0) {
             ans = ans + count;
-            os.write(output, 0, count);
             if (ans < 0) throw new IOException("Data too large to be written to the output file.");
+            os.write(output, 0, count);
          }
       }
       return ans;

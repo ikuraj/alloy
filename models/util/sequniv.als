@@ -3,6 +3,12 @@ module util/sequniv
 open util/integer as ui
 
 /*
+ * NOTE: Do not include this module manually.
+ * Instead, use the "seq" keyword which will automatically
+ * import this module with the correct additional constraints as needed.
+ */
+
+/*
  * A sequence utility for modeling sequences as just a
  * relation as opposed to reifying them into sequence
  * atoms like the util/sequence module does.

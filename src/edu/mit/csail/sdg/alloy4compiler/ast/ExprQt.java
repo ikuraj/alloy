@@ -266,7 +266,7 @@ public final class ExprQt extends Expr {
    @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
    /** {@inheritDoc} */
-   @Override public String getDescription() {
+   @Override public String getHTML() {
        StringBuilder sb = new StringBuilder("<b>").append(op).append("</b> ");
        boolean first = true;
        for (Decl d: decls) for(ExprHasName v: d.names) { if (!first) sb.append(", "); sb.append(v.label); first=false; }

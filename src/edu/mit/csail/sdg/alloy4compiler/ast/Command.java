@@ -200,7 +200,7 @@ public final class Command extends Browsable {
     @Override public final Pos span() { return pos; }
 
     /** {@inheritDoc} */
-    @Override public String getDescription() { return (check?"<b>check</b> ":"<b>run</b> ") + label; }
+    @Override public String getHTML() { return (check?"<b>check</b> ":"<b>run</b> ") + label; }
 
     /** {@inheritDoc} */
     @Override public List<? extends Browsable> getSubnodes() { return formula==null ? (new ArrayList<Browsable>(0)) : Util.asList(formula); }

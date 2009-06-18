@@ -39,56 +39,56 @@ public abstract class Browsable {
    /** Returns a Pos object representing the entire span of this Expr and all its subexpressions. */
    public Pos span() { return pos(); }
 
-   /** Returns the description to show for this node. */
-   public abstract String getDescription();
+   /** Returns the description (as HTML) to show for this node. */
+   public abstract String getHTML();
 
    /** Returns a list of subnodes for this node. */
    public abstract List<? extends Browsable> getSubnodes();
 
-   /** Construct a Browsable node with the given description and the given single subnode. */
-   public static final Browsable make(final Pos pos, final Pos span, final String description, Browsable subnode) {
-      return make(pos, span, description, Util.asList(subnode));
+   /** Construct a Browsable node with the given HTML description and the given single subnode. */
+   public static final Browsable make(final Pos pos, final Pos span, final String html, Browsable subnode) {
+      return make(pos, span, html, Util.asList(subnode));
    }
 
-   /** Construct a Browsable node with the given description and the given single subnode. */
-   public static final Browsable make(final String description, Browsable subnode) {
-      return make(Pos.UNKNOWN, Pos.UNKNOWN, description, Util.asList(subnode));
+   /** Construct a Browsable node with the given HTML description and the given single subnode. */
+   public static final Browsable make(final String html, Browsable subnode) {
+      return make(Pos.UNKNOWN, Pos.UNKNOWN, html, Util.asList(subnode));
    }
 
-   /** Construct a Browsable node with the given description and the given 0 or more subnodes. */
-   public static final Browsable make(final String description, final List<? extends Browsable> subnodes) {
-      return make(Pos.UNKNOWN, Pos.UNKNOWN, description, subnodes);
+   /** Construct a Browsable node with the given HTML description and the given 0 or more subnodes. */
+   public static final Browsable make(final String html, final List<? extends Browsable> subnodes) {
+      return make(Pos.UNKNOWN, Pos.UNKNOWN, html, subnodes);
    }
 
-   /** Construct a Browsable node with the given description and the given 0 or more subnodes. */
-   public static final Browsable make(final Pos pos, final Pos span, final String description, final List<? extends Browsable> subnodes) {
+   /** Construct a Browsable node with the given HTML description and the given 0 or more subnodes. */
+   public static final Browsable make(final Pos pos, final Pos span, final String html, final List<? extends Browsable> subnodes) {
       final ConstList<? extends Browsable> constlist = ConstList.make(subnodes);
       return new Browsable() {
          @Override public Pos pos() { return pos; }
          @Override public Pos span() { return span; }
-         @Override public String getDescription() { return description; }
+         @Override public String getHTML() { return html; }
          @Override public List<? extends Browsable> getSubnodes() { return constlist; }
       };
    }
 
-   /** Display this object (and so objects) as a tree; if listener!=null, it will receive OurTree.Event.SELECT events. */
+   /** Display this node and its subnodes as a tree; if listener!=null, it will receive OurTree.Event.SELECT events when nodes are selected. */
    public final JFrame showAsTree(Listener listener) {
       final OurTree tree = new OurTree(12) {
          private static final long serialVersionUID = 0;
          private final boolean onWindows = Util.onWindows();
          {do_start();}
-         @Override public String convertValueToText(Object val,boolean selected,boolean expanded,boolean leaf,int row,boolean focus) {
-             String c = ">";
-             String x = (val instanceof Browsable) ? ((Browsable)val).getDescription() : String.valueOf(val);
-             if (onWindows) c = selected ? " style=\"color:#ffffff;\">" : " style=\"color:#000000;\">";
-             return "<html> <span" + c + x + "</span></html>";
+         @Override public String convertValueToText(Object val, boolean selected, boolean expanded, boolean leaf, int row, boolean focus) {
+            String c = ">";
+            String x = (val instanceof Browsable) ? ((Browsable)val).getHTML() : Util.encode(String.valueOf(val));
+            if (onWindows) c = selected ? " style=\"color:#ffffff;\">" : " style=\"color:#000000;\">";
+            return "<html><span" + c + x + "</span></html>";
          }
          @Override public List<?> do_ask(Object parent) {
             if (parent instanceof Browsable) return ((Browsable)parent).getSubnodes(); else return new ArrayList<Browsable>();
          }
          @Override public Object do_root() { return Browsable.this; }
       };
-      tree.setBorder(new EmptyBorder(3,3,3,3));
+      tree.setBorder(new EmptyBorder(3, 3, 3, 3));
       final JScrollPane scr = new JScrollPane(tree, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
       scr.addFocusListener(new FocusListener() {
          public void focusGained(FocusEvent e) { tree.requestFocusInWindow(); }

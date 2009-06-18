@@ -128,7 +128,7 @@ public final class ExprLet extends Expr {
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
     /** {@inheritDoc} */
-    @Override public String getDescription() { return "<b>let</b> <i>" + type + "</i>"; }
+    @Override public String getHTML() { return "<b>let</b> <i>" + type + "</i>"; }
 
     /** {@inheritDoc} */
     @Override public List<? extends Browsable> getSubnodes() {

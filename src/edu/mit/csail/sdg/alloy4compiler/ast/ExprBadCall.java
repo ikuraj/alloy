@@ -124,7 +124,7 @@ public final class ExprBadCall extends Expr {
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
     /** {@inheritDoc} */
-    @Override public String getDescription() { return "<b>error</b> (parser or typechecker failed)"; }
+    @Override public String getHTML() { return "<b>error</b> (parser or typechecker failed)"; }
 
     /** {@inheritDoc} */
     @Override public List<? extends Browsable> getSubnodes() { return new ArrayList<Browsable>(0); }

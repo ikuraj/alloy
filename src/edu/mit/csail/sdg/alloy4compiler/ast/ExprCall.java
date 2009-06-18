@@ -258,13 +258,13 @@ public final class ExprCall extends Expr {
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
     /** {@inheritDoc} */
-    @Override public String getDescription() { return "<b>call</b> " + fun.label + " <i>" + type + "</i>"; }
+    @Override public String getHTML() { return "<b>call</b> " + fun.label + " <i>" + type + "</i>"; }
 
     /** {@inheritDoc} */
     @Override public List<? extends Browsable> getSubnodes() {
         if (args.size()==0) {
             Expr b = fun.getBody();
-            return Util.asList(make(b.pos(), b.span(), b.getDescription(), b.getSubnodes()));
+            return Util.asList(make(b.pos(), b.span(), b.getHTML(), b.getSubnodes()));
         }
         Pos p = pos;
         if (p == Pos.UNKNOWN) p = span();

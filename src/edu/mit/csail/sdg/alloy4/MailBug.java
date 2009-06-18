@@ -74,7 +74,7 @@ public final class MailBug implements UncaughtExceptionHandler, Runnable {
       while(ex != null) {
          sb.append(ex.getClass()).append(": ").append(ex.getMessage()).append('\n');
          StackTraceElement[] trace = ex.getStackTrace();
-         if (trace!=null) for(int n=trace.length, i=0; i<n; i++) sb.append(trace[i]).append('\n');
+         if (trace != null) for(int n = trace.length, i = 0; i < n; i++) sb.append(trace[i]).append('\n');
          ex = ex.getCause();
          if (ex != null) sb.append("caused by...\n");
       }
@@ -83,12 +83,17 @@ public final class MailBug implements UncaughtExceptionHandler, Runnable {
 
    /** This method returns true if the exception appears to be a Sun Java GUI bug. */
    private static boolean isGUI(Throwable ex) {
-      Throwable cause = ex.getCause();
-      if (cause != null && !isGUI(cause)) return false;
-      StackTraceElement[] trace = ex.getStackTrace();
-      for(int n=(trace==null ? 0 : trace.length), i=0; i<n; i++) {
-         String name = trace[i].getClassName();
-         if (!name.startsWith("java.") && !name.startsWith("javax.") && !name.startsWith("sun.")) return false;
+      // If the root of the stack trace is within Java framework itself,
+      // and no where is Alloy, Kodkod, or SAT4J anywhere along the trace,
+      // then it's almost *always* a Sun Java GUI bug from what we've seen.
+      // And it's better to ignore it rather than kill the file that the user is editing.
+      while(ex != null) {
+         StackTraceElement[] trace = ex.getStackTrace();
+         for(int n=(trace==null ? 0 : trace.length), i=0; i<n; i++) {
+            String name = trace[i].getClassName();
+            if (!name.startsWith("java.") && !name.startsWith("javax.") && !name.startsWith("sun.")) return false;
+         }
+         ex = ex.getCause();
       }
       return true;
    }
@@ -182,8 +187,8 @@ public final class MailBug implements UncaughtExceptionHandler, Runnable {
    private static void sendCrashReport (Thread thread, Throwable ex, String email, String problem) {
       try {
          final String report = prepareCrashReport(thread, ex, email, problem);
-         final String alt = "Sorry. An error has occurred in posting the bug report.\n"
-            + "Please email this report to alloy@mit.edu directly.\n\n" + dump(ex);
+         final String alt = "Sorry. An error has occurred in posting the bug report.\n" +
+              "Please email this report to alloy@mit.edu directly.\n\n" + dump(ex);
          final JTextArea status = OurUtil.textarea("Sending the bug report... please wait...",
                10, 40, false, true, new LineBorder(Color.GRAY));
          new Thread(new Runnable() {

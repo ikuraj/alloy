@@ -223,7 +223,7 @@ public abstract class Sig extends Expr {
    public SafeList<Expr> getFacts() { return facts.dup(); }
 
    /** {@inheritDoc} */
-   @Override public final String getDescription() { return "<b>sig</b> " + label + " <i>" + type + "</i>"; }
+   @Override public final String getHTML() { return "<b>sig</b> " + label + " <i>" + type + "</i>"; }
 
    /** {@inheritDoc} */
    @Override public final List<? extends Browsable> getSubnodes() {
@@ -478,7 +478,7 @@ public abstract class Sig extends Expr {
       @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
       /** {@inheritDoc} */
-      @Override public String getDescription() { return "<b>field</b> " + label + " <i>" + type + "</i>"; }
+      @Override public String getHTML() { return "<b>field</b> " + label + " <i>" + type + "</i>"; }
 
       /** {@inheritDoc} */
       @Override public List<? extends Browsable> getSubnodes() {

@@ -60,13 +60,13 @@ public final class ConstMap<K,V> extends AbstractMap<K,V> implements Serializabl
       if (map == null || map.isEmpty()) return make(); else return new ConstMap<K,V>(new LinkedHashMap<K,V>(map));
    }
 
-   /** Returns a unmodifiable view of the mappings in this map. */
+   /** Returns an unmodifiable view of the mappings in this map. */
    @Override public Set<Map.Entry<K,V>> entrySet()      { return map.entrySet(); }
 
-   /** Returns a unmodifiable view of the keys in this map. */
+   /** Returns an unmodifiable view of the keys in this map. */
    @Override public Set<K> keySet()                     { return map.keySet(); }  // overridden for performance
 
-   /** Returns a unmodifiable view of the values in this map. */
+   /** Returns an unmodifiable view of the values in this map. */
    @Override public Collection<V> values()              { return map.values(); }  // overridden for performance
 
    /** Returns the number of (key, value) mapping in this map. */

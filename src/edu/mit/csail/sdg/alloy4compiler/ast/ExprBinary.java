@@ -490,7 +490,7 @@ public final class ExprBinary extends Expr {
    @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
    /** {@inheritDoc} */
-   @Override public String getDescription() { return op.toHTML() + " <i>" + type + "</i>"; }
+   @Override public String getHTML() { return op.toHTML() + " <i>" + type + "</i>"; }
 
    /** {@inheritDoc} */
    @Override public List<? extends Browsable> getSubnodes() { return Util.asList(left, right); }
