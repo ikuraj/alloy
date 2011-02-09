@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="lib" path="/lib-sdg/jars-external/sat4j.jar"/>
+	<classpathentry kind="lib" path="lib/apple-osx-ui.jar"/>
+	<classpathentry kind="lib" path="lib/extra.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/kodkod"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

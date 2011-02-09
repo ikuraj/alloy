@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="javadoc">
+    <target name="javadoc">
+        <javadoc access="protected" author="true" classpath="lib/apple-osx-ui.jar:lib/extra.jar:/home/aleks/work/projects/lib-sdg/jars-external/sat4j.jar:/home/aleks/install/eclipse/plugins/org.hamcrest.core_1.1.0.v20090501071000.jar:/home/aleks/work/projects/kodkod/bin:/home/aleks/install/eclipse/plugins/org.junit_4.8.2.v4_8_2_v20110321-1705/junit.jar" destdir="doc" doctitle="Alloy4.2 Documentation" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" packagenames="edu.mit.csail.sdg.alloy4whole,edu.mit.csail.sdg.alloy4viz,edu.mit.csail.sdg.alloy4compiler.sim,edu.mit.csail.sdg.alloy4compiler.parser,edu.mit.csail.sdg.alloy4compiler.ast,tmp,edu.mit.csail.sdg.alloy4compiler.translator,edu.mit.csail.sdg.alloy4graph,java_cup.runtime,edu.mit.csail.sdg.alloy4" source="1.5" sourcepath="src" splitindex="true" stylesheetfile="/home/aleks/work/projects/relations/src/kodkod/util/taglet/kodkod.css" use="true" version="true"/>
+    </target>
+</project>
