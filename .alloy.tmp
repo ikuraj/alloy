@@ -1,0 +1,18 @@
+
+
+Main file = models/aleks/slow.als
+Sig this/Relation, Field r: {this/Relation->this/A->this/A->this/A->this/A}
+pred this/run$1, RETURN: {PrimitiveBoolean}
+pred this/run$1, BODY:{PrimitiveBoolean}
+Executing "Run run$1 for 1"
+   Sig this/A scope <= 1
+   Sig this/Relation scope <= 1
+   Sig this/A in [[A$0]]
+   Sig this/Relation in [[Relation$0]]
+Generating facts...
+Simplifying the bounds...
+   Solver=sat4j Bitwidth=4 MaxSeq=1 Symmetry=20
+Generating the solution...
+   14 vars. 3 primary vars. 16 clauses. 12345ms.
+   Instance found. Predicate is consistent. 90ms.
+

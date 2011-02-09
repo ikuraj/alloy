@@ -74,6 +74,8 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 
 public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
 
+    static int cnt = 0; 
+    
     /** This is used to detect "function recursion" (which we currently do not allow);
      * also, by knowing the current function name, we can provide a more meaningful name for skolem variables
      */
@@ -476,7 +478,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         throw new ErrorFatal(x.span(), "This should have been an integer expression.\nInstead it is "+y);
     }
 
-    /** Convenience method that evalutes x and cast the result to be a Kodkod Expression.
+    /** Convenience method that evaluаtes x and cast the result to be a Kodkod Expression.
      * @return the expression - if x evaluates to an Expression
      * @throws ErrorFatal - if x does not evaluate to an Expression
      */
@@ -714,7 +716,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             }
             Formula f1 = elem.in(first.join(next.reflexiveClosure())); // every element is in the total order
             Formula f2 = next.join(first).no(); // first element has no predecessor
-            Variable e = Variable.unary("");
+            Variable e = Variable.unary("v" + Integer.toString(cnt++));
             Formula f3 = e.eq(first).or(next.join(e).one()); // each element (except the first) has one predecessor
             Formula f4 = e.eq(elem.difference(next.join(elem))).or(e.join(next).one()); // each element (except the last) has one successor
             Formula f5 = e.in(e.join(next.closure())).not(); // there are no cycles
@@ -831,6 +833,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
           default:        b=cset(right); return a.in(b);
        }
     }
+    
+    //[AM]
+    private static boolean am = true;
 
     /** Helper method that translates the formula "r in (a ?->? b)" into a Kodkod formula. */
     private Formula isInBinary(Expression r, ExprBinary ab) throws Err {
@@ -840,8 +845,12 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         // "R in A ->op B" means for each tuple a in A, there are "op" tuples in r that begins with a.
         Expression atuple=null, ar=r;
         for(int i=a.arity(); i>0; i--) {
-           Variable v=Variable.unary("");
-           if (a.arity()==1) d=v.oneOf(a); else if (d==null) d=v.oneOf(Relation.UNIV); else d=v.oneOf(Relation.UNIV).and(d);
+           Variable v=Variable.unary("v" + Integer.toString(cnt++));
+           if (!am) {
+               if (a.arity()==1) d=v.oneOf(a); else if (d==null) d=v.oneOf(Relation.UNIV); else d=v.oneOf(Relation.UNIV).and(d);
+           } else {
+               d = am(a, d, i, v);
+           }
            ar=v.join(ar);
            if (atuple==null) atuple=v; else atuple=atuple.product(v);
         }
@@ -857,8 +866,12 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         // "R in A op-> B" means for each tuple b in B, there are "op" tuples in r that end with b.
         Expression btuple=null, rb=r;
         for(int i=b.arity(); i>0; i--) {
-           Variable v=Variable.unary("");
-           if (b.arity()==1) d2=v.oneOf(b); else if (d2==null) d2=v.oneOf(Relation.UNIV); else d2=v.oneOf(Relation.UNIV).and(d2);
+           Variable v=Variable.unary("v" + Integer.toString(cnt++));
+           if (!am) {
+               if (b.arity()==1) d2=v.oneOf(b); else if (d2==null) d2=v.oneOf(Relation.UNIV); else d2=v.oneOf(Relation.UNIV).and(d2);
+           } else {
+               d2 = am(b, d2, i, v);
+           }
            rb=rb.join(v);
            if (btuple==null) btuple=v; else btuple=v.product(btuple);
         }
@@ -878,6 +891,21 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             ans=rr.difference(rr.join(A4Solution.KK_NEXT)).in(A4Solution.KK_ZERO).and(ans);
         }
         return ans;
+    }
+
+    private Decls am(final Expression a, Decls d, int i, Variable v) {
+        kodkod.ast.Decl ddd;
+        if (a.arity() == 1) {
+            assert i == 1; 
+            ddd = v.oneOf(a);
+        } else {
+            ddd = v.oneOf(a.project(IntConstant.constant(i - 1)));
+        }
+        if (d == null)
+            d = ddd;
+        else
+            d = ddd.and(d);
+        return d;
     }
 
     /*===========================*/

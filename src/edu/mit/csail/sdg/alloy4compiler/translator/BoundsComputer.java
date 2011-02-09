@@ -179,7 +179,7 @@ final class BoundsComputer {
         Expression sum = null;
         while(n>0) {
            n--;
-           Variable v = Variable.unary("");
+           Variable v = Variable.unary("v" + Integer.toString(TranslateAlloyToKodkod.cnt++));
            kodkod.ast.Decl dd = v.oneOf(a);
            if (d==null) d=dd; else d=dd.and(d);
            if (sum==null) sum=v; else { if (f!=null) f=v.intersection(sum).no().and(f); sum=v.union(sum); }
