@@ -32,7 +32,7 @@ import java.io.FileNotFoundException;
 import java.io.Reader;
 import java.io.IOException;
 import java.io.StringReader;
-import java_cup_11a.runtime.*;
+import java_cup.runtime.*;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
@@ -609,7 +609,7 @@ Typescope  ::= TypeNumber:a Name:b  {:
 
 Typescope ::= TypeNumber:a INT:b  {:
    Pos p = a.pos.merge(b);
-   if (a.endingScope>a.startingScope) throw new ErrorSyntax(p, "Cannot specify a growing scope for \"int\"");
+   if (a.endingScope>a.startingScope) throw new ErrorSyntax(p, "Cannot specify a growing scope for \"Int\"");
    if (a.isExact) throw new ErrorSyntax(p, "The exactly keyword is redundant here since the integer bitwidth must be exact.");
    RESULT = new CommandScope(p, new PrimSig("int", AttrType.WHERE.make(p)), a.isExact, a.startingScope, a.startingScope, 1);
 :};

@@ -1,4 +1,4 @@
-package java_cup_11a.runtime;
+package java_cup.runtime;
 
 /**
  * Defines the Scanner interface, which CUP uses in the default

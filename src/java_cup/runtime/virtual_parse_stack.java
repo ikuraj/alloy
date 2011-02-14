@@ -1,5 +1,5 @@
 
-package java_cup_11a.runtime;
+package java_cup.runtime;
 
 import java.util.Stack;
 
@@ -14,7 +14,7 @@ import java.util.Stack;
  *  modified).  Since parse ahead does not execute actions, only parse
  *  state is maintained on the virtual stack, not full Symbol objects.
  *
- * @see     java_cup_11a.runtime.lr_parser
+ * @see     java_cup.runtime.lr_parser
  * @version last updated: 7/3/96
  * @author  Frank Flannery
  */
@@ -26,12 +26,12 @@ public class virtual_parse_stack {
   /*-----------------------------------------------------------*/
 
   /** Constructor to build a virtual stack out of a real stack. */
-  public virtual_parse_stack(Stack shadowing_stack) throws java.lang.Exception
+public virtual_parse_stack(Stack shadowing_stack) throws java.lang.Exception
     {
       /* sanity check */
       if (shadowing_stack == null)
-	throw new Exception(
-	  "Internal parser error: attempt to create null virtual stack");
+    throw new Exception(
+      "Internal parser error: attempt to create null virtual stack");
 
       /* set up our internals */
       real_stack = shadowing_stack;
@@ -100,7 +100,7 @@ public class virtual_parse_stack {
   public boolean empty()
     {
       /* if vstack is empty then we were unable to transfer onto it and 
-	 the whole thing is empty. */
+     the whole thing is empty. */
       return vstack.empty();
     }
 
@@ -110,8 +110,8 @@ public class virtual_parse_stack {
   public int top() throws java.lang.Exception
     {
       if (vstack.empty())
-	throw new Exception(
-		  "Internal parser error: top() called on empty virtual stack");
+    throw new Exception(
+          "Internal parser error: top() called on empty virtual stack");
 
       return ((Integer)vstack.peek()).intValue();
     }
@@ -122,8 +122,8 @@ public class virtual_parse_stack {
   public void pop() throws java.lang.Exception
     {
       if (vstack.empty())
-	throw new Exception(
-		  "Internal parser error: pop from empty virtual stack");
+    throw new Exception(
+          "Internal parser error: pop from empty virtual stack");
 
       /* pop it */
       vstack.pop();
