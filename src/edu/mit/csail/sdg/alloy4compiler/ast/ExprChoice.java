@@ -15,16 +15,17 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import edu.mit.csail.sdg.alloy4.Pos;
+
+import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
-import edu.mit.csail.sdg.alloy4.ConstList;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
+import edu.mit.csail.sdg.alloy4.Pos;
 
 /** Immutable; represents an unresolved node that has several possibilities. */
 
@@ -113,20 +114,21 @@ public final class ExprChoice extends Expr {
         // We first prefer exact matches
         for(int i=0; i<choices.size(); i++) {
             Type tt = choices.get(i).type;
-            if ((t.is_int && tt.is_int) || (t.is_bool && tt.is_bool) || t.intersects(tt)) { ch.add(choices.get(i)); re.add(reasons.get(i)); }
+            if ((t.is_int() && tt.is_int()) || (t.is_bool && tt.is_bool) || t.intersects(tt)) { ch.add(choices.get(i)); re.add(reasons.get(i)); }
         }
         // If none, we try any legal matches
         if (ch.size()==0) {
             for(int i=0; i<choices.size(); i++) if (choices.get(i).type.hasCommonArity(t)) { ch.add(choices.get(i)); re.add(reasons.get(i)); }
         }
-        // If none, we try sigint->int
-        if (ch.size()==0 && Type.SIGINT2INT && t.is_int) {
-            for(int i=0; i<choices.size(); i++) if (choices.get(i).type.intersects(SIGINT.type)) { ch.add(choices.get(i).cast2int()); re.add(reasons.get(i)); }
-        }
-        // If none, we try int->sigint
-        if (ch.size()==0 && Type.INT2SIGINT && t.hasArity(1)) {
-            for(int i=0; i<choices.size(); i++) if (choices.get(i).type.is_int) { ch.add(choices.get(i).cast2sigint()); re.add(reasons.get(i)); }
-        }
+        //[AM]: TODO: anything special about this?
+//        // If none, we try sigint->int
+//        if (ch.size()==0 && Type.SIGINT2INT && t.is_int) {
+//            for(int i=0; i<choices.size(); i++) if (choices.get(i).type.intersects(SIGINT.type)) { ch.add(choices.get(i).cast2int()); re.add(reasons.get(i)); }
+//        }
+//        // If none, we try int->sigint
+//        if (ch.size()==0 && Type.INT2SIGINT && t.hasArity(1)) {
+//            for(int i=0; i<choices.size(); i++) if (choices.get(i).type.is_int) { ch.add(choices.get(i).cast2sigint()); re.add(reasons.get(i)); }
+//        }
         // If too many, then keep the choices with the smallest weight
         if (ch.size()>1) {
             List<Expr> ch2 = new ArrayList<Expr>(ch.size());
@@ -155,7 +157,7 @@ public final class ExprChoice extends Expr {
         while(ch.size()>1) {
             int arity = -1;
             for(Expr c: ch) {
-                if (c.type.is_bool || c.type.is_int || c.type.hasTuple()) break none;
+                if (c.type.is_bool || c.type.is_int() || c.type.hasTuple()) break none;
                 int a = c.type.arity();
                 if (a<1) break none;
                 if (arity<0) arity=a; else if (arity!=a) break none;

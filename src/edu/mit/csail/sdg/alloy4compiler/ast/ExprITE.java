@@ -15,17 +15,18 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
+
 import java.util.Collection;
 import java.util.List;
-import edu.mit.csail.sdg.alloy4.Pos;
+
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.JoinableList;
+import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 /** Immutable; represents an if-then-else expression.
  *
@@ -104,17 +105,19 @@ public final class ExprITE extends Expr {
         while(left.errors.isEmpty() && right.errors.isEmpty()) {
             Type a=left.type, b=right.type;
             c = a.unionWithCommonArity(b);
-            if (a.is_int && b.is_int) c=Type.makeInt(c);
+            //[AM]
+//            if (a.is_int && b.is_int) c=Type.makeInt(c);
             if (a.is_bool && b.is_bool) c=Type.makeBool(c);
             if (c==EMPTY) {
-                if (Type.SIGINT2INT) {
-                    if (a.is_int && b.intersects(SIGINT.type)) { right=right.cast2int(); continue; }
-                    if (b.is_int && a.intersects(SIGINT.type)) { left=left.cast2int(); continue; }
-                }
-                if (Type.INT2SIGINT) {
-                    if (a.is_int && b.hasArity(1)) { left=left.cast2sigint(); continue; }
-                    if (b.is_int && a.hasArity(1)) { right=right.cast2sigint(); continue; }
-                }
+                //[AM]
+//                if (Type.SIGINT2INT) {
+//                    if (a.is_int && b.intersects(SIGINT.type)) { right=right.cast2int(); continue; }
+//                    if (b.is_int && a.intersects(SIGINT.type)) { left=left.cast2int(); continue; }
+//                }
+//                if (Type.INT2SIGINT) {
+//                    if (a.is_int && b.hasArity(1)) { left=left.cast2sigint(); continue; }
+//                    if (b.is_int && a.hasArity(1)) { right=right.cast2sigint(); continue; }
+//                }
                 errs = errs.make(new ErrorType(cond.span().merge(right.span()).merge(left.span()),
                     "The then-clause and the else-clause must match.\nThe then-clause has type: "
                     + a + "\nand the else-clause has type: " + b));
@@ -132,7 +135,7 @@ public final class ExprITE extends Expr {
         if (p.size()>0) {
             a = a.intersect(p);
             b = b.intersect(p);
-            if (p.is_int) { a=Type.makeInt(a); b=Type.makeInt(b); }
+            if (p.is_int()) { a=Type.makeInt(a); b=Type.makeInt(b); }
             if (p.is_bool) { a=Type.makeBool(a); b=Type.makeBool(b); }
             if (warns!=null && left.type.hasTuple() && !a.hasTuple()) warns.add(new ErrorWarning(left.span(),"This subexpression is redundant."));
             if (warns!=null && right.type.hasTuple() && !b.hasTuple()) warns.add(new ErrorWarning(right.span(),"This subexpression is redundant."));

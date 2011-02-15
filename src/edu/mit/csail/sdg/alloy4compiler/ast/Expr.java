@@ -15,21 +15,22 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import static edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary.Op.NOOP;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
-import edu.mit.csail.sdg.alloy4.Util;
-import edu.mit.csail.sdg.alloy4.Pos;
+
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.JoinableList;
+import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
-import static edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary.Op.NOOP;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 /** Immutable; represents a formula or expression.
  *
@@ -155,8 +156,9 @@ public abstract class Expr extends Browsable {
 
    /** Converts this into an "integer expression" if possible; otherwise, returns an Expr with a nonempty error list */
    public final Expr typecheck_as_int() {
-      if (!errors.isEmpty() || type.is_int) return this;
-      if (Type.SIGINT2INT && type.intersects(SIGINT.type)) return cast2int();
+      if (!errors.isEmpty() || type.is_int()) return this;
+      //[AM]
+//      if (Type.SIGINT2INT && type.intersects(SIGINT.type)) return cast2int();
       String msg = "This must be an integer expression.\nInstead, it has the following possible type(s):\n"+type;
       return NOOP.make(null, this, new ErrorType(span(), msg), 0);
    }
@@ -164,7 +166,8 @@ public abstract class Expr extends Browsable {
    /** Converts this into a "set or relation" if possible; otherwise, returns an Expr with a nonempty error list */
    public final Expr typecheck_as_set() {
       if (!errors.isEmpty() || type.size()>0) return this;
-      if (Type.INT2SIGINT && type.is_int) return cast2sigint();
+      //[AM]
+//      if (Type.INT2SIGINT && type.is_int) return cast2sigint();
       String msg = "This must be a set or relation.\nInstead, it has the following possible type(s):\n"+type;
       return NOOP.make(null, this, new ErrorType(span(), msg), 0);
    }
@@ -207,7 +210,7 @@ public abstract class Expr extends Browsable {
     * @param warnings - the list that will receive any warning we generate; can be null if we wish to ignore warnings
     */
    public final Expr resolve_as_int(Collection<ErrorWarning> warnings) {
-      return typecheck_as_int().resolve(Type.INT, warnings).typecheck_as_int();
+      return typecheck_as_int().resolve(Type.intType(), warnings).typecheck_as_int();
    }
 
    /** Converts this into a "set or relation" if possible, then resolves it if ambiguous.

@@ -437,9 +437,9 @@ public final class SimInstance extends VisitReturn<Object> {
               if (a instanceof ExprConstant && ((ExprConstant)a).op==ExprConstant.Op.NUMBER && ((ExprConstant)a).num()==0)
                  if (b instanceof ExprConstant && ((ExprConstant)b).op==ExprConstant.Op.NUMBER && ((ExprConstant)b).num()==max+1)
                     return min;
-              if (x.left.type().is_int) return trunc(cint(x.left)-cint(x.right)); else return cset(x.left).difference(cset(x.right));
+              if (x.left.type().is_int()) return trunc(cint(x.left)-cint(x.right)); else return cset(x.left).difference(cset(x.right));
           case PLUS:
-              if (x.left.type().is_int) return trunc(cint(x.left)+cint(x.right)); else return cset(x.left).union(cset(x.right));
+              if (x.left.type().is_int()) return trunc(cint(x.left)+cint(x.right)); else return cset(x.left).union(cset(x.right));
           case PLUSPLUS:
               return cset(x.left).override(cset(x.right));
           case MUL:
@@ -712,7 +712,7 @@ public final class SimInstance extends VisitReturn<Object> {
     /** Helper method that evaluates the formula "a = b" */
     public boolean equal(Expr a, Expr b) throws Err {
         if (a.type().is_bool) return cform(a)==cform(b);
-        if (a.type().is_int) return cint(a)==cint(b);
+        if (a.type().is_int()) return cint(a)==cint(b);
         if (a.type().arity()<=0 || a.type().arity()!=b.type().arity()) return false; // type mismatch
         if (a.isSame(b)) return true; else return cset(a).equals(cset(b));
     }

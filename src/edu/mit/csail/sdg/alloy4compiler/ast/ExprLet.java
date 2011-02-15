@@ -96,7 +96,7 @@ public final class ExprLet extends Expr {
         if (sub.mult != 0)
             errs = errs.make(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
         if (errs.size()==0 && var.type!=expr.type)
-            if (var.type.is_int!=expr.type.is_int
+            if (var.type.is_int()!=expr.type.is_int()
              || var.type.is_bool!=expr.type.is_bool
              || var.type.arity()!=expr.type.arity())
                 errs = errs.make(new ErrorType(var.span(), "This variable has type "+var.type+" but is bound to a value of type "+expr.type));

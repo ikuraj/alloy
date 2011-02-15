@@ -233,16 +233,17 @@ public final class ExprBinary extends Expr {
               break;
            }
            case PLUS: case MINUS: case EQUALS: case NOT_EQUALS: {
-              Type a=left.type, b=right.type;
-              if (a.hasCommonArity(b) || (a.is_int && b.is_int)) break;
-              if (Type.SIGINT2INT) {
-                 if (a.is_int && b.intersects(SIGINT.type)) { right=right.cast2int(); break; }
-                 if (b.is_int && a.intersects(SIGINT.type)) { left=left.cast2int(); break; }
-              }
-              if (Type.INT2SIGINT) {
-                 if (a.is_int && b.hasArity(1)) { left=left.cast2sigint(); break; }
-                 if (b.is_int && a.hasArity(1)) { right=right.cast2sigint(); break; }
-              }
+               //[AM]: these are always relational operators now, so no casts
+//              Type a=left.type, b=right.type;
+//              if (a.hasCommonArity(b) || (a.is_int && b.is_int)) break;
+//              if (Type.SIGINT2INT) {
+//                 if (a.is_int && b.intersects(SIGINT.type)) { right=right.cast2int(); break; }
+//                 if (b.is_int && a.intersects(SIGINT.type)) { left=left.cast2int(); break; }
+//              }
+//              if (Type.INT2SIGINT) {
+//                 if (a.is_int && b.hasArity(1)) { left=left.cast2sigint(); break; }
+//                 if (b.is_int && a.hasArity(1)) { right=right.cast2sigint(); break; }
+//              }
               break;
            }
            default: {
@@ -259,7 +260,7 @@ public final class ExprBinary extends Expr {
               type = Type.FORMULA;
               break;
            case MUL: case DIV: case REM: case SHL: case SHR: case SHA:
-              type = Type.INT;
+              type = Type.intType();
               break;
            case PLUSPLUS:
               type = left.type.unionWithCommonArity(right.type);
@@ -267,10 +268,11 @@ public final class ExprBinary extends Expr {
               break;
            case PLUS: case MINUS: case EQUALS: case NOT_EQUALS:
               if (this==EQUALS || this==NOT_EQUALS) {
-                 if (left.type.hasCommonArity(right.type) || (left.type.is_int && right.type.is_int)) {type=Type.FORMULA; break;}
+                 if (left.type.hasCommonArity(right.type) || (left.type.is_int() && right.type.is_int())) {type=Type.FORMULA; break;}
               } else {
                  type = (this==PLUS ? left.type.unionWithCommonArity(right.type) : left.type.pickCommonArity(right.type));
-                 if (left.type.is_int && right.type.is_int) type=Type.makeInt(type);
+                 //[AM] 
+//                 if (left.type.is_int && right.type.is_int) type=Type.makeInt(type);
                  if (type!=EMPTY) break;
               }
               e=error(pos, this+" can be used only between 2 expressions of the same arity, or between 2 integer expressions.", left, right);
@@ -324,7 +326,7 @@ public final class ExprBinary extends Expr {
       switch(op) {
         case MUL: case DIV: case REM: case LT: case LTE: case GT: case GTE: case SHL: case SHR: case SHA:
         case NOT_LTE: case NOT_GTE: case NOT_LT: case NOT_GT: {
-           a=(b=Type.INT);
+           a=(b=Type.intType());
            break;
         }
         case AND: case OR: case IFF: case IMPLIES: {
@@ -334,7 +336,7 @@ public final class ExprBinary extends Expr {
         case EQUALS: case NOT_EQUALS: {
            p=a.intersect(b);
            if (p.hasTuple()) {a=p; b=p;} else {a=a.pickCommonArity(b); b=b.pickCommonArity(a);}
-           if (left.type.is_int && right.type.is_int) {
+           if (left.type.is_int() && right.type.is_int()) {
               a=Type.makeInt(a); b=Type.makeInt(b);
            } else if (warns==null) {
               break;
@@ -370,7 +372,7 @@ public final class ExprBinary extends Expr {
         case PLUSPLUS: case PLUS: {
            a=a.intersect(p);
            b=b.intersect(p);
-           if (op==Op.PLUS && p.is_int) { a=Type.makeInt(a); b=Type.makeInt(b); }
+           if (op==Op.PLUS && p.is_int()) { a=Type.makeInt(a); b=Type.makeInt(b); }
            if (warns==null) break;
            if (a==EMPTY && b==EMPTY)
               w=warn(this+" is irrelevant since both subexpressions are redundant.", p);
@@ -383,7 +385,7 @@ public final class ExprBinary extends Expr {
         case MINUS: {
            a=p;
            b=p.intersect(b);
-           if (p.is_int) {
+           if (p.is_int()) {
               a=Type.makeInt(a); b=Type.makeInt(b);
            } else if (warns!=null && (type.hasNoTuple() || b.hasNoTuple())) {
               w=warn("- is irrelevant since the right expression is redundant.", p);

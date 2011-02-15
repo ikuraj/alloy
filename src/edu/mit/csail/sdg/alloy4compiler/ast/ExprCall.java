@@ -97,7 +97,7 @@ public final class ExprCall extends Expr {
               case NOT_LT: case NOT_GT: case NOT_LTE: case NOT_GTE: case NOT_IN: case NOT_EQUALS:
                   return Type.FORMULA;
               case MUL: case DIV: case REM: case SHL: case SHR: case SHA:
-                  return Type.INT;
+                  return Type.intType();
             }
             Type a = x.left.accept(this);
             Type b = x.right.accept(this);
@@ -107,8 +107,8 @@ public final class ExprCall extends Expr {
               case RANGE: return a.rangeRestrict(b);
               case INTERSECT: return a.intersect(b);
               case PLUSPLUS: return a.unionWithCommonArity(b);
-              case PLUS: return (a.is_int && b.is_int) ? Type.makeInt(a.unionWithCommonArity(b)) : a.unionWithCommonArity(b);
-              case MINUS: return (a.is_int && b.is_int) ? Type.makeInt(a.pickCommonArity(b)) : a.pickCommonArity(b);
+              case PLUS: return (a.is_int() && b.is_int()) ? Type.makeInt(a.unionWithCommonArity(b)) : a.unionWithCommonArity(b);
+              case MINUS: return (a.is_int() && b.is_int()) ? Type.makeInt(a.pickCommonArity(b)) : a.pickCommonArity(b);
               default: return a.product(b);
             }
         }
@@ -116,7 +116,7 @@ public final class ExprCall extends Expr {
             Type t = x.sub.accept(this);
             switch(x.op) {
               case NOOP: case LONEOF: case ONEOF: case SETOF: case SOMEOF: case EXACTLYOF: return t;
-              case CARDINALITY: case CAST2INT: return Type.INT;
+              case CARDINALITY: case CAST2INT: return Type.intType();
               case CAST2SIGINT: return Sig.SIGINT.type;
               case TRANSPOSE: return t.transpose();
               case CLOSURE: return t.closure();
@@ -125,7 +125,7 @@ public final class ExprCall extends Expr {
             }
         }
         @Override public Type visit(ExprQt x) throws Err {
-            if (x.op == ExprQt.Op.SUM) return Type.INT;
+            if (x.op == ExprQt.Op.SUM) return Type.intType();
             if (x.op != ExprQt.Op.COMPREHENSION) return Type.FORMULA;
             Type ans = null;
             for(Decl d: x.decls) {
@@ -215,7 +215,7 @@ public final class ExprCall extends Expr {
                     d.env.put(param, newargs.get(i).type.extract(param.type.arity()));
                 }
                 t = fun.returnDecl.accept(d);
-                if (t==null || t.is_int || t.is_bool || t.arity()!=tt.arity()) t=tt; // Just in case an error occurred...
+                if (t==null || t.is_int() || t.is_bool || t.arity()!=tt.arity()) t=tt; // Just in case an error occurred...
             } catch(Throwable ex) {
                 t=tt; // Just in case an error occurred...
             }

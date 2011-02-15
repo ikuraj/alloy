@@ -475,6 +475,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         if (!x.errors.isEmpty()) throw x.errors.pick();
         Object y=visitThis(x);
         if (y instanceof IntExpression) return (IntExpression)y;
+        if (y instanceof Expression) return ((Expression) y).sum();
         throw new ErrorFatal(x.span(), "This should have been an integer expression.\nInstead it is "+y);
     }
 
@@ -553,8 +554,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     /** {@inheritDoc} */
     @Override public Object visit(ExprConstant x) throws Err {
         switch(x.op) {
-          case MIN: return IntConstant.constant(min);
-          case MAX: return IntConstant.constant(max);
+          case MIN: return IntConstant.constant(min); //TODO
+          case MAX: return IntConstant.constant(max); //TODO
           case NEXT: return A4Solution.KK_NEXT;
           case TRUE: return Formula.TRUE;
           case FALSE: return Formula.FALSE;
@@ -568,7 +569,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             int n=x.num();
             if (n<min) throw new ErrorType(x.pos, "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is smaller than the minimum integer "+min);
             if (n>max) throw new ErrorType(x.pos, "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is bigger than the maximum integer "+max);
-            return IntConstant.constant(n);
+            return IntConstant.constant(n).toExpression();
         }
         throw new ErrorFatal(x.pos, "Unsupported operator ("+x.op+") encountered during ExprConstant.accept()");
     }
@@ -661,7 +662,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             if (maxRecursion==0) {
                 Type t = f.returnDecl.type();
                 if (t.is_bool) return Formula.FALSE;
-                if (t.is_int) return IntConstant.constant(0);
+                if (t.is_int()) return IntConstant.constant(0);
                 int i = t.arity();
                 Expression ans = Expression.NONE;
                 while(i>1) { ans = ans.product(Expression.NONE); i--; }

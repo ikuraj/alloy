@@ -64,7 +64,7 @@ public final class ExprConstant extends Expr {
             (op==Op.IDEN ? Type.make2(UNIV) :
                 (op==Op.NEXT ? Type.make2(Sig.SIGINT) :
                     (op==Op.TRUE || op==Op.FALSE ? Type.FORMULA :
-                        (op==Op.EMPTYNESS ? UNIV.type : (op==Op.STRING ? Sig.STRING.type : Type.INT))))), 0, 0, null);
+                        (op==Op.EMPTYNESS ? UNIV.type : (op==Op.STRING ? Sig.STRING.type : Type.intType()))))), 0, 0, null);
         this.op = op;
         this.num = (op==Op.NUMBER ? num : 0);
         this.string = (op==Op.STRING ? string : "");
