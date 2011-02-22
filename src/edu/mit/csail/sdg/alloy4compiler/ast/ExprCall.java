@@ -107,8 +107,9 @@ public final class ExprCall extends Expr {
               case RANGE: return a.rangeRestrict(b);
               case INTERSECT: return a.intersect(b);
               case PLUSPLUS: return a.unionWithCommonArity(b);
-              case PLUS: return (a.is_int() && b.is_int()) ? Type.makeInt(a.unionWithCommonArity(b)) : a.unionWithCommonArity(b);
-              case MINUS: return (a.is_int() && b.is_int()) ? Type.makeInt(a.pickCommonArity(b)) : a.pickCommonArity(b);
+              case PLUS: return a.unionWithCommonArity(b); //[AM]: return (a.is_int() && b.is_int()) ? Type.makeInt(a.unionWithCommonArity(b)) : a.unionWithCommonArity(b);
+              case IPLUS: case IMINUS: return Type.smallIntType();
+              case MINUS: return a.pickCommonArity(b); //[AM]: return (a.is_int() && b.is_int()) ? Type.makeInt(a.pickCommonArity(b)) : a.pickCommonArity(b);
               default: return a.product(b);
             }
         }

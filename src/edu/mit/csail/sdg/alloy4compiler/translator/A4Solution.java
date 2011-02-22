@@ -484,6 +484,7 @@ public final class A4Solution {
               case ARROW: return a2k(a).product(a2k(b));
               case PLUS: return a2k(a).union(a2k(b));
               case MINUS: return a2k(a).difference(a2k(b));
+              //TODO: IPLUS, IMINUS???
             }
         }
         return null; // Current only UNION, PRODUCT, and DIFFERENCE of Sigs and Fields and ExprConstant.EMPTYNESS are allowed in a defined field's definition.
@@ -924,14 +925,10 @@ public final class A4Solution {
             return null;
          }
         if (solver.options().solver()==SATFactory.ZChaff || !solver.options().solver().incremental()) {
-           rep.debug("Begin solve()\n");
            if (sol==null) sol = solver.solve(fgoal, bounds);
-           rep.debug("End solve()\n");
         } else {
-           rep.debug("Begin solveAll()\n");
            kEnumerator = new Peeker<Solution>(solver.solveAll(fgoal, bounds));
            if (sol==null) sol = kEnumerator.next();
-           rep.debug("End solveAll()\n");
         }
         if (!solved[0]) rep.solve(0, 0, 0);
         final Instance inst = sol.instance();

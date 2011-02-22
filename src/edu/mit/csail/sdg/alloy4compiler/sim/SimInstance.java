@@ -437,9 +437,17 @@ public final class SimInstance extends VisitReturn<Object> {
               if (a instanceof ExprConstant && ((ExprConstant)a).op==ExprConstant.Op.NUMBER && ((ExprConstant)a).num()==0)
                  if (b instanceof ExprConstant && ((ExprConstant)b).op==ExprConstant.Op.NUMBER && ((ExprConstant)b).num()==max+1)
                     return min;
-              if (x.left.type().is_int()) return trunc(cint(x.left)-cint(x.right)); else return cset(x.left).difference(cset(x.right));
+              //[AM]
+//              if (x.left.type().is_int()) return trunc(cint(x.left)-cint(x.right)); else return cset(x.left).difference(cset(x.right));
+              return cset(x.left).difference(cset(x.right));
+          case IMINUS: 
+              return trunc(cint(x.left)-cint(x.right)); 
           case PLUS:
-              if (x.left.type().is_int()) return trunc(cint(x.left)+cint(x.right)); else return cset(x.left).union(cset(x.right));
+              return cset(x.left).union(cset(x.right));
+              //[AM]
+//              if (x.left.type().is_int()) return trunc(cint(x.left)+cint(x.right)); else return cset(x.left).union(cset(x.right));
+          case IPLUS:
+              return trunc(cint(x.left)+cint(x.right));
           case PLUSPLUS:
               return cset(x.left).override(cset(x.right));
           case MUL:

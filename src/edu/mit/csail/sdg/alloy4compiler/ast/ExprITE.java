@@ -135,7 +135,7 @@ public final class ExprITE extends Expr {
         if (p.size()>0) {
             a = a.intersect(p);
             b = b.intersect(p);
-            if (p.is_int()) { a=Type.makeInt(a); b=Type.makeInt(b); }
+            //if (p.is_int()) { a=Type.makeInt(a); b=Type.makeInt(b); }
             if (p.is_bool) { a=Type.makeBool(a); b=Type.makeBool(b); }
             if (warns!=null && left.type.hasTuple() && !a.hasTuple()) warns.add(new ErrorWarning(left.span(),"This subexpression is redundant."));
             if (warns!=null && right.type.hasTuple() && !b.hasTuple()) warns.add(new ErrorWarning(right.span(),"This subexpression is redundant."));

@@ -900,13 +900,13 @@ ShiftExprB ::= ShiftExprB:a SHA:o UnionDiffExprB:b        {: RESULT=ExprBinary.O
 UnionDiffExprA ::=                           MulExprA:b    {: RESULT=b;                                       :};
 UnionDiffExprA ::= UnionDiffExprB:a PLUS:o   Bind:b        {: RESULT=ExprBinary.Op.PLUS .make(o, null, a, b); :};
 UnionDiffExprA ::= UnionDiffExprB:a MINUS:o  Bind:b        {: RESULT=ExprBinary.Op.MINUS.make(o, null, a, b); :};
-UnionDiffExprA ::= UnionDiffExprB:a INTADD:o Bind:b        {: RESULT=ExprBinary.Op.PLUS .make(o, null, a.cast2int(), b.cast2int()); :};
-UnionDiffExprA ::= UnionDiffExprB:a INTSUB:o Bind:b        {: RESULT=ExprBinary.Op.MINUS.make(o, null, a.cast2int(), b.cast2int()); :};
+UnionDiffExprA ::= UnionDiffExprB:a INTADD:o Bind:b        {: RESULT=ExprBinary.Op.IPLUS.make(o, null, a.cast2int(), b.cast2int()); :};
+UnionDiffExprA ::= UnionDiffExprB:a INTSUB:o Bind:b        {: RESULT=ExprBinary.Op.IMINUS.make(o, null, a.cast2int(), b.cast2int()); :};
 UnionDiffExprB ::=                           MulExprB:b    {: RESULT=b;                                       :};
 UnionDiffExprB ::= UnionDiffExprB:a PLUS:o   MulExprB:b    {: RESULT=ExprBinary.Op.PLUS .make(o, null, a, b); :};
 UnionDiffExprB ::= UnionDiffExprB:a MINUS:o  MulExprB:b    {: RESULT=ExprBinary.Op.MINUS.make(o, null, a, b); :};
-UnionDiffExprB ::= UnionDiffExprB:a INTADD:o MulExprB:b    {: RESULT=ExprBinary.Op.PLUS .make(o, null, a.cast2int(), b.cast2int()); :};
-UnionDiffExprB ::= UnionDiffExprB:a INTSUB:o MulExprB:b    {: RESULT=ExprBinary.Op.MINUS.make(o, null, a.cast2int(), b.cast2int()); :};
+UnionDiffExprB ::= UnionDiffExprB:a INTADD:o MulExprB:b    {: RESULT=ExprBinary.Op.IPLUS.make(o, null, a.cast2int(), b.cast2int()); :};
+UnionDiffExprB ::= UnionDiffExprB:a INTSUB:o MulExprB:b    {: RESULT=ExprBinary.Op.IMINUS.make(o, null, a.cast2int(), b.cast2int()); :};
 
 MulExprA ::=                         NumUnopExprA:b        {: RESULT=b;                                            :};
 MulExprA ::= MulExprB:a INTMUL:o     Bind:b                {: RESULT=ExprBinary.Op.MUL       .make(o, null, a, b); :};

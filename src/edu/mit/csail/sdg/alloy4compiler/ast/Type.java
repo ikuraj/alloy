@@ -228,8 +228,7 @@ public final class Type implements Iterable<Type.ProductType> {
     public static final Type EMPTY = new Type(false, false, null, 0);
 
     //[AM]
-    /** Constant value with is_int==true, is_bool==false, and entries.size()==0. 
-     *  Can't be final because it relies on Sig.SIGINT being initialized */
+    /*  Can't be final because it relies on a static Sig.SIGINT being initialized */
     private static Type INT = null;
 
     /** Constant value with is_int==false, is_bool==true, and entries.size()==0. */
@@ -266,6 +265,13 @@ public final class Type implements Iterable<Type.ProductType> {
         return entries.size() == 1 && entries.get(0).arity() == 1 && entries.get(0).get(0) == Sig.SIGINT;
     }
 
+    //TODO
+    public static Type smallIntType() {
+        if (INT == null) 
+            INT = make(Sig.SIGINT); 
+        return INT;
+    }
+    
     public static Type intType() {
         if (INT == null) 
             INT = make(Sig.SIGINT); 
@@ -356,9 +362,9 @@ public final class Type implements Iterable<Type.ProductType> {
     }
 
     /** Create a new type that is the same as "old", except the "is_int" flag is set to true. */
-    static Type makeInt(Type old) {
-        if (old.is_int()) return old; else return make(true, old.is_bool, old.entries, old.arities);
-    }
+//    static Type makeInt(Type old) {
+//        if (old.is_int()) return old; else return make(true, old.is_bool, old.entries, old.arities);
+//    }
 
     /** Create a new type that is the same as "old", except the "is_bool" flag is set to true. */
     static Type makeBool(Type old) {
@@ -807,7 +813,8 @@ public final class Type implements Iterable<Type.ProductType> {
      */
     public Expr toExpr() throws Err {
         int arity = arity();
-        if (is_int() || is_bool || arity<1) throw new ErrorType("Cannot convert this type into a bounding expression.");
+        if (is_bool || arity<1) 
+            throw new ErrorType("Cannot convert this type into a bounding expression.");
         Expr ans = null;
         for(ProductType pt:this) {
             Expr pro = null;
@@ -886,7 +893,7 @@ public final class Type implements Iterable<Type.ProductType> {
     @Override public String toString() {
         boolean first=true;
         StringBuilder ans=new StringBuilder("{");
-        if (is_int()) { first=false; ans.append("PrimitiveInteger"); }
+        //[AM] if (is_int()) { first=false; ans.append("PrimitiveInteger"); }
         if (is_bool) { if (!first) ans.append(", "); first=false; ans.append("PrimitiveBoolean"); }
         for(List<PrimSig> r:fold()) {
             if (!first) ans.append(", ");

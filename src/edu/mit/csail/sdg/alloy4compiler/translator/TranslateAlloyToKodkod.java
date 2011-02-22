@@ -473,8 +473,12 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
      */
     private IntExpression cint(Expr x) throws Err {
         if (!x.errors.isEmpty()) throw x.errors.pick();
-        Object y=visitThis(x);
+        return toInt(x, visitThis(x));
+    }
+
+    private IntExpression toInt(Expr x, Object y) throws Err, ErrorFatal {
         if (y instanceof IntExpression) return (IntExpression)y;
+        //[AM]: maybe this conversion should be removed
         if (y instanceof Expression) return ((Expression) y).sum();
         throw new ErrorFatal(x.span(), "This should have been an integer expression.\nInstead it is "+y);
     }
@@ -485,8 +489,13 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
      */
     private Expression cset(Expr x) throws Err {
         if (!x.errors.isEmpty()) throw x.errors.pick();
-        Object y=visitThis(x);
+        return toSet(x, visitThis(x));
+    }
+
+    private Expression toSet(Expr x, Object y) throws Err, ErrorFatal {
         if (y instanceof Expression) return (Expression)y;
+        //[AM]
+        if (y instanceof IntExpression) return ((IntExpression) y).toExpression();
         throw new ErrorFatal(x.span(), "This should have been a set or a relation.\nInstead it is "+y);
     }
 
@@ -743,7 +752,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     /** {@inheritDoc} */
     @Override public Object visit(ExprBinary x) throws Err {
         Expr a=x.left, b=x.right;
-        Expression s, s2; IntExpression i; Formula f; Object obj;
+        Expression s, s2; IntExpression i; Formula f; Object obj, objL, objR;
         switch(x.op) {
             case IMPLIES: f=cform(a).not().or(cform(b)); return k2pos(f,x);
             case IN:      return k2pos(isIn(cset(a),b), x);
@@ -767,18 +776,26 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             case SHR: i=cint(a); return i.shr(cint(b));
             case SHA: i=cint(a); return i.sha(cint(b));
             case PLUS:
-                obj = visitThis(a);
-                if (obj instanceof IntExpression) { i=(IntExpression)obj; return i.plus(cint(b)); }
-                s = (Expression)obj; return s.union(cset(b));
+                return cset(a).union(cset(b));
+                //[AM]
+//                obj = visitThis(a);
+//                if (obj instanceof IntExpression) { i=(IntExpression)obj; return i.plus(cint(b)); }
+//                s = (Expression)obj; return s.union(cset(b));
+            case IPLUS:
+                return cint(a).plus(cint(b));
             case MINUS:
                 // Special exception to allow "0-8" to not throw an exception, where 7 is the maximum allowed integer (when bitwidth==4)
                 // (likewise, when bitwidth==5, then +15 is the maximum allowed integer, and we want to allow 0-16 without throwing an exception)
                 if (a instanceof ExprConstant && ((ExprConstant)a).op==ExprConstant.Op.NUMBER && ((ExprConstant)a).num()==0)
                    if (b instanceof ExprConstant && ((ExprConstant)b).op==ExprConstant.Op.NUMBER && ((ExprConstant)b).num()==max+1)
                       return IntConstant.constant(min);
-                obj=visitThis(a);
-                if (obj instanceof IntExpression) { i=(IntExpression)obj; return i.minus(cint(b));}
-                s=(Expression)obj; return s.difference(cset(b));
+                return cset(a).difference(cset(b));
+                //[AM]
+//                obj=visitThis(a);
+//                if (obj instanceof IntExpression) { i=(IntExpression)obj; return i.minus(cint(b));}
+//                s=(Expression)obj; return s.difference(cset(b));
+            case IMINUS: 
+                return cint(a).minus(cint(b));
             case INTERSECT:
                 s=cset(a); return s.intersection(cset(b));
             case ANY_ARROW_SOME: case ANY_ARROW_ONE: case ANY_ARROW_LONE:
@@ -796,15 +813,31 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
                 }
                 return s.join(s2);
             case EQUALS:
-                obj=visitThis(a);
-                if (obj instanceof IntExpression) { i=(IntExpression)obj; f=i.eq(cint(b));}
-                else { s=(Expression)obj; f=s.eq(cset(b)); }
-                return k2pos(f,x);
+                objL = visitThis(a);
+                objR = visitThis(b);
+                if (objL instanceof IntExpression && objR instanceof IntExpression)
+                    f = ((IntExpression) objL).eq((IntExpression) objR); 
+                else
+                    f = toSet(a, objL).eq(toSet(b, objR));
+                return k2pos(f, x);
+                //[AM]
+//                obj = visitThis(a);
+//                if (obj instanceof IntExpression) { i=(IntExpression)obj; f=i.eq(cint(b));}
+//                else { s=(Expression)obj; f=s.eq(cset(b)); }
+//                return k2pos(f,x);
             case NOT_EQUALS:
-                obj=visitThis(a);
-                if (obj instanceof IntExpression) { i=(IntExpression)obj; f=i.eq(cint(b)).not();}
-                else { s=(Expression)obj; f=s.eq(cset(b)).not(); }
-                return k2pos(f,x);
+                objL = visitThis(a);
+                objR = visitThis(b);
+                if (objL instanceof IntExpression && objR instanceof IntExpression)
+                    f = ((IntExpression) objL).eq((IntExpression) objR).not(); 
+                else
+                    f = toSet(a, objL).eq(toSet(b, objR)).not();
+                return k2pos(f, x);
+                //[AM]
+//                obj=visitThis(a);
+//                if (obj instanceof IntExpression) { i=(IntExpression)obj; f=i.eq(cint(b)).not();}
+//                else { s=(Expression)obj; f=s.eq(cset(b)).not(); }
+//                return k2pos(f,x);
             case DOMAIN:
                 s=cset(a);
                 s2=cset(b);

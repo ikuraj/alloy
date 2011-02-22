@@ -107,7 +107,8 @@ public abstract class Expr extends Browsable {
       this.closingBracket = (closingBracket==null ? Pos.UNKNOWN : closingBracket);
       this.ambiguous      = ambiguous;
       if (errors==null) errors = emptyListOfErrors;
-      if (type==EMPTY && errors.size()==0) errors = errors.make(new ErrorType(pos, "This expression failed to be typechecked"));
+      if (type==EMPTY && errors.size()==0) 
+          errors = errors.make(new ErrorType(pos, "This expression failed to be typechecked"));
       this.mult   = (mult<0 || mult>2) ? 0 : mult;
       this.type   = (errors.size()>0 || type==null) ? EMPTY : type;
       this.weight = (weight>0) ? weight : 0;
@@ -356,12 +357,14 @@ public abstract class Expr extends Browsable {
     * <p> this and x must be expressions with the same arity, or both be integer expressions
     * <p> Note: as a special guarantee, if x==null, then the method will return this Expr object as-is.
     */
-   public final Expr plus(Expr x) { return (x==null) ? this : ExprBinary.Op.PLUS.make(span().merge(x.span()), null, this, x); }
+   public final Expr plus(Expr x)  { return (x==null) ? this : ExprBinary.Op.PLUS.make(span().merge(x.span()), null, this, x); }
+   public final Expr iplus(Expr x) { return (x==null) ? this : ExprBinary.Op.IPLUS.make(span().merge(x.span()), null, this, x); }
 
    /** Returns the expression (this-x)
     * <p> this and x must be expressions with the same arity, or both be integer expressions
     */
-   public final Expr minus(Expr x) { return ExprBinary.Op.MINUS.make(span().merge(x.span()), null, this, x); }
+   public final Expr minus(Expr x)  { return ExprBinary.Op.MINUS.make(span().merge(x.span()), null, this, x); }
+   public final Expr iminus(Expr x) { return ExprBinary.Op.IMINUS.make(span().merge(x.span()), null, this, x); }
 
    /** Returns the formula "this.mul[x]" (the result of multiplying this by x)
     * <p> this and x must both be integer expressions
