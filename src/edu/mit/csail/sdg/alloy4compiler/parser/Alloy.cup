@@ -608,6 +608,13 @@ Typescope  ::= TypeNumber:a Name:b  {:
 :};
 
 //[AM]: INT -> SIGINT
+Typescope ::= TypeNumber:a SIGINT:b  {: 
+   Pos p = a.pos.merge(b);
+   if (a.endingScope>a.startingScope) throw new ErrorSyntax(p, "Cannot specify a growing scope for \"Int\"");
+   if (a.isExact) throw new ErrorSyntax(p, "The exactly keyword is redundant here since the integer bitwidth must be exact.");
+   RESULT = new CommandScope(p, new PrimSig("int", AttrType.WHERE.make(p)), a.isExact, a.startingScope, a.startingScope, 1);
+:};
+
 Typescope ::= TypeNumber:a INT:b  {: 
    Pos p = a.pos.merge(b);
    if (a.endingScope>a.startingScope) throw new ErrorSyntax(p, "Cannot specify a growing scope for \"Int\"");

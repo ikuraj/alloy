@@ -58,7 +58,7 @@ public final class ExprLet extends Expr {
     /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
-            out.append("(let ").append(var.label).append("=... | ");
+            out.append("(let ").append(var.label).append("= ").append(expr.toString()).append(" | ");
             sub.toString(out,-1);
             out.append(')');
         } else {

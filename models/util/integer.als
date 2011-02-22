@@ -22,7 +22,7 @@ fun div [n1, n2: Int] : Int { n1 fun/div n2 }
 fun rem [n1, n2: Int] : Int { n1 fun/rem n2 }
 
 /* negate */
-fun negate [n: Int] : Int { 0 - n }
+fun negate [n: Int] : Int { 0 fun/sub n }
 
 /* equal to */
 pred eq [n1, n2: Int] { int[n1] = int[n2] }
@@ -55,7 +55,7 @@ pred nonpos [n: Int] { n <= 0 }
 pred nonneg [n: Int] { n >= 0 }
 
 /* signum (aka sign or sgn) */
-fun signum [n: Int] : Int { n<0 => (0-1) else (n>0 => 1 else 0) }
+fun signum [n: Int] : Int { n<0 => (0 fun/sub 1) else (n>0 => 1 else 0) }
 
 /*
  * returns the ith element (zero-based) from the set s

@@ -5,10 +5,11 @@ DST=dist
 rm -rf $DST/alloy*
 mkdir -p $DST/alloy
 
-for f in lib/*jar
+for f in ls -1 lib/*jar
 do
     unzip -o $f -d $DST/alloy
 done
+
 cp -r bin/* ../kodkod/bin/* $DST/alloy/
 
 # echo '#!/bin/bash
@@ -22,7 +23,7 @@ cp -r bin/* ../kodkod/bin/* $DST/alloy/
 cd $DST
 rm -rf $DST/alloy/META-INF
 
-for d in amd64-linux  help  icons  images  LICENSES  META-INF  models  README.TXT  x86-freebsd  x86-linux  x86-mac  x86-windows
+for d in META-INF # amd64-linux  help  icons  images  LICENSES  META-INF  models  README.TXT  x86-freebsd  x86-linux  x86-mac  x86-windows
 do
     cp -r template/$d alloy/
 done
