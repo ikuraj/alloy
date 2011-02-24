@@ -720,7 +720,7 @@ public final class SimInstance extends VisitReturn<Object> {
     /** Helper method that evaluates the formula "a = b" */
     public boolean equal(Expr a, Expr b) throws Err {
         if (a.type().is_bool) return cform(a)==cform(b);
-        if (a.type().is_int()) return cint(a)==cint(b);
+        //[AM] if (a.type().is_int()) return cint(a)==cint(b);
         if (a.type().arity()<=0 || a.type().arity()!=b.type().arity()) return false; // type mismatch
         if (a.isSame(b)) return true; else return cset(a).equals(cset(b));
     }

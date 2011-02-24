@@ -341,8 +341,8 @@ public final class CompModule extends Browsable implements Module {
          Expr right = visitThis(x.right);
          // If it's a macro invocation, instantiate it
          if (right instanceof Macro) return ((Macro)right).addArg(left).instantiate(this, warns);
-         // check to see if it is the special builtin function "Int[]"
-         if (left.type().is_int() && right.isSame(Sig.SIGINT)) return left.cast2sigint();
+          // check to see if it is the special builtin function "Int[]"
+         if (left.type().is_int() && right.isSame(Sig.SIGINT)) return left; //[AM] .cast2sigint();
          // otherwise, process as regular join or as method call
          left = left.typecheck_as_set();
          if (!left.errors.isEmpty() || !(right instanceof ExprChoice)) return ExprBinary.Op.JOIN.make(x.pos, x.closingBracket, left, right);
@@ -357,7 +357,7 @@ public final class CompModule extends Browsable implements Module {
             // If it's a macro invocation, instantiate it
             if (right instanceof Macro) return ((Macro)right).addArg(left).instantiate(this, warns);
             // check to see if it is the special builtin function "Int[]"
-            if (left.type().is_int() && right.isSame(Sig.SIGINT)) return left.cast2sigint();
+            if (left.type().is_int() && right.isSame(Sig.SIGINT)) return left; //[AM] .cast2sigint();
             // otherwise, process as regular join or as method call
             left = left.typecheck_as_set();
             if (!left.errors.isEmpty() || !(right instanceof ExprChoice)) return x.op.make(x.pos, x.closingBracket, left, right);

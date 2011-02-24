@@ -225,20 +225,20 @@ public final class Type implements Iterable<Type.ProductType> {
     }
 
     /** Constant value with is_int==false, is_bool==false, and entries.size()==0. */
-    public static final Type EMPTY = new Type(false, false, null, 0);
+    public static final Type EMPTY = new Type(false, null, 0);
 
     //[AM]
     /*  Can't be final because it relies on a static Sig.SIGINT being initialized */
     private static Type INT = null;
 
     /** Constant value with is_int==false, is_bool==true, and entries.size()==0. */
-    public static final Type FORMULA = new Type(false, true, null, 0);
+    public static final Type FORMULA = new Type(true, null, 0);
 
     /** Constant value with is_int==true, is_bool==true, and entries.size()==0. */
-    public static final Type INTANDFORMULA = new Type(true, true, null, 0);
+    public static final Type INTANDFORMULA = new Type(true, null, 0);
 
     /** True if primitive integer value is a possible value in this type. */
-    private final boolean is_int;
+//    private final boolean is_int;
 
     /** True if primitive boolean value is a possible value in this type. */
     public final boolean is_bool;
@@ -258,18 +258,17 @@ public final class Type implements Iterable<Type.ProductType> {
     private final ConstList<ProductType> entries;
 
     public boolean is_int() {
-        return is_int || checkIntType();
+//        return is_int || checkIntType();
+        return checkIntType();
     }
-
+    
     private boolean checkIntType() {
-        return entries.size() == 1 && entries.get(0).arity() == 1 && entries.get(0).get(0) == Sig.SIGINT;
+        return entries != null && entries.size() == 1 && entries.get(0).arity() == 1 && entries.get(0).get(0) == Sig.SIGINT;
     }
 
     //TODO
     public static Type smallIntType() {
-        if (INT == null) 
-            INT = make(Sig.SIGINT); 
-        return INT;
+        return intType();
     }
     
     public static Type intType() {
@@ -304,8 +303,7 @@ public final class Type implements Iterable<Type.ProductType> {
     /** Create a new type consisting of the given set of entries, set of arities, and the given is_int/is_bool values;
      * <p> Precondition: entries and arities must be consistent
      */
-    private Type(boolean is_int, boolean is_bool, ConstList<ProductType> entries, int arities) {
-        this.is_int = is_int; 
+    private Type(boolean is_bool, ConstList<ProductType> entries, int arities) {
         this.is_bool = is_bool;
         if (entries==null || entries.size()==0 || arities==0) {
             this.entries = ConstList.make();
@@ -319,11 +317,11 @@ public final class Type implements Iterable<Type.ProductType> {
     /** Create a new type consisting of the given set of entries, set of arities, and the given is_int/is_bool values;
      * <p> Precondition: entries and arities must be consistent
      */
-    private static Type make(boolean is_int, boolean is_bool, ConstList<ProductType> entries, int arities) {
+    private static Type make(boolean is_bool, ConstList<ProductType> entries, int arities) {
         if (entries==null || entries.size()==0 || arities==0) {
-            if (is_int) return is_bool?INTANDFORMULA:intType(); else return is_bool?FORMULA:EMPTY;
+            return is_bool?FORMULA:EMPTY;
         }
-        return new Type(is_int || isIntType(entries), is_bool, entries, arities);
+        return new Type(is_bool, entries, arities);
     }
 
     /** Create the type consisting of the given ProductType entry.
@@ -331,7 +329,7 @@ public final class Type implements Iterable<Type.ProductType> {
     static Type make(ProductType productType) {
         int ar=productType.types.length;
         if (ar==0) return EMPTY;
-        return make(isIntType(productType), false, ConstList.make(1,productType), (ar>30) ? 1 : (1<<ar));
+        return make(false, ConstList.make(1,productType), (ar>30) ? 1 : (1<<ar));
     }
 
     /** Create the type list[start]->list[start+1]->..->list[end-1]
@@ -368,28 +366,20 @@ public final class Type implements Iterable<Type.ProductType> {
 
     /** Create a new type that is the same as "old", except the "is_bool" flag is set to true. */
     static Type makeBool(Type old) {
-        if (old.is_bool) return old; else return make(old.is_int(), true, old.entries, old.arities);
+        if (old.is_bool) return old; else return make(true, old.entries, old.arities);
     }
 
     /** Create a new type that is the same as "old", except the "is_bool" and "is_int" flags are both set to false. */
     public static Type removesBoolAndInt(Type old) {
-        if (!old.is_bool && !old.is_int()) return old; else return make(false, false, old.entries, old.arities);
+        if (!old.is_bool && !old.is_int()) return old; else return make(false, old.entries, old.arities);
     }
-    
-    private static boolean isIntType(ConstList<ProductType> entries) {
-        return entries != null && entries.size() == 1 && isIntType(entries.get(0));
-    }
-
-    private static boolean isIntType(ProductType productType) {
-        return productType.arity() == 1 && productType.get(0) == Sig.SIGINT;
-    }
-    
+        
     /** Returns true iff ((this subsumes that) and (that subsumes this)) */
     @Override public boolean equals(Object that) {
         if (this==that) return true;
         if (!(that instanceof Type)) return false;
         Type x = (Type)that;
-        if (arities != x.arities || is_int() != x.is_int() || is_bool != x.is_bool) return false;
+        if (arities != x.arities || /*[AM] is_int() != x.is_int() || */is_bool != x.is_bool) return false;
         again1:
         for(ProductType aa:entries) {
             for(ProductType bb:x.entries) if (aa.types.length==bb.types.length && aa.isSubtypeOf(bb)) continue again1;
@@ -404,7 +394,7 @@ public final class Type implements Iterable<Type.ProductType> {
     }
 
     /** Returns a hash code consistent with equals() */
-    @Override public int hashCode() { return arities * (is_int()?1732051:1) * (is_bool?314157:1); }
+    @Override public int hashCode() { return arities * /*[AM] (is_int()?1732051:1) **/ (is_bool?314157:1); }
 
     /** Returns true if this.size()==0 or every entry consists only of NONE. */
     public boolean hasNoTuple() {
@@ -492,7 +482,7 @@ public final class Type implements Iterable<Type.ProductType> {
         TempList<ProductType> ee=new TempList<ProductType>();
         int aa=0;
         for (ProductType a:this) for (ProductType b:that) aa=add(ee, aa, a.product(b));
-        return make(false, false, ee.makeConst(), aa);
+        return make(false, ee.makeConst(), aa);
     }
 
     /** Returns true iff { A&B | A is in this, and B is in that } can have tuples.
@@ -520,7 +510,7 @@ public final class Type implements Iterable<Type.ProductType> {
           for (ProductType b:that)
             if (a.types.length==b.types.length)
                aa=add(ee, aa, a.intersect(b));
-        return make(false, false, ee.makeConst(), aa);
+        return make(false, ee.makeConst(), aa);
     }
 
     /** Returns a new type { A&that | A is in this }
@@ -535,7 +525,7 @@ public final class Type implements Iterable<Type.ProductType> {
         TempList<ProductType> ee=new TempList<ProductType>();
         int aa=0;
         for (ProductType a:this) if (a.types.length==that.types.length) aa=add(ee, aa, a.intersect(that));
-        return make(false, false, ee.makeConst(), aa);
+        return make(false, ee.makeConst(), aa);
     }
 
     /** Returns a new type { A | A is in this, or A is in that }
@@ -549,14 +539,14 @@ public final class Type implements Iterable<Type.ProductType> {
      */
     public Type merge(Type that) {
         if (that==null) return this;
-        if (is_int()==that.is_int() && is_bool==that.is_bool) {
+        if (is_bool==that.is_bool) {
             if (this.size()==0) return that;
             if (that.size()==0) return this;
         }
         TempList<ProductType> ee=new TempList<ProductType>(entries);
         int aa=arities;
         for(ProductType x:that) aa=add(ee,aa,x);
-        return make(is_int()||that.is_int(), is_bool||that.is_bool, ee.makeConst(), aa);
+        return make(is_bool||that.is_bool, ee.makeConst(), aa);
     }
 
     /** Returns a new type { A | A is in this, or A == that }
@@ -567,7 +557,7 @@ public final class Type implements Iterable<Type.ProductType> {
     public Type merge(ProductType that) {
         TempList<ProductType> ee=new TempList<ProductType>(entries);
         int aa=add(ee, arities, that);
-        return make(is_int(), is_bool, ee.makeConst(), aa);
+        return make(is_bool, ee.makeConst(), aa);
     }
 
     /** Returns a new type { A | A is in this, or A == that.subList(begin,end) }
@@ -581,7 +571,7 @@ public final class Type implements Iterable<Type.ProductType> {
         for(int i=0; i < array.length; i++) { array[i]=that.types[begin+i]; }
         TempList<ProductType> ee=new TempList<ProductType>(entries);
         int aa=add(ee, arities, new ProductType(array));
-        return make(is_int(), is_bool, ee.makeConst(), aa);
+        return make(is_bool, ee.makeConst(), aa);
     }
 
     /** Returns a new type { A | A is in this, or A == that }
@@ -602,7 +592,7 @@ public final class Type implements Iterable<Type.ProductType> {
         }
         TempList<ProductType> ee=new TempList<ProductType>(entries);
         int aa=add(ee, arities, new ProductType(array));
-        return make(is_int(), is_bool, ee.makeConst(), aa);
+        return make(is_bool, ee.makeConst(), aa);
     }
 
     /** Returns a new type { A | (A is in this && A.arity in that) or (A is in that && A.arity in this) }
@@ -630,7 +620,7 @@ public final class Type implements Iterable<Type.ProductType> {
                 if (ee.get(i) != this.entries.get(i)) break;
             }
         }
-        return make(false, false, ee.makeConst(), aa);
+        return make(false, ee.makeConst(), aa);
     }
 
     /** Returns a new type { A | (A is in this && A.arity in that) }
@@ -652,7 +642,7 @@ public final class Type implements Iterable<Type.ProductType> {
         } else {
             for(ProductType x:entries) if (that.hasArity(x.types.length)) aa=add(ee,aa,x);
         }
-        return make(false, false, ee.makeConst(), aa);
+        return make(false, ee.makeConst(), aa);
     }
 
     /** Returns a new type { A in this | A.artiy==1 }
@@ -667,7 +657,7 @@ public final class Type implements Iterable<Type.ProductType> {
         if (!is_int() && !is_bool && arities==(1<<1)) return this;
         TempList<ProductType> ee=new TempList<ProductType>();
         for(ProductType x: entries) if (x.types.length == 1) ee.add(x);
-        return make(false, false, ee.makeConst(), (1<<1));
+        return make(false, ee.makeConst(), (1<<1));
     }
 
     /** Returns a new type { A in this | A.artiy==2 }
@@ -682,7 +672,7 @@ public final class Type implements Iterable<Type.ProductType> {
         if (!is_int() && !is_bool && arities==(1<<2)) return this;
         TempList<ProductType> ee=new TempList<ProductType>();
         for(ProductType x: entries) if (x.types.length == 2) ee.add(x);
-        return make(false, false, ee.makeConst(), (1<<2));
+        return make(false, ee.makeConst(), (1<<2));
     }
 
     /** Returns a new type { A | A is binary and ~A is in this }
@@ -697,7 +687,7 @@ public final class Type implements Iterable<Type.ProductType> {
         TempList<ProductType> ee=new TempList<ProductType>();
         int aa=0;
         for(ProductType a:this) if (a.types.length==2) aa=add(ee, aa, a.transpose());
-        return make(false, false, ee.makeConst(), aa);
+        return make(false, ee.makeConst(), aa);
     }
 
     /** Returns true if for all A in this, there exists B in that, where A is equal or subset of B.
@@ -729,7 +719,7 @@ public final class Type implements Iterable<Type.ProductType> {
         TempList<ProductType> ee=new TempList<ProductType>();
         int aa=0;
         for (ProductType a:this) for (ProductType b:that) if (a.types.length>1 || b.types.length>1) aa=add(ee, aa, a.join(b));
-        return make(false, false, ee.makeConst(), aa);
+        return make(false, ee.makeConst(), aa);
     }
 
     /** Returns a new type { R[0]->..->R[n-1] |
@@ -748,7 +738,7 @@ public final class Type implements Iterable<Type.ProductType> {
           if (b.types.length==1)
             for (ProductType a:this)
                 aa = add(ee, aa, a.columnRestrict(b.types[0], 0));
-        return make(false, false, ee.makeConst(), aa);
+        return make(false, ee.makeConst(), aa);
     }
 
     /** Returns a new type { R[0]->..->R[n-1] |
@@ -767,7 +757,7 @@ public final class Type implements Iterable<Type.ProductType> {
           if (b.types.length==1)
             for (ProductType a:this)
                 aa = add(ee, aa, a.columnRestrict(b.types[0], a.types.length-1));
-        return make(false, false, ee.makeConst(), aa);
+        return make(false, ee.makeConst(), aa);
     }
 
     /** Returns a new type { A  |  (A in this) and (A.arity == arity) }
@@ -783,7 +773,7 @@ public final class Type implements Iterable<Type.ProductType> {
         if ((arities & aa)==0) return EMPTY;
         final TempList<ProductType> ee=new TempList<ProductType>();
         for(ProductType x: entries) if (x.types.length == arity) ee.add(x);
-        return make(false, false, ee.makeConst(), aa);
+        return make(false, ee.makeConst(), aa);
     }
 
     /** Returns a new type u + u.u + u.u.u + ... (where u == the set of binary entries in this type)

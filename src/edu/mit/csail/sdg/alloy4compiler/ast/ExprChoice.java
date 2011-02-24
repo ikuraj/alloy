@@ -114,7 +114,7 @@ public final class ExprChoice extends Expr {
         // We first prefer exact matches
         for(int i=0; i<choices.size(); i++) {
             Type tt = choices.get(i).type;
-            if ((t.is_int() && tt.is_int()) || (t.is_bool && tt.is_bool) || t.intersects(tt)) { ch.add(choices.get(i)); re.add(reasons.get(i)); }
+            if (/*[AM](t.is_int() && tt.is_int()) || */(t.is_bool && tt.is_bool) || t.intersects(tt)) { ch.add(choices.get(i)); re.add(reasons.get(i)); }
         }
         // If none, we try any legal matches
         if (ch.size()==0) {

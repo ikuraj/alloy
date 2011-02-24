@@ -714,13 +714,4 @@ public abstract class Expr extends Browsable {
     */
    public final Expr cardinality() { return ExprUnary.Op.CARDINALITY.make(span(), this); }
 
-   /** Returns the integer expression "int[this]"
-    * <p> this must be a unary set
-    */
-   public final Expr cast2int() { return ExprUnary.Op.CAST2INT.make(span(), this); }
-
-   /** Returns the singleton set "Int[this]"
-    * <p> this must be an integer expression
-    */
-   public final Expr cast2sigint() { return ExprUnary.Op.CAST2SIGINT.make(span(), this); }
 }

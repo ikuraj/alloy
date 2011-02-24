@@ -29,6 +29,7 @@ do
 done
 
 cd alloy
+find -type f -name "*.java" | xargs rm -f
 zip -r alloy-dev.jar *
 chmod +x alloy-dev.jar
 mv alloy-dev.jar ../

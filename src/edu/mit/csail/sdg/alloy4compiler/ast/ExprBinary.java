@@ -15,21 +15,22 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import edu.mit.csail.sdg.alloy4.Pos;
+
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.JoinableList;
+import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
-import edu.mit.csail.sdg.alloy4compiler.ast.Type.ProductType;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
+import edu.mit.csail.sdg.alloy4compiler.ast.Type.ProductType;
 
 /** Immutable; represents an expression of the form (x OP y).
  *
@@ -268,17 +269,21 @@ public final class ExprBinary extends Expr {
               type = left.type.unionWithCommonArity(right.type);
               if (type==EMPTY) e=error(pos, "++ can be used only between two expressions of the same arity.", left, right);
               break;
-           case PLUS: case MINUS: case EQUALS: case NOT_EQUALS: case IPLUS: case IMINUS:
+           case PLUS: case MINUS: case EQUALS: case NOT_EQUALS: 
               if (this==EQUALS || this==NOT_EQUALS) {
-                 if (left.type.hasCommonArity(right.type) || (left.type.is_int() && right.type.is_int())) {type=Type.FORMULA; break;}
+                 if (left.type.hasCommonArity(right.type) || (left.type.is_int() && right.type.is_int())) {
+                     type=Type.FORMULA; 
+                     break;
+                 }
               } else {
                  type = (this==PLUS ? left.type.unionWithCommonArity(right.type) : left.type.pickCommonArity(right.type));
-                 //[AM] 
-//                 if (left.type.is_int && right.type.is_int) type=Type.makeInt(type);
                  if (type!=EMPTY) break;
               }
               e=error(pos, this+" can be used only between 2 expressions of the same arity, or between 2 integer expressions.", left, right);
               break;
+           case IPLUS: case IMINUS:
+               type = Type.smallIntType();
+               break;
            case IN: case NOT_IN:
               type=(left.type.hasCommonArity(right.type)) ? Type.FORMULA : EMPTY;
               if (type==EMPTY) e=error(pos,this+" can be used only between 2 expressions of the same arity.", left, right);
