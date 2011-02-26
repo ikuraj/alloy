@@ -99,6 +99,10 @@ public final class SimInstance extends VisitReturn<Object> {
     /** The maximum allowed integer based on the chosen bitwidth. */
     private final int max;
 
+    /** Whether the was overflow the last time "trunc" was called */
+    private boolean wasOverflow;
+    public boolean wasOverflow() { return wasOverflow; }
+
     /** Helper method that encodes the given string using UTF-8 and write to the output stream. */
     private static void write(BufferedOutputStream out, String string) throws IOException {
         out.write(string.getBytes("UTF-8"));
@@ -353,8 +357,13 @@ public final class SimInstance extends VisitReturn<Object> {
         cacheForConstants.clear();
     }
 
-    /** Truncate the given integer based on the current chosen bitwidth */
-    private int trunc(int i) { return (i<<(32-bitwidth)) >> (32-bitwidth); }
+    /** Truncate the given integer based on the current chosen bitwidth (as string) plus 
+     *  a flag to indicate overflow */
+    private int trunc(int i) { 
+        int ret = (i<<(32-bitwidth)) >> (32-bitwidth);
+        wasOverflow = ret != i;
+        return ret;
+    }
 
     /** Convenience method that evalutes x and casts the result to be a boolean.
      * @return the boolean - if x evaluates to a boolean
@@ -374,7 +383,8 @@ public final class SimInstance extends VisitReturn<Object> {
     public int cint(Expr x) throws Err {
         if (!x.errors.isEmpty()) throw x.errors.pick();
         Object y = visitThis(x);
-        if (y instanceof Integer) return trunc((Integer)y);
+        if (y instanceof Integer) return (Integer)y;
+        if (y instanceof SimTupleset) return ((SimTupleset) y).sum();
         throw new ErrorFatal(x.span(), "This should have been an integer expression.\nInstead it is "+y);
     }
 
@@ -386,6 +396,7 @@ public final class SimInstance extends VisitReturn<Object> {
         if (!x.errors.isEmpty()) throw x.errors.pick();
         Object y = visitThis(x);
         if (y instanceof SimTupleset) return (SimTupleset)y;
+        if (y instanceof Integer) return SimTupleset.make(SimTuple.make(SimAtom.make(((Integer) y).intValue())));
         throw new ErrorFatal(x.span(), "This should have been a set or a relation.\nInstead it is "+y);
     }
 

@@ -1649,9 +1649,10 @@ public final class SimpleGUI implements ComponentListener, Listener {
             }
             try {
                 Expr e = CompUtil.parseOneExpression_fromString(root, str);
-                if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG)
-                   return convert(root, ans).visitThis(e).toString();
-                else
+                if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG) {
+                    SimInstance simInst = convert(root, ans);
+                    return simInst.visitThis(e).toString() + (simInst.wasOverflow() ? " (OF)" : "");
+                } else
                    return ans.eval(e).toString();
             } catch(HigherOrderDeclException ex) {
                 throw new ErrorType("Higher-order quantification is not allowed in the evaluator.");

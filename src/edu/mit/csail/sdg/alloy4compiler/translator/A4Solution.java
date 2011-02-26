@@ -592,7 +592,7 @@ public final class A4Solution {
            if (expr.ambiguous && !expr.errors.isEmpty()) expr = expr.resolve(expr.type(), null);
            if (!expr.errors.isEmpty()) throw expr.errors.pick();
            Object result = TranslateAlloyToKodkod.alloy2kodkod(this, expr);
-           if (result instanceof IntExpression) return eval.evaluate((IntExpression)result);
+           if (result instanceof IntExpression) return eval.evaluate((IntExpression)result) + (eval.wasOverflow() ? " (OF)" : "");
            if (result instanceof Formula) return eval.evaluate((Formula)result);
            if (result instanceof Expression) return new A4TupleSet(eval.evaluate((Expression)result), this);
            throw new ErrorFatal("Unknown internal error encountered in the evaluator.");
