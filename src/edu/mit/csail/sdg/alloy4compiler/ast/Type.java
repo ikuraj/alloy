@@ -15,18 +15,20 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import edu.mit.csail.sdg.alloy4.Err;
+
 import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 
 /** Immutable; represents the type of an expression.
  *
@@ -229,7 +231,7 @@ public final class Type implements Iterable<Type.ProductType> {
 
     //[AM]
     /*  Can't be final because it relies on a static Sig.SIGINT being initialized */
-    private static Type INT = null;
+    private static Type SMALL_INT = null;
 
     /** Constant value with is_int==false, is_bool==true, and entries.size()==0. */
     public static final Type FORMULA = new Type(true, null, 0);
@@ -239,6 +241,7 @@ public final class Type implements Iterable<Type.ProductType> {
 
     /** True if primitive integer value is a possible value in this type. */
 //    private final boolean is_int;
+    private boolean is_small_int;
 
     /** True if primitive boolean value is a possible value in this type. */
     public final boolean is_bool;
@@ -257,24 +260,25 @@ public final class Type implements Iterable<Type.ProductType> {
     /** Contains the list of ProductType entries in this type. */
     private final ConstList<ProductType> entries;
 
-    public boolean is_int() {
-//        return is_int || checkIntType();
-        return checkIntType();
-    }
+    public boolean is_int()       { return checkIntType(); }
+    public boolean is_small_int() { return is_int() && is_small_int; }
     
     private boolean checkIntType() {
-        return entries != null && entries.size() == 1 && entries.get(0).arity() == 1 && entries.get(0).get(0) == Sig.SIGINT;
+        if (entries == null)
+            return false;
+        for (ProductType e : entries) {
+            if (e.arity() == 1 && e.get(0) == Sig.SIGINT)
+                return true;
+        }
+        return false;
     }
 
-    //TODO
     public static Type smallIntType() {
-        return intType();
-    }
-    
-    public static Type intType() {
-        if (INT == null) 
-            INT = make(Sig.SIGINT); 
-        return INT;
+        if (SMALL_INT == null) { 
+            SMALL_INT = make(Sig.SIGINT);
+            SMALL_INT.is_small_int = true;
+        }
+        return SMALL_INT;
     }
 
     /** Returns an iterator that iterates over the ProductType entries in this type.

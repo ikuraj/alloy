@@ -926,18 +926,18 @@ MulExprB ::= MulExprB:a INTREM:o     NumUnopExprB:b        {: RESULT=ExprBinary.
 
 NumUnopExprA ::=          OverrideExprA:b                        {: RESULT=b;                                   :};
 NumUnopExprA ::= HASH:o   Bind:b                                 {: RESULT=ExprUnary.Op.CARDINALITY.make(o, b); :};
-NumUnopExprA ::= SUM:o    Bind:b                                 {: RESULT=ExprUnary.Op.CAST2INT   .make(o, b); :};
+NumUnopExprA ::= SUM:o    Bind:b                                 {: RESULT=ExprUnary.Op.CAST2SIGINT.make(o, ExprUnary.Op.CAST2INT.make(o, b)); :};
 //[AM]: INT->SIGINT
-NumUnopExprA ::= INT:o    Bind:b                                 {: RESULT=ExprUnary.Op.CAST2INT   .make(o, b); :};
+NumUnopExprA ::= INT:o    Bind:b                                 {: RESULT=ExprUnary.Op.CAST2SIGINT.make(o, ExprUnary.Op.CAST2INT.make(o, b)); :};
 NumUnopExprA ::= HASH:o   NumUnopExprA:b                         {: RESULT=ExprUnary.Op.CARDINALITY.make(o, b); :};
-NumUnopExprA ::= SUM:o    NumUnopExprA:b                         {: RESULT=ExprUnary.Op.CAST2INT   .make(o, b); :};
+NumUnopExprA ::= SUM:o    NumUnopExprA:b                         {: RESULT=ExprUnary.Op.CAST2SIGINT.make(o, ExprUnary.Op.CAST2INT.make(o, b)); :};
 //[AM]: INT->SIGINT
-NumUnopExprA ::= INT:o    NumUnopExprA:b                         {: RESULT=ExprUnary.Op.CAST2INT   .make(o, b); :};
+NumUnopExprA ::= INT:o    NumUnopExprA:b                         {: RESULT=ExprUnary.Op.CAST2SIGINT.make(o, ExprUnary.Op.CAST2INT.make(o, b)); :};
 NumUnopExprB ::=          OverrideExprB:b                        {: RESULT=b;                                   :};
 NumUnopExprB ::= HASH:o   NumUnopExprB:b                         {: RESULT=ExprUnary.Op.CARDINALITY.make(o, b); :};
-NumUnopExprB ::= SUM:o    NumUnopExprB:b                         {: RESULT=ExprUnary.Op.CAST2INT   .make(o, b); :};
+NumUnopExprB ::= SUM:o    NumUnopExprB:b                         {: RESULT=ExprUnary.Op.CAST2SIGINT.make(o, ExprUnary.Op.CAST2INT.make(o, b)); :};
 //[AM]: INT->SIGINT
-NumUnopExprB ::= INT:o    NumUnopExprB:b                      {: RESULT=ExprUnary.Op.CAST2INT   .make(o, b); :};
+NumUnopExprB ::= INT:o    NumUnopExprB:b                         {: RESULT=ExprUnary.Op.CAST2SIGINT.make(o, ExprUnary.Op.CAST2INT.make(o, b)); :};
 
 OverrideExprA ::=                            IntersectExprA:b     {: RESULT=b;                                               :};
 OverrideExprA ::= OverrideExprB:a PLUSPLUS:o Bind:b               {: RESULT=ExprBinary.Op.PLUSPLUS.make(o, null, a, b);      :};
@@ -987,8 +987,8 @@ BracketExprB ::= BracketExprB:a LBRACKET Exprs:b RBRACKET:c {: Expr aa=a;       
 BracketExprB ::= DISJ:a         LBRACKET Exprs:b RBRACKET:c {: Expr aa=ExprVar.make(a, "disj");            for(Expr bb:b) aa=t(aa.span().merge(bb.span()), c, bb, aa, c); RESULT=aa; :};
 BracketExprB ::= TOTALORDER:a   LBRACKET Exprs:b RBRACKET:c {: Expr aa=ExprVar.make(a, "pred/totalOrder"); for(Expr bb:b) aa=t(aa.span().merge(bb.span()), c, bb, aa, c); RESULT=aa; :};
 //[AM]: INT->SIGINT
-BracketExprB ::= INT:a       LBRACKET Exprs:b RBRACKET:c {: Expr aa=ExprVar.make(a, "int");             for(Expr bb:b) aa=t(aa.span().merge(bb.span()), c, bb, aa, c); RESULT=aa; :};
-BracketExprB ::= SUM:a          LBRACKET Exprs:b RBRACKET:c {: Expr aa=ExprVar.make(a, "int");             for(Expr bb:b) aa=t(aa.span().merge(bb.span()), c, bb, aa, c); RESULT=aa; :};
+BracketExprB ::= INT:a       LBRACKET Exprs:b RBRACKET:c {: Expr aa=ExprVar.make(a, "int");             for(Expr bb:b) aa=t(aa.span().merge(bb.span()), c, bb, aa, c); RESULT=ExprUnary.Op.CAST2SIGINT.make(a, aa); :};
+BracketExprB ::= SUM:a       LBRACKET Exprs:b RBRACKET:c {: Expr aa=ExprVar.make(a, "int");             for(Expr bb:b) aa=t(aa.span().merge(bb.span()), c, bb, aa, c); RESULT=ExprUnary.Op.CAST2SIGINT.make(a, aa); :};
 
 DotExprA ::=                      UnopExprA:b  {: RESULT=b;                                                       :};
 DotExprA ::= BracketExprB:a DOT:o Bind:b       {: RESULT=t(o, null, a, b,                                  null); :};
@@ -997,8 +997,8 @@ DotExprB ::= BracketExprB:a DOT:o UnopExprB:b  {: RESULT=t(o, null, a, b,       
 DotExprB ::= BracketExprB:a DOT:o DISJ:b       {: RESULT=t(o, null, a, ExprVar.make(b, "disj"),            null); :};
 DotExprB ::= BracketExprB:a DOT:o TOTALORDER:b {: RESULT=t(o, null, a, ExprVar.make(b, "pred/totalOrder"), null); :};
 //[AM]: INT->SIGINT
-DotExprB ::= BracketExprB:a DOT:o INT       {: RESULT=ExprUnary.Op.CAST2INT.make(o, a);                        :};
-DotExprB ::= BracketExprB:a DOT:o SUM          {: RESULT=ExprUnary.Op.CAST2INT.make(o, a);                        :};
+DotExprB ::= BracketExprB:a DOT:o INT       {: RESULT=ExprUnary.Op.CAST2SIGINT.make(o, ExprUnary.Op.CAST2INT.make(o, a)); :};
+DotExprB ::= BracketExprB:a DOT:o SUM       {: RESULT=ExprUnary.Op.CAST2SIGINT.make(o, ExprUnary.Op.CAST2INT.make(o, a)); :};
 
 UnopExprA ::= TILDE:o  Bind:b       {: RESULT=ExprUnary.Op.TRANSPOSE.make(o,b); :};
 UnopExprA ::= STAR:o   Bind:b       {: RESULT=ExprUnary.Op.RCLOSURE .make(o,b); :};

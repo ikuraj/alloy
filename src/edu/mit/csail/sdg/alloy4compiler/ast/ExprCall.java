@@ -97,7 +97,7 @@ public final class ExprCall extends Expr {
               case NOT_LT: case NOT_GT: case NOT_LTE: case NOT_GTE: case NOT_IN: case NOT_EQUALS:
                   return Type.FORMULA;
               case MUL: case DIV: case REM: case SHL: case SHR: case SHA:
-                  return Type.intType();
+                  return Type.smallIntType();
             }
             Type a = x.left.accept(this);
             Type b = x.right.accept(this);
@@ -117,7 +117,7 @@ public final class ExprCall extends Expr {
             Type t = x.sub.accept(this);
             switch(x.op) {
               case NOOP: case LONEOF: case ONEOF: case SETOF: case SOMEOF: case EXACTLYOF: return t;
-              case CARDINALITY: case CAST2INT: return Type.intType();
+              case CARDINALITY: case CAST2INT: return Type.smallIntType();
               case CAST2SIGINT: return Sig.SIGINT.type;
               case TRANSPOSE: return t.transpose();
               case CLOSURE: return t.closure();
@@ -126,7 +126,7 @@ public final class ExprCall extends Expr {
             }
         }
         @Override public Type visit(ExprQt x) throws Err {
-            if (x.op == ExprQt.Op.SUM) return Type.intType();
+            if (x.op == ExprQt.Op.SUM) return Type.smallIntType();
             if (x.op != ExprQt.Op.COMPREHENSION) return Type.FORMULA;
             Type ans = null;
             for(Decl d: x.decls) {

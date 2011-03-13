@@ -12,7 +12,7 @@ check plus_doesnt_overflow {
   all s: S_add | 
     (s.a > 0 and s.b > 0 => s.res > 0) and
     (s.a < 0 and s.b < 0 => s.res < 0)
-} for 0 but 5 Int, exactly 1 S_add
+} for 0 but 4 Int, exactly 1 S_add
 
 /* ~~~~~~~~~ subtraction ~~~~~~~~~ */
 
@@ -73,5 +73,19 @@ sig S_div {
 } {
   res = div[a, b]
 }
+
+/* ~~~~~~~~ shift left ~~~~~~~~ */
+
+sig S_shl {
+  a, b, res: one Int
+} {
+  res = a << b
+}
+
+check shl_doesnt_overflow {
+  all s: S_shl | 
+    (s.a > 0 and s.b > 0 => s.res > 0) and
+    (s.a < 0 and s.b > 0 => s.res < 0)
+} for 0 but 5 Int, exactly 1 S_shl
 
 

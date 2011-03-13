@@ -15,22 +15,24 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
+
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
-import edu.mit.csail.sdg.alloy4.Pos;
+
+import edu.mit.csail.sdg.alloy4.DirectedGraph;
 import edu.mit.csail.sdg.alloy4.Err;
-import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.JoinableList;
-import edu.mit.csail.sdg.alloy4.DirectedGraph;
+import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type.ProductType;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 /** Immutable; represents a unary expression of the form "(OP subexpression)"
  *
@@ -168,8 +170,23 @@ public final class ExprUnary extends Expr {
             switch(this) {
                case NOOP: break;
                case NOT: sub=sub.typecheck_as_formula(); break;
-               case CAST2SIGINT: sub=sub.typecheck_as_int(); break;
-               case CAST2INT: if (sub.type==Type.intType()) return sub; else {sub=sub.typecheck_as_set(); break;} // Shortcut if already integer
+               case CAST2SIGINT: 
+                   if (sub instanceof ExprUnary)
+                       if (((ExprUnary) sub).op == CAST2SIGINT)
+                           return sub;
+                   sub=sub.typecheck_as_int(); 
+                   break;
+               case CAST2INT: 
+                   if (sub instanceof ExprUnary) {
+                       // shortcircuit
+                       ExprUnary sub2 = (ExprUnary) sub;
+                       if (sub2.op == CAST2INT)
+                           return sub2;
+                       if (sub2.op == CAST2SIGINT)
+                           return sub2.sub;
+                   }
+                   sub=sub.typecheck_as_set(); 
+                   break;
                default: sub=sub.typecheck_as_set();
             }
             Type type=sub.type;
@@ -194,12 +211,12 @@ public final class ExprUnary extends Expr {
                 if (this==RCLOSURE) type=Type.make2(UNIV);
                 break;
               case CARDINALITY:
-                type=Type.intType();
+                type=Type.smallIntType();
                 break;
               case CAST2INT:
                 if (!sub.type.hasArity(1)) extraError=new ErrorType(sub.span(), "int[] can be used only with a unary set.\n" +
                    "Instead, its possible type(s) are:\n"+sub.type);
-                type=Type.intType();
+                type=Type.smallIntType();
                 break;
               case CAST2SIGINT:
                 type=SIGINT.type;
@@ -243,7 +260,7 @@ public final class ExprUnary extends Expr {
             s=Type.removesBoolAndInt(sub.type);
             break;
           case CAST2SIGINT:
-            s=Type.intType();
+            s=Type.smallIntType();
             break;
           case CAST2INT:
             s=sub.type.intersect(SIGINT.type);

@@ -157,7 +157,7 @@ public final class ExprQt extends Expr {
        * @param sub - the body of the expression
        */
       public final Expr make(Pos pos, Pos closingBracket, List<Decl> decls, Expr sub) {
-         Type t = this==SUM ? Type.intType() : (this==COMPREHENSION ? Type.EMPTY : Type.FORMULA);
+         Type t = this==SUM ? Type.smallIntType() : (this==COMPREHENSION ? Type.EMPTY : Type.FORMULA);
          if (this!=SUM) sub = sub.typecheck_as_formula(); else sub = sub.typecheck_as_int();
          boolean ambiguous = sub.ambiguous;
          JoinableList<Err> errs = emptyListOfErrors;

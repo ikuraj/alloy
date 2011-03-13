@@ -235,7 +235,12 @@ public final class ExprBinary extends Expr {
               right = right.typecheck_as_formula();
               break;
            }
-           case PLUS: case MINUS: case EQUALS: case NOT_EQUALS: case IPLUS: case IMINUS: {
+           case IPLUS: case IMINUS: {
+               left = left.typecheck_as_int();
+               right = right.typecheck_as_int();
+               break;
+           }
+           case PLUS: case MINUS: case EQUALS: case NOT_EQUALS: {
                //[AM]: these are always relational operators now, so no casts
 //              Type a=left.type, b=right.type;
 //              if (a.hasCommonArity(b) || (a.is_int && b.is_int)) break;
@@ -263,7 +268,7 @@ public final class ExprBinary extends Expr {
               type = Type.FORMULA;
               break;
            case MUL: case DIV: case REM: case SHL: case SHR: case SHA:
-              type = Type.intType();
+              type = Type.smallIntType();
               break;
            case PLUSPLUS:
               type = left.type.unionWithCommonArity(right.type);
@@ -333,7 +338,7 @@ public final class ExprBinary extends Expr {
       switch(op) {
         case MUL: case DIV: case REM: case LT: case LTE: case GT: case GTE: case SHL: case SHR: case SHA:
         case NOT_LTE: case NOT_GTE: case NOT_LT: case NOT_GT: {
-           a=(b=Type.intType());
+           a=(b=Type.smallIntType());
            break;
         }
         case AND: case OR: case IFF: case IMPLIES: {
@@ -379,7 +384,7 @@ public final class ExprBinary extends Expr {
            break;
         }
         case IPLUS: case IMINUS: {
-            a=Type.smallIntType(); 
+            a = Type.smallIntType(); 
             b = Type.smallIntType();
             break;
         }
