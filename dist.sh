@@ -1,5 +1,9 @@
 #!/bin/bash
 
+## ----------------------------------------------------------------
+## TODO: used stuff from the extra folder instead of dist/template
+## ----------------------------------------------------------------
+
 DST=dist
 
 rm -rf $DST/alloy*

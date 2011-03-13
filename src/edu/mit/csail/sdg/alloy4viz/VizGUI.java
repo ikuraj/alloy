@@ -361,7 +361,7 @@ public final class VizGUI implements ComponentListener {
          wrap = true;
          JMenu fileMenu = menu(mb, "&File", null);
          menuItem(fileMenu, "Open...", 'O', 'O', doLoad());
-         JMenu exportMenu = menu(null, "&Export As", null);
+         JMenu exportMenu = menu(null, "&Export To", null);
          menuItem(exportMenu, "Dot...", 'D', 'D', doExportDot());
          menuItem(exportMenu, "XML...", 'X', 'X', doExportXml());
          fileMenu.add(exportMenu);
