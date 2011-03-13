@@ -100,7 +100,7 @@ public final class VizGUI implements ComponentListener {
    private final JButton projectionButton, openSettingsButton, closeSettingsButton,
    magicLayout, loadSettingsButton, saveSettingsButton, saveAsSettingsButton,
    resetSettingsButton, updateSettingsButton, openEvaluatorButton, closeEvaluatorButton, enumerateButton,
-   vizButton, xmlButton, treeButton, dotButton;
+   vizButton, treeButton, txtButton/*, dotButton, xmlButton*/;
 
    /** This list must contain all the display mode buttons (that is, vizButton, xmlButton...) */
    private final List<JButton> solutionButtons = new ArrayList<JButton>();
@@ -209,8 +209,9 @@ public final class VizGUI implements ComponentListener {
    /** This enum defines the set of possible visualizer modes. */
    private enum VisualizerMode {
       /** Visualize using graphviz's dot. */  Viz("graphviz"),
-      /** See the DOT content. */             DOT("dot"),
-      /** See the XML content. */             XML("xml"),
+//      /** See the DOT content. */             DOT("dot"),
+//      /** See the XML content. */             XML("xml"),
+      /** See the instance as text. */        TEXT("txt"),
       /** See the instance as a tree. */      Tree("tree");
       /** This is a unique String for this value; it should be kept consistent in future versions. */
       private final String id;
@@ -360,6 +361,10 @@ public final class VizGUI implements ComponentListener {
          wrap = true;
          JMenu fileMenu = menu(mb, "&File", null);
          menuItem(fileMenu, "Open...", 'O', 'O', doLoad());
+         JMenu exportMenu = menu(null, "&Export As", null);
+         menuItem(exportMenu, "Dot...", 'D', 'D', doExportDot());
+         menuItem(exportMenu, "XML...", 'X', 'X', doExportXml());
+         fileMenu.add(exportMenu);
          menuItem(fileMenu, "Close",   'W', 'W', doClose());
          if (standalone) menuItem(fileMenu, "Quit", 'Q', 'Q', doCloseAll()); else menuItem(fileMenu, "Close All", 'A', doCloseAll());
          JMenu instanceMenu = menu(mb, "&Instance", null);
@@ -393,8 +398,9 @@ public final class VizGUI implements ComponentListener {
       try {
          wrap = true;
          vizButton=makeSolutionButton("Viz", "Show Visualization", "images/24_graph.gif", doShowViz());
-         dotButton=makeSolutionButton("Dot", "Show the Dot File for the Graph", "images/24_plaintext.gif", doShowDot());
-         xmlButton=makeSolutionButton("XML", "Show XML", "images/24_plaintext.gif", doShowXML());
+//         dotButton=makeSolutionButton("Dot", "Show the Dot File for the Graph", "images/24_plaintext.gif", doShowDot());
+//         xmlButton=makeSolutionButton("XML", "Show XML", "images/24_plaintext.gif", doShowXML());
+         txtButton=makeSolutionButton("Txt", "Show the textual output for the Graph", "images/24_plaintext.gif", doShowTxt());
          treeButton=makeSolutionButton("Tree", "Show Tree", "images/24_texttree.gif", doShowTree());
          if (frame!=null) addDivider();
          toolbar.add(closeSettingsButton=OurUtil.button("Close", "Close the theme customization panel", "images/24_settings_close2.gif", doCloseThemePanel()));
@@ -493,15 +499,17 @@ public final class VizGUI implements ComponentListener {
       for(JButton button:solutionButtons) button.setEnabled(settingsOpen!=1);
       switch (currentMode) {
          case Tree: treeButton.setEnabled(false); break;
-         case XML: xmlButton.setEnabled(false); break;
-         case DOT: dotButton.setEnabled(false); break;
+         case TEXT: txtButton.setEnabled(false); break;
+//         case XML: xmlButton.setEnabled(false); break;
+//         case DOT: dotButton.setEnabled(false); break;
          default: vizButton.setEnabled(false);
       }
       final boolean isMeta = myState.getOriginalInstance().isMetamodel;
       vizButton.setVisible(frame!=null);
       treeButton.setVisible(frame!=null);
-      dotButton.setVisible(frame!=null);
-      xmlButton.setVisible(frame!=null);
+      txtButton.setVisible(frame!=null);
+//      dotButton.setVisible(frame!=null);
+//      xmlButton.setVisible(frame!=null);
       magicLayout.setVisible((settingsOpen==0 || settingsOpen==1) && currentMode==VisualizerMode.Viz);
       projectionButton.setVisible((settingsOpen==0 || settingsOpen==1) && currentMode==VisualizerMode.Viz);
       openSettingsButton.setVisible(               settingsOpen==0 && currentMode==VisualizerMode.Viz);
@@ -529,13 +537,24 @@ public final class VizGUI implements ComponentListener {
             content = scroll;
             break;
          }
-         case XML: {
-            content=getTextComponent(xmlFileName);
+         case TEXT: {
+             //TODO: which one?
+            String textualOutput = myState.getOriginalInstance().originalA4.toString();
+            textualOutput += "\n\n ------------------------ \n\n";
+            textualOutput += myState.getOriginalInstance().toString();
+            content = getTextComponent(textualOutput);
             break;
          }
+//         case XML: {
+//            content=getTextComponent(xmlFileName);
+//            break;
+//         }
          default: {
-            if (myGraphPanel==null) myGraphPanel=new VizGraphPanel(myState, currentMode == VisualizerMode.DOT);
-            else {myGraphPanel.seeDot(currentMode==VisualizerMode.DOT); myGraphPanel.remakeAll();}
+            if (myGraphPanel==null) { 
+                myGraphPanel=new VizGraphPanel(myState, false);
+            } else {
+                myGraphPanel.seeDot(false); 
+            }
          }
          content=myGraphPanel;
       }
@@ -613,18 +632,23 @@ public final class VizGUI implements ComponentListener {
       if (name2.equals(filename)) return; else Theme3.set(name2);
    }
 
-   /** Helper method that reads a file and then return a JTextArea containing it. */
-   private JComponent getTextComponent(String filename) {
-      String text = "";
-      try { text="<!-- "+filename+" -->\n"+Util.readAll(filename); } catch(IOException ex) { text="# Error reading from "+filename; }
-      final JTextArea ta = OurUtil.textarea(text, 10, 10, false, true);
-      final JScrollPane ans = new JScrollPane(ta, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED) {
-         private static final long serialVersionUID = 0;
-         @Override public void setFont(Font font) { ta.setFont(font); }
-      };
-      ans.setBorder(new OurBorder(true, false, true, false));
-      return ans;
+   /** Helper method returns a JTextArea containing the given text. */
+   private JComponent getTextComponent(String text) {
+       final JTextArea ta = OurUtil.textarea(text, 10, 10, false, true);
+       final JScrollPane ans = new JScrollPane(ta, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED) {
+          private static final long serialVersionUID = 0;
+          @Override public void setFont(Font font) { ta.setFont(font); }
+       };
+       ans.setBorder(new OurBorder(true, false, true, false));
+       return ans; 
    }
+   
+//   /** Helper method that reads a file and then return a JTextArea containing it. */
+//   private JComponent getTextComponentFromFile(String filename) {
+//      String text = "";
+//      try { text="<!-- "+filename+" -->\n"+Util.readAll(filename); } catch(IOException ex) { text="# Error reading from "+filename; }
+//      return getTextComponent(text);
+//   }
 
    /** Returns the GraphViewer that contains the graph; can be null if the graph hasn't been loaded yet. */
    public GraphViewer getViewer() {
@@ -823,7 +847,37 @@ public final class VizGUI implements ComponentListener {
       saveThemeFile(file.getPath());
       return null;
    }
+   
+   private Runner doExportDot() {
+       if (wrap) return wrapMe();
+       File file=OurDialog.askFile(false, null, ".dot", ".dot graph files");
+       if (file==null) return null;
+       if (file.exists()) if (!OurDialog.askOverwrite(Util.canon(file.getPath()))) return null;
+       Util.setCurrentDirectory(file.getParentFile());
+       String filename = Util.canon(file.getPath());
+       try {
+          Util.writeAll(filename, myGraphPanel.toDot());
+       } catch (Throwable er) {
+          OurDialog.alert("Error saving the theme.\n\nError: " + er.getMessage());
+       }
+       return null;
+   }
 
+   private Runner doExportXml() {
+       if (wrap) return wrapMe();
+       File file=OurDialog.askFile(false, null, ".xml", ".xml XML files");
+       if (file==null) return null;
+       if (file.exists()) if (!OurDialog.askOverwrite(Util.canon(file.getPath()))) return null;
+       Util.setCurrentDirectory(file.getParentFile());
+       String filename = Util.canon(file.getPath());
+       try {
+          Util.writeAll(filename, Util.readAll(xmlFileName));
+       } catch (Throwable er) {
+          OurDialog.alert("Error saving XML instance.\n\nError: " + er.getMessage());
+       }
+       return null;
+   }
+   
    /** This method resets the current theme. */
    private Runner doResetTheme() {
       if (wrap) return wrapMe();
@@ -943,21 +997,31 @@ public final class VizGUI implements ComponentListener {
       return wrapMe();
    }
 
-   /** This method changes the display mode to show the instance as XML (the return value is always null). */
-   public Runner doShowXML() {
-      if (!wrap) { currentMode=VisualizerMode.XML; updateDisplay(); return null; }
-      return wrapMe();
-   }
-
    /** This method changes the display mode to show the instance as a tree (the return value is always null). */
    public Runner doShowTree() {
       if (!wrap) { currentMode=VisualizerMode.Tree; updateDisplay(); return null; }
       return wrapMe();
    }
 
-   /** This method changes the display mode to show the equivalent dot text (the return value is always null). */
-   public Runner doShowDot() {
-      if (!wrap) { currentMode=VisualizerMode.DOT; updateDisplay(); return null; }
-      return wrapMe();
-   }
+    /**
+     * This method changes the display mode to show the equivalent dot text (the
+     * return value is always null).
+     */
+    public Runner doShowTxt() {
+       if (!wrap) { currentMode = VisualizerMode.TEXT; updateDisplay(); return null; }
+       return wrapMe();
+    }
+   
+//   /** This method changes the display mode to show the equivalent dot text (the return value is always null). */
+//   public Runner doShowDot() {
+//      if (!wrap) { currentMode=VisualizerMode.DOT; updateDisplay(); return null; }
+//      return wrapMe();
+//   }
+//
+//   /** This method changes the display mode to show the instance as XML (the return value is always null). */
+//   public Runner doShowXML() {
+//      if (!wrap) { currentMode=VisualizerMode.XML; updateDisplay(); return null; }
+//      return wrapMe();
+//   }
+
 }

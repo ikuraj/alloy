@@ -179,6 +179,9 @@ public final class SimpleGUI implements ComponentListener, Listener {
 
     /** True if Alloy Analyzer should enable the new Implicit This name resolution. */
     private static final BooleanPref ImplicitThis = new BooleanPref("ImplicitThis");
+    
+    /** True if Alloy Analyzer should not report models that overflow. */
+    private static final BooleanPref NoOverflow = new BooleanPref("NoOverflow");
 
     /** The latest X corrdinate of the Alloy Analyzer's main window. */
     private static final IntPref AnalyzerX = new IntPref("AnalyzerX",0,-1,65535);
@@ -992,6 +995,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
         opt.tempDirectory = alloyHome() + fs + "tmp";
         opt.solverDirectory = alloyHome() + fs + "binary";
         opt.recordKodkod = RecordKodkod.get();
+        opt.noOverflow = NoOverflow.get();
         opt.unrolls = Version.experimental ? Unrolls.get() : (-1);
         opt.skolemDepth = SkolemDepth.get();
         opt.coreMinimization = CoreMinimization.get();
@@ -1248,6 +1252,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
             menuItem(optmenu, "Visualize Automatically: "+(AutoVisualize.get()?"Yes":"No"), doOptAutoVisualize());
             menuItem(optmenu, "Record the Kodkod Input/Output: "+(RecordKodkod.get()?"Yes":"No"), doOptRecordKodkod());
             if (Version.experimental) menuItem(optmenu, "Enable \"implicit this\" name resolution: "+(ImplicitThis.get()?"Yes":"No"), doOptImplicitThis());
+            if (Version.experimental) menuItem(optmenu, "Forbid overflow: "+(NoOverflow.get()?"Yes":"No"), doOptNoOverflow());
         } finally {
             wrap = false;
         }
@@ -1365,6 +1370,11 @@ public final class SimpleGUI implements ComponentListener, Listener {
         return wrapMe();
     }
 
+    private Runner doOptNoOverflow() {
+        if (!wrap) NoOverflow.set(!NoOverflow.get());
+        return wrapMe();
+    }
+    
     /** This method toggles the "syntax highlighting" checkbox. */
     private Runner doOptSyntaxHighlighting() {
         if (!wrap) {

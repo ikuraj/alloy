@@ -168,6 +168,10 @@ public final class A4Options implements Serializable {
      * <p> Default value is false.
      */
     public boolean recordKodkod = false;
+    
+    /** This option specifies whether the solver should report only solutions
+     *  that don't cause any overflows. */
+    public boolean noOverflow = false;
 
     /** This option constrols how deep we unroll loops and unroll recursive predicate/function/macros (negative means it's disallowed) */
     public int unrolls = (-1);
@@ -184,6 +188,7 @@ public final class A4Options implements Serializable {
         x.tempDirectory = tempDirectory;
         x.originalFilename = originalFilename;
         x.recordKodkod = recordKodkod;
+        x.noOverflow = noOverflow;
         return x;
     }
 }

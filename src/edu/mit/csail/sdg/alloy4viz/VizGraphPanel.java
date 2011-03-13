@@ -89,7 +89,7 @@ public final class VizGraphPanel extends JPanel {
    private final Map<AlloyType,TypePanel> type2panel = new TreeMap<AlloyType,TypePanel>();
 
    /** Inner class that displays a combo box of possible projection atom choices. */
-   private final class TypePanel extends JPanel {
+   final class TypePanel extends JPanel {
       /** This ensures the class can be serialized reliably. */
       private static final long serialVersionUID = 0;
       /** The type being projected. */
@@ -261,6 +261,10 @@ public final class VizGraphPanel extends JPanel {
       if (seeDot==yesOrNo) return;
       seeDot=yesOrNo;
       remakeAll();
+   }
+   
+   public String toDot() {
+       return vizState.getGraph(currentProjection).toString(); 
    }
 
    /** Retrieves the actual GraphViewer object that contains the graph (or null if the graph hasn't loaded yet) */
