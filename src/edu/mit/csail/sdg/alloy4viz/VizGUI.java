@@ -538,10 +538,7 @@ public final class VizGUI implements ComponentListener {
             break;
          }
          case TEXT: {
-             //TODO: which one?
             String textualOutput = myState.getOriginalInstance().originalA4.toString();
-            textualOutput += "\n\n ------------------------ \n\n";
-            textualOutput += myState.getOriginalInstance().toString();
             content = getTextComponent(textualOutput);
             break;
          }
@@ -553,7 +550,8 @@ public final class VizGUI implements ComponentListener {
             if (myGraphPanel==null) { 
                 myGraphPanel=new VizGraphPanel(myState, false);
             } else {
-                myGraphPanel.seeDot(false); 
+                myGraphPanel.seeDot(false);
+                myGraphPanel.remakeAll();
             }
          }
          content=myGraphPanel;
