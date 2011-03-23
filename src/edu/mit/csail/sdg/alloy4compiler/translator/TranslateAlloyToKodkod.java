@@ -752,7 +752,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     /** {@inheritDoc} */
     @Override public Object visit(ExprBinary x) throws Err {
         Expr a=x.left, b=x.right;
-        Expression s, s2; IntExpression i; Formula f; Object obj, objL, objR;
+        Expression s, s2; IntExpression i; Formula f; Object objL, objR;
         switch(x.op) {
             case IMPLIES: f=cform(a).not().or(cform(b)); return k2pos(f,x);
             case IN:      return k2pos(isIn(cset(a),b), x);

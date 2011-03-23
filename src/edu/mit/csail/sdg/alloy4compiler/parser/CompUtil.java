@@ -24,6 +24,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
@@ -119,6 +120,7 @@ public final class CompUtil {
         // No cycle detected so far. So now we parse the file.
         CompModule u = CompParser.alloy_parseStream(seenDollar, loaded, fc, root, 0, filename, prefix, initialResolution);
         if (prefix.length()==0) root = u;
+        
         // Here, we recursively open the included files
         for(Open x: u.getOpens()) {
             String cp=Util.canon(computeModulePath(u.getModelName(), filename, x.filename)), content=fc.get(cp);
@@ -151,11 +153,15 @@ public final class CompUtil {
      * @return an array of 0 or more Command if no error occurred
      */
     public static ConstList<Command> parseOneModule_fromString(String content) throws Err {
+        CompModule u = parseOneModule(content);
+        return ConstList.make(u.getAllCommands());
+    }
+    
+    public static CompModule parseOneModule(String content) throws Err {
         try {
             Map<String,String> fc = new LinkedHashMap<String,String>();
             fc.put("", content);
-            CompModule u=CompParser.alloy_parseStream(new ArrayList<Object>(), null, fc, null, 0, "", "", 1);
-            return ConstList.make(u.getAllCommands());
+            return CompParser.alloy_parseStream(new ArrayList<Object>(), null, fc, null, 0, "", "", 1);
         } catch(IOException ex) {
             throw new ErrorFatal("IOException occurred: "+ex.getMessage(), ex);
         } catch(Throwable ex) {

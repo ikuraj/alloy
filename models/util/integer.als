@@ -6,9 +6,11 @@ module util/integer
  * using the 2's complement arithmetic.
  */
 
-fun add [n1, n2: Int] : Int { n1 fun/add n2 }
+fun add  [n1, n2: Int] : Int { this/plus[n1, n2] }
+fun plus [n1, n2: Int] : Int { n1 fun/add n2 }
 
-fun sub [n1, n2: Int] : Int { n1 fun/sub n2 }
+fun sub   [n1, n2: Int] : Int { this/minus[n1, n2] }
+fun minus [n1, n2: Int] : Int { n1 fun/sub n2 }
 
 fun mul [n1, n2: Int] : Int { n1 fun/mul n2 }
 

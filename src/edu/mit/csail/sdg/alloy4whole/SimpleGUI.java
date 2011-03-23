@@ -261,7 +261,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
         /** Saves this value into the Java preference object. */
         private void set() { Preferences.userNodeForPackage(Util.class).put("Verbosity",id); }
         /** Reads the current value of the Java preference object (if it's not set, then return DEFAULT). */
-        private static Verbosity get() { return FULLDEBUG; } // [AM] parse(Preferences.userNodeForPackage(Util.class).get("Verbosity","")); }
+        private static Verbosity get() { return parse(Preferences.userNodeForPackage(Util.class).get("Verbosity","")); }
     };
 
     //===================================================================================================//
