@@ -504,7 +504,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
 
     private Expression toSet(Expr x, Object y) throws Err, ErrorFatal {
         if (y instanceof Expression) return (Expression)y;
-        //[AM]
         if (y instanceof IntExpression) return ((IntExpression) y).toExpression();
         throw new ErrorFatal(x.span(), "This should have been a set or a relation.\nInstead it is "+y);
     }
@@ -763,7 +762,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     /** {@inheritDoc} */
     @Override public Object visit(ExprBinary x) throws Err {
         Expr a=x.left, b=x.right;
-        Expression s, s2; IntExpression i; Formula f; Object objL, objR;
+        Expression s, s2, eL, eR; IntExpression i; Formula f; Object objL, objR;
         switch(x.op) {
             case IMPLIES: f=cform(a).not().or(cform(b)); return k2pos(f,x);
             case IN:      return k2pos(isIn(cset(a),b), x);
@@ -826,41 +825,23 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             case EQUALS:
                 objL = visitThis(a);
                 objR = visitThis(b);
-                if (objL instanceof IntExpression) {
-                    if (objR instanceof IntExpression)
-                        f = ((IntExpression) objL).eq((IntExpression) objR);
-                    else if (objR instanceof IntToExprCast) 
-                        f = ((IntExpression) objL).eq(((IntToExprCast) objR).intExpr());
-                    else 
-                        f = toSet(a, objL).eq(toSet(b, objR));
-                } else if (objL instanceof IntToExprCast) {
-                    if (objR instanceof IntExpression) 
-                        f = ((IntToExprCast) objL).intExpr().eq((IntExpression)objR);
-                    else if (objR instanceof IntToExprCast)
-                        f = ((IntToExprCast) objL).intExpr().eq(((IntToExprCast) objR).intExpr());
-                    else 
-                        f = toSet(a, objL).eq(toSet(b, objR));
-                } else
-                    f = toSet(a, objL).eq(toSet(b, objR));
+		eL = toSet(a, objL);
+		eR = toSet(b, objR);
+                if (eL instanceof IntToExprCast && eR instanceof IntToExprCast)
+                    f = ((IntToExprCast) eL).intExpr().eq(((IntToExprCast) eR).intExpr()); 
+                else
+                    f = eL.eq(eR);
                 return k2pos(f, x);
-                //[AM]
-//                obj = visitThis(a);
-//                if (obj instanceof IntExpression) { i=(IntExpression)obj; f=i.eq(cint(b));}
-//                else { s=(Expression)obj; f=s.eq(cset(b)); }
-//                return k2pos(f,x);
             case NOT_EQUALS:
                 objL = visitThis(a);
                 objR = visitThis(b);
-                if (objL instanceof IntExpression && objR instanceof IntExpression)
-                    f = ((IntExpression) objL).eq((IntExpression) objR).not(); 
+		eL = toSet(a, objL);
+		eR = toSet(b, objR);
+                if (eL instanceof IntToExprCast && eR instanceof IntToExprCast)
+                    f = ((IntToExprCast) eL).intExpr().eq(((IntToExprCast) eR).intExpr()).not(); 
                 else
-                    f = toSet(a, objL).eq(toSet(b, objR)).not();
+                    f = eL.eq(eR).not();
                 return k2pos(f, x);
-                //[AM]
-//                obj=visitThis(a);
-//                if (obj instanceof IntExpression) { i=(IntExpression)obj; f=i.eq(cint(b)).not();}
-//                else { s=(Expression)obj; f=s.eq(cset(b)).not(); }
-//                return k2pos(f,x);
             case DOMAIN:
                 s=cset(a);
                 s2=cset(b);
