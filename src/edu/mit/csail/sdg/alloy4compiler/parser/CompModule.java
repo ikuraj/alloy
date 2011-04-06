@@ -15,17 +15,31 @@
 
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
+import static edu.mit.csail.sdg.alloy4.Util.asList;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Attr.AttrType.ABSTRACT;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Attr.AttrType.ONE;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Attr.AttrType.PRIVATE;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Attr.AttrType.SUBSET;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Attr.AttrType.SUBSIG;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Attr.AttrType.WHERE;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.STRING;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Env;
@@ -43,9 +57,9 @@ import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Attr;
 import edu.mit.csail.sdg.alloy4compiler.ast.Browsable;
-import edu.mit.csail.sdg.alloy4compiler.ast.Decl;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.CommandScope;
+import edu.mit.csail.sdg.alloy4compiler.ast.Decl;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBad;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBadCall;
@@ -66,21 +80,9 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Module;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
-import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
-import static edu.mit.csail.sdg.alloy4.Util.asList;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Attr.AttrType.WHERE;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Attr.AttrType.ONE;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Attr.AttrType.ABSTRACT;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Attr.AttrType.SUBSET;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Attr.AttrType.SUBSIG;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Attr.AttrType.PRIVATE;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.STRING;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 
 /** Mutable; this class represents an Alloy module; equals() uses object identity. */
 
@@ -122,7 +124,7 @@ public final class CompModule extends Browsable implements Module {
 
    /** The world that this CompModule belongs to. */
    private final CompModule world;
-
+   
    /** The simplest path pointing to this Module ("" if this is the main module) */
    public final String path;
 
@@ -273,7 +275,7 @@ public final class CompModule extends Browsable implements Module {
          return visitThis(x);
       }
 
-      /** Returns true if the function's parameters have reasonable intersection with the list of arguments.
+    /** Returns true if the function's parameters have reasonable intersection with the list of arguments.
        * <br> If args.length() > f.params.size(), the extra arguments are ignored by this check
        */
       private static boolean applicable(Func f, List<Expr> args) {
@@ -464,8 +466,9 @@ public final class CompModule extends Browsable implements Module {
 
       /** {@inheritDoc} */
       @Override public Expr visit(Field x) { return x; }
-   }
 
+   }
+   
    //============================================================================================================================//
 
    /** Mutable; this class represents an untypechecked Alloy module import statement; equals() uses object identity. */
@@ -545,7 +548,7 @@ public final class CompModule extends Browsable implements Module {
 
    /** {@inheritDoc} */
    @Override public final Pos span() { return modulePos; }
-
+   
    /** {@inheritDoc} */
    @Override public String getHTML() {
       StringBuilder sb = new StringBuilder("<b>module</b> ").append(path).append(" <i>");
@@ -1128,7 +1131,10 @@ public final class CompModule extends Browsable implements Module {
          cx.rootfunbody = ff;
          for(Decl d: ff.decls) for(ExprHasName n: d.names) cx.put(n.label, n);
          Expr newBody = cx.check(ff.getBody());
-         if (ff.isPred) newBody = newBody.resolve_as_formula(warns); else newBody = newBody.resolve_as_set(warns);
+         if (ff.isPred) 
+             newBody = newBody.resolve_as_formula(warns); 
+         else
+             newBody = newBody.resolve_as_set(warns);
          errors = errors.make(newBody.errors);
          if (!newBody.errors.isEmpty()) continue;
          try { ff.setBody(newBody); } catch(Err er) {errors = errors.make(er); continue;}

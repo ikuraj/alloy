@@ -124,7 +124,7 @@ public final class Type implements Iterable<Type.ProductType> {
         /** Returns a specific PrimSig in this ProductType
          * @throws ArrayIndexOutOfBoundsException if (i < 0) or (i >= arity)
          */
-        PrimSig get(int i) { return types[i]; }
+        public PrimSig get(int i) { return types[i]; }
 
         /** Returns true if this.arity==0  or  this==NONE->..->NONE */
         public boolean isEmpty() { return types.length==0 || types[0]==NONE; }

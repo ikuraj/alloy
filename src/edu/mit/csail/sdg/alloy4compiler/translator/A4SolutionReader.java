@@ -35,6 +35,7 @@ import kodkod.instance.TupleSet;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.alloy4.Util;
@@ -248,7 +249,7 @@ public final class A4SolutionReader {
        // set up the basic values of the A4Solution object
        final int bitwidth = Integer.parseInt(inst.getAttribute("bitwidth"));
        final int maxseq = Integer.parseInt(inst.getAttribute("maxseq"));
-       final int max = (1<<(bitwidth-1))-1, min = 0-(1<<(bitwidth-1));
+       final int max = Util.max(bitwidth), min = Util.min(bitwidth);
        if (bitwidth>=1 && bitwidth<=30) for(int i=min; i<=max; i++) { atoms.add(Integer.toString(i)); }
        for(XMLNode x:inst) {
            String id=x.getAttribute("ID");

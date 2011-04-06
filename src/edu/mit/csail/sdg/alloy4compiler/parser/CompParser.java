@@ -13,6 +13,7 @@ import java.util.TreeSet;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.Reader;
 import java.io.IOException;
@@ -2239,7 +2240,7 @@ public class CompParser extends java_cup.runtime.lr_parser {
         if (root==null && prefix.length()!=0) throw new ErrorFatal("Internal error (parse subfile with root==null)");
         if (root!=null && prefix.length()==0) throw new ErrorFatal("Internal error (parse topfile with root!=null)");
         CompModule u = new CompModule(root, filename, prefix);
-        if (!filename.endsWith("util/integer.als"))
+        if (!filename.endsWith("util" + File.separator + "integer.als"))
             u.addOpen(null, null, ExprVar.make(null, "util/integer"), null, ExprVar.make(null, "integer"));
         u.resolution = initialResolutionMode;
         String content = fc!=null ? fc.get(filename) : null;

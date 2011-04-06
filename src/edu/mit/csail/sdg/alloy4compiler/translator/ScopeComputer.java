@@ -15,10 +15,17 @@
 
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.STRING;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
+
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
+
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
@@ -27,15 +34,13 @@ import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.UniqueNameGenerator;
+import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.CommandScope;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.STRING;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
+import edu.mit.csail.sdg.alloy4compiler.ast.Type.ProductType;
 
 /** Immutable; this class computes the scopes for each sig and computes the bitwidth and maximum sequence length.
  *
@@ -127,27 +132,27 @@ final class ScopeComputer {
 
     /** Modifies the integer bitwidth of this solution's model (and sets the max sequence length to 0) */
     private void setBitwidth(Pos pos, int newBitwidth) throws ErrorAPI, ErrorSyntax {
-        if (newBitwidth<1)  throw new ErrorSyntax(pos, "Cannot specify a bitwidth less than 1");
+        if (newBitwidth<0)  throw new ErrorSyntax(pos, "Cannot specify a bitwidth less than 0");
         if (newBitwidth>30) throw new ErrorSyntax(pos, "Cannot specify a bitwidth greater than 30");
         bitwidth = newBitwidth;
         maxseq = 0;
-        sig2scope.put(SIGINT, 1<<bitwidth);
+        sig2scope.put(SIGINT, bitwidth < 1 ? 0 : 1<<bitwidth);
         sig2scope.put(SEQIDX, 0);
     }
 
     /** Modifies the maximum sequence length. */
     private void setMaxSeq(Pos pos, int newMaxSeq) throws ErrorAPI, ErrorSyntax {
-        if (newMaxSeq < 0)     throw new ErrorSyntax(pos, "The maximum sequence length cannot be negative.");
         if (newMaxSeq > max()) throw new ErrorSyntax(pos, "With integer bitwidth of "+bitwidth+", you cannot have sequence length longer than "+max());
+        if (newMaxSeq < 0) newMaxSeq = 0; //throw new ErrorSyntax(pos, "The maximum sequence length cannot be negative.");
         maxseq = newMaxSeq;
         sig2scope.put(SEQIDX, maxseq);
     }
 
     /** Returns the largest allowed integer. */
-    private int max() { return (1<<(bitwidth-1)) - 1; }
+    private int max() { return Util.max(bitwidth); }
 
     /** Returns the smallest allowed integer. */
-    private int min() { return 0 - (1<<(bitwidth-1)); }
+    private int min() { return Util.min(bitwidth); }
 
     //===========================================================================================================================//
 
@@ -260,6 +265,7 @@ final class ScopeComputer {
     private ScopeComputer(A4Reporter rep, Iterable<Sig> sigs, Command cmd) throws Err {
         this.rep = rep;
         this.cmd = cmd;
+        boolean shouldUseInts = areIntsUsed(sigs);
         // Process each sig listed in the command
         for(CommandScope entry:cmd.scope) {
             Sig s = entry.sig;
@@ -268,7 +274,8 @@ final class ScopeComputer {
             if (s==UNIV) throw new ErrorSyntax(cmd.pos, "You cannot set a scope on \"univ\".");
             if (s==SIGINT) throw new ErrorSyntax(cmd.pos,
                     "You can no longer set a scope on \"Int\". "
-                    +"The number of atoms in Int is always exactly equal to 2^(integer bitwidth).\n");
+                    +"The number of atoms in Int is always exactly equal to 2^(i" +
+                    		"nteger bitwidth).\n");
             if (s==SEQIDX) throw new ErrorSyntax(cmd.pos,
                     "You cannot set a scope on \"seq/Int\". "
                     +"To set the maximum allowed sequence length, use the seq keyword.\n");
@@ -302,17 +309,33 @@ final class ScopeComputer {
         }
         // Set the initial scope on "int" and "Int" and "seq"
         int maxseq=cmd.maxseq, bitwidth=cmd.bitwidth;
-        if (bitwidth<0) bitwidth=4;
+        if (bitwidth<0) { bitwidth = (shouldUseInts ? 4 : 0); } 
         setBitwidth(cmd.pos, bitwidth);
         if (maxseq<0) {
             if (cmd.overall>=0) maxseq=cmd.overall; else maxseq=4;
-            int max = (1<<(bitwidth-1))-1;
+            int max = Util.max(bitwidth);
             if (maxseq > max) maxseq = max;
         }
         setMaxSeq(cmd.pos, maxseq);
         // Generate the atoms and the universe
         for(Sig s:sigs) if (s.isTopLevel()) computeLowerBound((PrimSig)s);
-        for(int max=max(), i=min(); i<=max; i++) atoms.add(""+i);
+        int max = max(), min = min();
+        if (max >= min) for(int i=min; i<=max; i++) atoms.add(""+i);
+    }
+
+    /** Whether or not Int appears in the relation types found in these sigs */
+    private boolean areIntsUsed(Iterable<Sig> sigs) {
+        for (Sig s : sigs) {
+            for (Field f : s.getFields()) {
+                for (ProductType pt : f.type()) {
+                    for (int k = 0; k < pt.arity(); k++) {
+                        if (pt.get(k) == SIGINT)
+                            return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     //===========================================================================================================================//

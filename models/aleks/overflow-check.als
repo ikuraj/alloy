@@ -88,4 +88,8 @@ check shl_doesnt_overflow {
     (s.a < 0 and s.b > 0 => s.res < 0)
 } for 0 but 5 Int, exactly 1 S_shl
 
+check shl_overflows_for_neg {
+  no s: S_shl | s.a != 0 and s.b < 0
+} for 0 but 5 Int, exactly 1 S_shl
+
 

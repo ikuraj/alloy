@@ -223,10 +223,14 @@ public final class A4Solution {
         this.originalCommand = (originalCommand==null ? "" : originalCommand);
         this.bitwidth = bitwidth;
         this.maxseq = maxseq;
-        if (bitwidth < 1)   throw new ErrorSyntax("Cannot specify a bitwidth less than 1");
+        if (bitwidth < 0)   throw new ErrorSyntax("Cannot specify a bitwidth less than 0");
         if (bitwidth > 30)  throw new ErrorSyntax("Cannot specify a bitwidth greater than 30");
         if (maxseq < 0)     throw new ErrorSyntax("The maximum sequence length cannot be negative.");
-        if (maxseq > max()) throw new ErrorSyntax("With integer bitwidth of "+bitwidth+", you cannot have sequence length longer than "+max());
+        if (maxseq > 0 && maxseq > max()) throw new ErrorSyntax("With integer bitwidth of "+bitwidth+", you cannot have sequence length longer than "+max());
+        if (atoms.isEmpty()) {
+            atoms = new ArrayList<String>(1);
+            atoms.add("<empty>");
+        }
         kAtoms = ConstList.make(atoms);
         bounds = new Bounds(new Universe(kAtoms));
         factory = bounds.universe().factory();
@@ -234,7 +238,8 @@ public final class A4Solution {
         TupleSet seqidxBounds = factory.noneOf(1);
         TupleSet stringBounds = factory.noneOf(1);
         final TupleSet next = factory.noneOf(2);
-        for(int min=min(), max=max(), i=min; i<=max; i++) { // Safe since we know 1 <= bitwidth <= 30
+        int min=min(), max=max();
+        if (max >= min)  for(int i=min; i<=max; i++) { // Safe since we know 1 <= bitwidth <= 30
            Tuple ii = factory.tuple(""+i);
            TupleSet is = factory.range(ii, ii);
            bounds.boundExactly(i, is);
@@ -285,7 +290,7 @@ public final class A4Solution {
         }
         solver.options().setSymmetryBreaking(sym);
         solver.options().setSkolemDepth(opt.skolemDepth);
-        solver.options().setBitwidth(bitwidth);
+        solver.options().setBitwidth(bitwidth > 0 ? bitwidth : (int) Math.ceil(Math.log(atoms.size())) + 1);
         solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
      }
 
@@ -358,11 +363,11 @@ public final class A4Solution {
     /** Returns the maximum allowed sequence length; always between 0 and 2^(bitwidth-1)-1. */
     public int getMaxSeq() { return maxseq; }
 
-    /** Returns the largest allowed integer. */
-    public int max() { return (1<<(bitwidth-1)) - 1; }
+    /** Returns the largest allowed integer, or -1 if no integers are allowed. */
+    public int max() { return Util.max(bitwidth); }
 
-    /** Returns the smallest allowed integer. */
-    public int min() { return 0 - (1<<(bitwidth-1)); }
+    /** Returns the smallest allowed integer, or 0 if no integers are allowed */
+    public int min() { return Util.min(bitwidth); }
 
     /** Returns the maximum number of allowed loop unrolling or recursion level. */
     public int unrolls() { return unrolls; }

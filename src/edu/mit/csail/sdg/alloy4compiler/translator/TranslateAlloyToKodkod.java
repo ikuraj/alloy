@@ -15,12 +15,34 @@
 
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
-import java.util.HashSet;
-import java.util.List;
+import static edu.mit.csail.sdg.alloy4.Util.tail;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
+
 import java.util.ArrayList;
-import java.util.Map;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+
+import kodkod.ast.BinaryExpression;
+import kodkod.ast.Decls;
+import kodkod.ast.ExprToIntCast;
+import kodkod.ast.Expression;
+import kodkod.ast.Formula;
+import kodkod.ast.IntConstant;
+import kodkod.ast.IntExpression;
+import kodkod.ast.IntToExprCast;
+import kodkod.ast.QuantifiedFormula;
+import kodkod.ast.Relation;
+import kodkod.ast.Variable;
+import kodkod.ast.operator.ExprOperator;
+import kodkod.engine.CapacityExceededException;
+import kodkod.engine.fol2sat.HigherOrderDeclException;
+import kodkod.instance.Tuple;
+import kodkod.instance.TupleFactory;
+import kodkod.instance.TupleSet;
+import kodkod.util.ints.IntVector;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstMap;
@@ -31,44 +53,26 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.CommandScope;
 import edu.mit.csail.sdg.alloy4compiler.ast.Decl;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprHasName;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprList;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprHasName;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprITE;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprLet;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprList;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprQt;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
-import edu.mit.csail.sdg.alloy4compiler.ast.Type;
-import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
+import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
-import kodkod.ast.BinaryExpression;
-import kodkod.ast.IntExpression;
-import kodkod.ast.Decls;
-import kodkod.ast.IntConstant;
-import kodkod.ast.IntToExprCast;
-import kodkod.ast.QuantifiedFormula;
-import kodkod.ast.Variable;
-import kodkod.ast.Relation;
-import kodkod.ast.Formula;
-import kodkod.ast.Expression;
-import kodkod.ast.operator.ExprOperator;
-import kodkod.engine.CapacityExceededException;
-import kodkod.engine.fol2sat.HigherOrderDeclException;
-import kodkod.instance.Tuple;
-import kodkod.instance.TupleFactory;
-import kodkod.instance.TupleSet;
-import kodkod.util.ints.IntVector;
-import static edu.mit.csail.sdg.alloy4.Util.tail;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 
 /** Translate an Alloy AST into Kodkod AST then attempt to solve it using Kodkod. */
 
@@ -138,14 +142,14 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
      */
     private TranslateAlloyToKodkod (int bitwidth, int unrolls, Map<Expr,Expression> a2k, Map<String,Expression> s2k) throws Err {
         this.unrolls = unrolls;
-        if (bitwidth<1)  throw new ErrorSyntax("Cannot specify a bitwidth less than 1");
+        if (bitwidth<0)  throw new ErrorSyntax("Cannot specify a bitwidth less than 0");
         if (bitwidth>30) throw new ErrorSyntax("Cannot specify a bitwidth greater than 30");
         this.rep = A4Reporter.NOP;
         this.cmd = null;
         this.frame = null;
         this.bitwidth = bitwidth;
-        this.max = (1<<(bitwidth-1)) - 1;
-        this.min = 0 - (1<<(bitwidth-1));
+        this.max = Util.max(bitwidth);
+        this.min = Util.min(bitwidth);
         this.a2k = ConstMap.make(a2k);
         this.s2k = ConstMap.make(s2k);
     }
@@ -477,6 +481,12 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     }
 
     private IntExpression toInt(Expr x, Object y) throws Err, ErrorFatal {
+        // simplify: if y is int[Int[sth]] then return sth
+        if (y instanceof ExprToIntCast) {
+            ExprToIntCast y2 = (ExprToIntCast) y;
+            if (y2.expression() instanceof IntToExprCast)
+                return ((IntToExprCast)y2.expression()).intExpr();
+        }
         if (y instanceof IntExpression) return (IntExpression)y;
         //[AM]: maybe this conversion should be removed
         if (y instanceof Expression) return ((Expression) y).sum();
@@ -576,8 +586,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             return ans;
           case NUMBER:
             int n=x.num();
-            if (n<min) throw new ErrorType(x.pos, "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is smaller than the minimum integer "+min);
-            if (n>max) throw new ErrorType(x.pos, "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is bigger than the maximum integer "+max);
+            //[am] const
+//            if (n<min) throw new ErrorType(x.pos, "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is smaller than the minimum integer "+min);
+//            if (n>max) throw new ErrorType(x.pos, "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is bigger than the maximum integer "+max);
             return IntConstant.constant(n).toExpression();
         }
         throw new ErrorFatal(x.pos, "Unsupported operator ("+x.op+") encountered during ExprConstant.accept()");
@@ -815,9 +826,21 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             case EQUALS:
                 objL = visitThis(a);
                 objR = visitThis(b);
-                if (objL instanceof IntExpression && objR instanceof IntExpression)
-                    f = ((IntExpression) objL).eq((IntExpression) objR); 
-                else
+                if (objL instanceof IntExpression) {
+                    if (objR instanceof IntExpression)
+                        f = ((IntExpression) objL).eq((IntExpression) objR);
+                    else if (objR instanceof IntToExprCast) 
+                        f = ((IntExpression) objL).eq(((IntToExprCast) objR).intExpr());
+                    else 
+                        f = toSet(a, objL).eq(toSet(b, objR));
+                } else if (objL instanceof IntToExprCast) {
+                    if (objR instanceof IntExpression) 
+                        f = ((IntToExprCast) objL).intExpr().eq((IntExpression)objR);
+                    else if (objR instanceof IntToExprCast)
+                        f = ((IntToExprCast) objL).intExpr().eq(((IntToExprCast) objR).intExpr());
+                    else 
+                        f = toSet(a, objL).eq(toSet(b, objR));
+                } else
                     f = toSet(a, objL).eq(toSet(b, objR));
                 return k2pos(f, x);
                 //[AM]

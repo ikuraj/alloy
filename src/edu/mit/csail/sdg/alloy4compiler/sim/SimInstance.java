@@ -234,15 +234,15 @@ public final class SimInstance extends VisitReturn<Object> {
 
     /** Construct a new simulation context with the given bitwidth and the given maximum sequence length. */
     public SimInstance(Module root, int bitwidth, int maxseq) throws Err {
-        if (bitwidth<1 || bitwidth>32) throw new ErrorType("Bitwidth must be between 1 and 32.");
+        if (bitwidth<0 || bitwidth>32) throw new ErrorType("Bitwidth must be between 0 and 32.");
         this.root = root;
         this.bitwidth = bitwidth;
         this.maxseq = maxseq;
         this.callbacks = new HashMap<Func,SimCallback>();
-        if (bitwidth==32) { max=Integer.MAX_VALUE; min=Integer.MIN_VALUE; } else { max=(1<<(bitwidth-1))-1; min=(0-max)-1; }
+        if (bitwidth==32) { max=Integer.MAX_VALUE; min=Integer.MIN_VALUE; } else { max=Util.max(bitwidth); min=(0-max)-1; }
         if (maxseq < 0)   throw new ErrorSyntax("The maximum sequence length cannot be negative.");
-        if (maxseq > max) throw new ErrorSyntax("With integer bitwidth of "+bitwidth+", you cannot have sequence length longer than "+max);
-        shiftmask = (1 << (32 - Integer.numberOfLeadingZeros(bitwidth-1))) - 1;
+        if (maxseq > 0 && maxseq > max) throw new ErrorSyntax("With integer bitwidth of "+bitwidth+", you cannot have sequence length longer than "+max);
+        shiftmask = Util.shiftmask(bitwidth);
     }
 
     /** Construct a deep copy of this instance (except that it shares the same root Module object as the old instance) */
@@ -535,8 +535,9 @@ public final class SimInstance extends VisitReturn<Object> {
         switch(x.op) {
           case NUMBER:
              int n = x.num();
-             if (n<min) throw new ErrorType(x.pos, "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is smaller than the minimum integer "+min);
-             if (n>max) throw new ErrorType(x.pos, "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is bigger than the maximum integer "+max);
+             //[am] const
+//             if (n<min) throw new ErrorType(x.pos, "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is smaller than the minimum integer "+min);
+//             if (n>max) throw new ErrorType(x.pos, "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is bigger than the maximum integer "+max);
              return n;
           case FALSE: return Boolean.FALSE;
           case TRUE: return Boolean.TRUE;

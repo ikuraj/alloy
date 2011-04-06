@@ -588,4 +588,14 @@ public final class Util {
 
    /** Returns the substring after the last "/" */
    public static String tail(String string)  { int i=string.lastIndexOf('/'); return (i<0) ? string : string.substring(i+1); }
+
+   /** Returns the largest allowed integer, or -1 if no integers are allowed (bitwidth < 1). */
+   public static int max(int bitwidth) { return bitwidth < 1 ? -1 : (1<<(bitwidth-1))-1; }
+   
+   /** Returns the smallest allowed integer, or 0 if no integers are allowed (bitwidth < 1)*/
+   public static int min(int bitwidth) { return bitwidth < 1 ?  0 : 0-(1<<(bitwidth-1)); }
+
+   /** Returns a mask of the form 000..0011..11 where the number of 1s is equal to the number of significant bits of the highest integer withing the given bitwidth */
+   public static int shiftmask(int bitwidth) { return bitwidth < 1 ? 0 : (1 << (32 - Integer.numberOfLeadingZeros(bitwidth-1))) - 1; }
+
 }

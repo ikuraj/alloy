@@ -68,7 +68,7 @@ public interface Module {
 
    /** Add a global expression; if the name already exists, it is removed first. */
    public void addGlobal(String name, Expr value);
-
+   
    /** Display this object (and so objects) as a tree; if listener!=null, it will receive OurTree.Event.SELECT events. */
    public JFrame showAsTree(Listener listener);
 
