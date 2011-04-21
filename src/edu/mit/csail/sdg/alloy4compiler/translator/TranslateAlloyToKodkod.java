@@ -487,7 +487,11 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             if (y2.expression() instanceof IntToExprCast)
                 return ((IntToExprCast)y2.expression()).intExpr();
         }
-        if (y instanceof IntExpression) return (IntExpression)y;
+        // simplify: if y is Int[sth], then return sth
+        if (y instanceof IntToExprCast)
+            return ((IntToExprCast) y).intExpr();
+        if (y instanceof IntExpression) 
+            return (IntExpression)y;
         //[AM]: maybe this conversion should be removed
         if (y instanceof Expression) return ((Expression) y).sum();
         throw new ErrorFatal(x.span(), "This should have been an integer expression.\nInstead it is "+y);
@@ -825,8 +829,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             case EQUALS:
                 objL = visitThis(a);
                 objR = visitThis(b);
-		eL = toSet(a, objL);
-		eR = toSet(b, objR);
+                eL = toSet(a, objL);
+		        eR = toSet(b, objR);
                 if (eL instanceof IntToExprCast && eR instanceof IntToExprCast)
                     f = ((IntToExprCast) eL).intExpr().eq(((IntToExprCast) eR).intExpr()); 
                 else
@@ -835,8 +839,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             case NOT_EQUALS:
                 objL = visitThis(a);
                 objR = visitThis(b);
-		eL = toSet(a, objL);
-		eR = toSet(b, objR);
+                eL = toSet(a, objL);
+                eR = toSet(b, objR);
                 if (eL instanceof IntToExprCast && eR instanceof IntToExprCast)
                     f = ((IntToExprCast) eL).intExpr().eq(((IntToExprCast) eR).intExpr()).not(); 
                 else
