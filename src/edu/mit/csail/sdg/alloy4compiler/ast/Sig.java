@@ -49,6 +49,17 @@ public abstract class Sig extends Expr {
 
    /** The built-in "none" signature. */
    public static final PrimSig NONE = new PrimSig("none", null, false);
+   
+   /** The built-in "none" signature. */
+   public static final PrimSig GHOST = mkGhostSig();
+   
+   private static final PrimSig mkGhostSig() {
+       try {
+           return new PrimSig("Univ", null, new Attr[0]);
+       } catch (Err e) {
+           return null; // never happens
+       }
+   }
 
    /** Returns the name for this sig; this name need not be unique. */
    @Override public final String toString() { return label; }

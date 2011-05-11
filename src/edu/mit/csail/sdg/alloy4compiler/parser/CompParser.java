@@ -2240,7 +2240,7 @@ public class CompParser extends java_cup.runtime.lr_parser {
         if (root==null && prefix.length()!=0) throw new ErrorFatal("Internal error (parse subfile with root==null)");
         if (root!=null && prefix.length()==0) throw new ErrorFatal("Internal error (parse topfile with root!=null)");
         CompModule u = new CompModule(root, filename, prefix);
-        if (!filename.endsWith("util" + File.separator + "integer.als"))
+        if (root == null)
             u.addOpen(null, null, ExprVar.make(null, "util/integer"), null, ExprVar.make(null, "integer"));
         u.resolution = initialResolutionMode;
         String content = fc!=null ? fc.get(filename) : null;
@@ -2253,6 +2253,10 @@ public class CompParser extends java_cup.runtime.lr_parser {
         CompParser p = new CompParser(s);
         p.alloymodule=u;
         try {p.parse();} catch(Throwable ex) {if (ex instanceof Err) throw (Err)ex; throw new ErrorFatal("Parser Exception", ex);}
+        // if no sigs are defined by the user, add one
+        if (root == null && u.getAllSigs().isEmpty()) {
+            u.addGhostSig(); 
+        }
         return u;
     } finally {
         Util.close(isr);

@@ -955,6 +955,10 @@ public final class CompModule extends Browsable implements Module {
    //============================================================================================================================//
 
    /** Add a sig declaration. */
+   void addGhostSig() throws Err {
+       sigs.put(Sig.GHOST.label, Sig.GHOST);
+   }
+   
    Sig addSig(String name, ExprVar par, List<ExprVar> parents, List<Decl> fields, Expr fact, Attr... attributes) throws Err {
       Sig obj;
       Pos pos = Pos.UNKNOWN.merge(WHERE.find(attributes));
