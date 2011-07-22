@@ -9,6 +9,10 @@ module examples/algorithms/dijkstra
  *   University, Eindhoven, The Netherlands, September 1965.
  *   Reprinted in Programming Languages, F. Genuys, Ed., Academic
  *   Press, New York, 1968, 43-112.
+ *
+ * Acknowledgements to Ulrich Geilmann for finding and fixing a bug
+ * in the GrabMutex predicate.
+ *   
  */
 
 open util/ordering [State] as so
@@ -36,6 +40,8 @@ pred GrabMutex [s: State, p: Process, m: Mutex, s': State] {
    !s.IsStalled[p]
    // can only grab a mutex we do not yet hold
    m !in p.(s.holds)
+   // mutexes are grabbed in order
+   all m': p.(s.holds) | mo/lt[m',m]
    s.IsFree[m] => {
       // if the mutex is free, we now hold it,
       // and do not become stalled
@@ -97,16 +103,8 @@ pred Deadlock  {
          some s: State | all p: Process | some p.(s.waits)
 }
 
-pred GrabbedInOrder  {
-   all pre: State - so/last |
-     let post = so/next[pre] |
-        let had = Process.(pre.holds), have = Process.(post.holds) |
-        let grabbed = have - had |
-           some grabbed => grabbed in mo/nexts[had]
-}
-
 assert DijkstraPreventsDeadlocks {
-   some Process && GrabOrRelease && GrabbedInOrder => ! Deadlock
+   GrabOrRelease => ! Deadlock
 }
 
 
