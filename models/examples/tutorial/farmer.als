@@ -10,6 +10,9 @@ module examples/tutorial/farmer
  * to the far side of the river intact?
  *
  * authors: Greg Dennis, Rob Seater
+ *
+ * Acknowledgements to Derek Rayside and his students for finding and
+ * fixing a bug in the "crossRiver" predicate.
  */
 
 open util/ordering[State] as ord
@@ -49,14 +52,13 @@ fact initialState {
  * Also constrains which objects get eaten.
  */
 pred crossRiver [from, from', to, to': set Object] {
-  // either the Farmer takes no items
-  ( from' = from - Farmer &&
-    to' = to - to.eats + Farmer ) ||
-  // or the Farmer takes one item
-  (some item: from - Farmer {
-    from' = from - Farmer - item
-    to' = to - to.eats + Farmer + item
-  })
+   // either the Farmer takes no items
+   (from' = from - Farmer - from'.eats and
+    to' = to + Farmer) or
+    // or the Farmer takes one item
+    (one x : from - Farmer | {
+       from' = from - Farmer - x - from'.eats
+       to' = to + Farmer + x })
 }
 
 /*
@@ -78,3 +80,11 @@ pred solvePuzzle {
 }
 
 run solvePuzzle for 8 State expect 1
+
+// no Object can be in two places at once
+// this is implied by both definitions of crossRiver
+assert NoQuantumObjects {
+   no s : State | some x : Object | x in s.near and x in s.far
+}
+
+check NoQuantumObjects for 8 State expect 0
