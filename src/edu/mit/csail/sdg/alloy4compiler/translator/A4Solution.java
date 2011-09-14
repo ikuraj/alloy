@@ -239,7 +239,7 @@ public final class A4Solution {
         TupleSet stringBounds = factory.noneOf(1);
         final TupleSet next = factory.noneOf(2);
         int min=min(), max=max();
-        if (max >= min)  for(int i=min; i<=max; i++) { // Safe since we know 1 <= bitwidth <= 30
+        if (max >= min) for(int i=min; i<=max; i++) { // Safe since we know 1 <= bitwidth <= 30
            Tuple ii = factory.tuple(""+i);
            TupleSet is = factory.range(ii, ii);
            bounds.boundExactly(i, is);

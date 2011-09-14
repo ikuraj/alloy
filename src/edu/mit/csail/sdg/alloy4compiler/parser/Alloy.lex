@@ -201,7 +201,8 @@ import java_cup.runtime.*;
 [\"] ([^\\\"] | ("\\" .))*                                             { throw new ErrorSyntax(alloy_here(yytext()),"String literal is missing its closing \" character"); }
 [0-9][0-9]*[\$a-zA-Z_\'\"][\$0-9a-zA-Z_\'\"]*                          { throw new ErrorSyntax(alloy_here(yytext()),"Name cannot start with a number."); }
 [0-9][0-9]*                                                            { return alloy_num (yytext()); }
-[\$a-zA-Z][\$0-9a-zA-Z_\'\"]*                                          { return alloy_id  (yytext()); }
+[:jletter:][[:jletterdigit:]\'\"]*                                      { return alloy_id  (yytext()); }
+//[\$a-zA-Z][\$0-9a-zA-Z_\'\"]*                                          { return alloy_id  (yytext()); }
 
 "/**" ~"*/"                  { }
 

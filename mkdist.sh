@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## ----------------------------------------------------------------
-## TODO: used stuff from the extra folder instead of dist/template
+## TODO: use stuff from the extra folder instead of dist/template
 ## ----------------------------------------------------------------
 
 BUILD_DATE=$(date +"%F %H:%M %Z")
@@ -19,7 +19,7 @@ function compile {
 
     CP=../kodkod/bin:$(ls -1 lib/*.jar | xargs | sed 's/\ /:/g')
     echo "[compiling...]"
-    find src -name "*.java" | xargs javac -cp $CP -d bin
+    find src -name "*.java" | xargs javac -cp $CP -d bin -target 1.5
 
     mv $version_file.bak $version_file
 }
@@ -58,8 +58,13 @@ function dist {
     cd ..
 }
 
-compile 
-dist
+if [[ "X"$1 == "X" ]]
+then
+  compile 
+  dist
+else
+  $1
+fi
 
 # echo '#!/bin/bash
     

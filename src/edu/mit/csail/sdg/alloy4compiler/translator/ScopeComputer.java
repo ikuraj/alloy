@@ -329,7 +329,7 @@ final class ScopeComputer {
             for (Field f : s.getFields()) {
                 for (ProductType pt : f.type()) {
                     for (int k = 0; k < pt.arity(); k++) {
-                        if (pt.get(k) == SIGINT)
+                        if (pt.get(k) == SIGINT || pt.get(k) == SEQIDX)
                             return true;
                     }
                 }
