@@ -274,11 +274,11 @@ public final class A4Solution {
             if (opt.solverDirectory.length()>0 && ext.indexOf(File.separatorChar)<0) ext=opt.solverDirectory+File.separatorChar+ext;
             try {
                 File tmp = File.createTempFile("tmp", ".cnf", new File(opt.tempDirectory));
-                tmp.deleteOnExit();
-                solver.options().setSolver(SATFactory.externalFactory(ext, tmp.getAbsolutePath(), "", opt.solver.options()));
+                tmp.deleteOnExit(); 
+                solver.options().setSolver(SATFactory.externalFactory(ext, tmp.getAbsolutePath(), opt.solver.options()));
             } catch(IOException ex) { throw new ErrorFatal("Cannot create temporary directory.", ex); }
         } else if (opt.solver.equals(A4Options.SatSolver.ZChaffJNI)) {
-            solver.options().setSolver(SATFactory.ZChaff);
+            solver.options().setSolver(SATFactory.ZChaffMincost);
         } else if (opt.solver.equals(A4Options.SatSolver.MiniSatJNI)) {
             solver.options().setSolver(SATFactory.MiniSat);
         } else if (opt.solver.equals(A4Options.SatSolver.MiniSatProverJNI)) {
@@ -929,7 +929,7 @@ public final class A4Solution {
             rep.resultCNF(out);
             return null;
          }
-        if (solver.options().solver()==SATFactory.ZChaff || !solver.options().solver().incremental()) {
+        if (solver.options().solver()==SATFactory.ZChaffMincost || !solver.options().solver().incremental()) {
            if (sol==null) sol = solver.solve(fgoal, bounds);
         } else {
            kEnumerator = new Peeker<Solution>(solver.solveAll(fgoal, bounds));
