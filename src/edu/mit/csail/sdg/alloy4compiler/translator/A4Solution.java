@@ -285,6 +285,7 @@ public final class A4Solution {
             sym=20;
             solver.options().setSolver(SATFactory.MiniSatProver);
             solver.options().setLogTranslation(2);
+            solver.options().setCoreGranularity(opt.coreGranularity);
         } else {
             solver.options().setSolver(SATFactory.DefaultSAT4J); // Even for "KK" and "CNF", we choose SAT4J here; later, just before solving, we'll change it to a Write2CNF solver
         }

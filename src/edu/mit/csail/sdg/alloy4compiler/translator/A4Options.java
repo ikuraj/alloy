@@ -143,6 +143,9 @@ public final class A4Options implements Serializable {
      * <p> Default value is set to the fastest current strategy.
      */
     public int coreMinimization = 2;
+    
+    /** Unsat core granularity, default is 0 (only top-level conjuncts are considered), 3 expands all quantifiers */
+    public int coreGranularity = 0;
 
     /** This option specifies the SAT solver to use (SAT4J, MiniSatJNI, MiniSatProverJNI, ZChaffJNI...)
      * <p> Default value is SAT4J.
@@ -189,6 +192,7 @@ public final class A4Options implements Serializable {
         x.originalFilename = originalFilename;
         x.recordKodkod = recordKodkod;
         x.noOverflow = noOverflow;
+        x.coreGranularity = coreGranularity;
         return x;
     }
 }
