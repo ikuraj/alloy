@@ -62,6 +62,7 @@ import kodkod.instance.Bounds;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Tuple;
 import kodkod.util.ints.IndexedEntry;
+import kodkod.util.nodes.PrettyPrinter;
 
 /** Translate a Kodkod formula node to an equivalent Java program that solves the formula.
  *
@@ -187,6 +188,14 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         file.printf("import kodkod.engine.*;%n");
         file.printf("import kodkod.engine.satlab.SATFactory;%n");
         file.printf("import kodkod.engine.config.Options;%n%n");
+        
+        file.printf("/* %n");
+        file.printf("  ==================================================%n");
+        file.printf("    kodkod formula: %n");
+        file.printf("  ==================================================%n");
+        file.printf(PrettyPrinter.print(x, 4) + "%n");
+        file.printf("  ==================================================%n");
+        file.printf("*/%n");
         file.printf("public final class Test {%n%n");
         file.printf("public static void main(String[] args) throws Exception {%n%n");
         ArrayList<String> atomlist=new ArrayList<String>();
