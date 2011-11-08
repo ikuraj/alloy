@@ -66,6 +66,7 @@ parser code {:
      int act; // current action code
      Symbol lhs_sym = null; // the Symbol/stack element returned by a reduce
      short handle_size, lhs_sym_num; // information about production being reduced with
+     boolean logging = "yes".equals(System.getProperty("debug"));
      production_tab = production_table();
      action_tab     = action_table();
      reduce_tab     = reduce_table();
@@ -79,11 +80,13 @@ parser code {:
      for (_done_parsing = false; !_done_parsing; ) {
         act = get_action(((Symbol)stack.peek()).parse_state, cur_token.sym);
         if (act > 0) { // "shift"; thus, we shift to the encoded state by pushing it on the stack
+           if (logging) System.out.println("shift " + cur_token.sym);
            cur_token.parse_state = act-1;
            stack.push(cur_token);
            tos++;
            cur_token = scan();
         } else if (act<0) { // "reduce"
+           if (logging) System.out.println("reduce " + ((-act)-1));
            lhs_sym = do_action((-act)-1, this, stack, tos);
            lhs_sym_num = production_tab[(-act)-1][0];
            handle_size = production_tab[(-act)-1][1];
@@ -93,6 +96,7 @@ parser code {:
            stack.push(lhs_sym);
            tos++;
         } else { // "error"
+           if (logging) System.out.println("error");
            syntax_error(cur_token);
            done_parsing();
         }
