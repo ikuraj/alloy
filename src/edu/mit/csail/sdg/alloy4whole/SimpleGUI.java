@@ -1553,7 +1553,9 @@ public final class SimpleGUI implements ComponentListener, Listener {
             text.clearShade();
             text.shade(hCore.b, subCoreColor, false);
             text.shade(hCore.a, coreColor, false);
-            if (false) text.shade(lCore, coreColor, false); // we are currently not highlighting the lowlevel core
+            // shade again, because if not all files were open, some shadings will have no effect
+            text.shade(hCore.b, subCoreColor, false);
+            text.shade(hCore.a, coreColor, false);
         }
         if (arg.startsWith("POS: ")) { // POS: x1 y1 x2 y2 filename
             Scanner s=new Scanner(arg.substring(5));
