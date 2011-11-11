@@ -81,7 +81,7 @@ final class CompFilter implements Scanner {
     public Symbol next_token() throws Err {
        Symbol a = myread(), b;
        int c;
-       if (last==null || last.sym!=COLON) {
+       if (last==null || (last.sym!=COLON && last.sym!=DISJ)) {
           if (a.sym==NO) c=NO2;
              else if (a.sym==ALL) c=ALL2;
              else if (a.sym==SUM) c=SUM2;

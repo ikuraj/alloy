@@ -27,6 +27,7 @@ function compile {
 
 function dist {
     DST=dist
+    MACOSDST=OSX-DMG-build
 
     rm -rf $DST/alloy*
     mkdir -p $DST/alloy
@@ -59,6 +60,12 @@ function dist {
     chmod +x alloy-dev.jar
     mv alloy-dev.jar ../
     popd
+
+    echo "copying JAR file to OSX dist folder"
+    cp -v $DST/alloy-dev.jar $MACOSDST/dist/alloy4.2-rc.app/Contents/Resources/Java/alloy-dev.jar -f
+
+    echo "zipping the OSX dist folder"
+    zip -r $MACOSDST.zip $MACOSDST -x .svn 
 }
 
 if [[ "X"$1 == "X" ]]
