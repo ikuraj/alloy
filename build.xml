@@ -1,0 +1,28 @@
+<project name="Alloy" basedir=".">
+    <description>
+        ANT build file for Alloy; Currently only for building OSX .app file.
+    </description>
+
+    <taskdef name="jarbundler" 
+             classname="net.sourceforge.jarbundler.JarBundler" />
+
+    <jarbundler dir="dist"
+		name="Alloy4.2-rc"
+		mainclass="edu.mit.csail.sdg.alloy4whole.SimpleGUI"
+		jar="dist/alloy-dev.jar" 
+		build="4.2"
+		bundleid="edu.mit.csail.sdg.alloy4whole.SimpleGUI"
+		stubfile="OSX-JavaStub/JavaApplicationStub"
+		icon="OSX-icons/AlloyLogo.icns"
+		infostring="Alloy Analyzer"
+		shortname="Alloy">
+
+      <documenttype name="Alloy model file"
+                    extensions="als" 
+                    iconFile="OSX-icons/AlloyFile.icns"
+                    role="Editor"/>
+
+    </jarbundler>
+
+
+</project>

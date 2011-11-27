@@ -387,7 +387,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             tr.makeFacts(cmd.formula);
             return tr.frame.solve(rep, cmd, new Simplifier(), false);
         } catch(UnsatisfiedLinkError ex) {
-            throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
+            throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim(), ex);
         } catch(CapacityExceededException ex) {
             throw rethrow(ex);
         } catch(HigherOrderDeclException ex) {
@@ -422,7 +422,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             tr.makeFacts(cmd.formula);
             return tr.frame.solve(rep, cmd, new Simplifier(), true);
         } catch(UnsatisfiedLinkError ex) {
-            throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
+            throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim(), ex);
         } catch(CapacityExceededException ex) {
             throw rethrow(ex);
         } catch(HigherOrderDeclException ex) {

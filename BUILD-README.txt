@@ -19,7 +19,7 @@
  - the script first deletes everything from the "bin" folder   
 
  - the sources from the "src" folder are then compiled; target JVM
-   version is set to 1.5 (important for MacOS!) and version number and
+   version is set to 1.5 (important for MacOS!).  Version number and
    build date are also properly set (compiling from Eclipse won't do
    that automatically).  The compiled class files are placed in the
    "bin" folder.

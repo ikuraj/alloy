@@ -168,8 +168,8 @@ public final class MailBug implements UncaughtExceptionHandler, Runnable {
       String result = readAll(ALLOY_NOW + "?buildnum=" + Version.buildNumber() + "&builddate=" + Version.buildDate(), "", "");
       if (!result.startsWith("Alloy Build ")) return;
       // Now that we know we're online, try to remove the old ill-conceived "Java WebStart" versions of Alloy4 BETA1..BETA7
-      Subprocess.exec(20000, new String[]{
-            "javaws", "-silent", "-offline", "-uninstall", "http://alloy.mit.edu/alloy4/download/alloy4.jnlp"});
+      //Subprocess.exec(20000, new String[]{
+      //      "javaws", "-silent", "-offline", "-uninstall", "http://alloy.mit.edu/alloy4/download/alloy4.jnlp"});
       // Now parse the result
       int num = 0;
       boolean found = false;

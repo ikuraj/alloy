@@ -1722,7 +1722,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
         try { System.loadLibrary(library+"x2"); return true; } catch(UnsatisfiedLinkError ex) { }
         try { System.loadLibrary(library+"x3"); return true; } catch(UnsatisfiedLinkError ex) { }
         try { System.loadLibrary(library+"x4"); return true; } catch(UnsatisfiedLinkError ex) { }
-        try { System.loadLibrary(library+"x4"); return true; } catch(UnsatisfiedLinkError ex) { return false; }
+        try { System.loadLibrary(library+"x5"); return true; } catch(UnsatisfiedLinkError ex) { return false; }
     }
 
     /** Create a dummy task object for testing purpose. */
@@ -1939,8 +1939,9 @@ public final class SimpleGUI implements ComponentListener, Listener {
         // Testing the SAT solvers
         if (1==1) {
             satChoices = SatSolver.values().makeCopy();
-            String test1 = Subprocess.exec(20000, new String[]{binary+fs+"berkmin", binary+fs+"tmp.cnf"});
-            if (!isSat(test1)) satChoices.remove(SatSolver.BerkMinPIPE);
+//            String test1 = Subprocess.exec(20000, new String[]{binary+fs+"berkmin", binary+fs+"tmp.cnf"});
+//            if (!isSat(test1)) satChoices.remove(SatSolver.BerkMinPIPE);
+            satChoices.remove(SatSolver.BerkMinPIPE);
             String test2 = Subprocess.exec(20000, new String[]{binary+fs+"spear", "--model", "--dimacs", binary+fs+"tmp.cnf"});
             if (!isSat(test2)) satChoices.remove(SatSolver.SpearPIPE);
             if (!loadLibrary("minisat")) {

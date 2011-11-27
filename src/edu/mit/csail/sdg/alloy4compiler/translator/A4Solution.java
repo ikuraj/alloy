@@ -275,10 +275,11 @@ public final class A4Solution {
             try {
                 File tmp = File.createTempFile("tmp", ".cnf", new File(opt.tempDirectory));
                 tmp.deleteOnExit(); 
-                solver.options().setSolver(SATFactory.externalFactory(ext, tmp.getAbsolutePath(), opt.solver.options()));
+	            solver.options().setSolver(SATFactory.externalFactory(ext, tmp.getAbsolutePath(), "", opt.solver.options()));
+                //solver.options().setSolver(SATFactory.externalFactory(ext, tmp.getAbsolutePath(), opt.solver.options()));
             } catch(IOException ex) { throw new ErrorFatal("Cannot create temporary directory.", ex); }
         } else if (opt.solver.equals(A4Options.SatSolver.ZChaffJNI)) {
-            solver.options().setSolver(SATFactory.ZChaffMincost);
+            solver.options().setSolver(SATFactory.ZChaff);
         } else if (opt.solver.equals(A4Options.SatSolver.MiniSatJNI)) {
             solver.options().setSolver(SATFactory.MiniSat);
         } else if (opt.solver.equals(A4Options.SatSolver.MiniSatProverJNI)) {

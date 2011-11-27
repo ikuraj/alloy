@@ -5,7 +5,7 @@ VERSION="4.2"
 
 if [[ -z $KODKOD_HOME ]]
 then
-    KODKOD_HOME=../relations-experimental
+    KODKOD_HOME=../kodkod  #../relations-experimental
 fi
 
 function compile {
@@ -29,7 +29,7 @@ function dist {
     DST=dist
     MACOSDST=Alloy-OSX
 
-    rm -rf $DST/alloy*
+    rm -rf $DST/*
     mkdir -p $DST/alloy
 
     for f in lib/*jar
@@ -39,10 +39,14 @@ function dist {
     
     rm -rf bin/tmp
     cp -r bin/* $DST/alloy/
+    cp -r src/* $DST/alloy/
     rm -rf $DST/alloy/kodkod
     cp -r $KODKOD_HOME/bin/kodkod $DST/alloy/kodkod
-    
+    cp -r $KODKOD_HOME/src/kodkod/* $DST/alloy/kodkod/
     rm -rf $DST/alloy/META-INF
+ 
+    find $DST/alloy -type d -name ".svn" | xargs rm -rf 
+    find $DST/alloy -type d -name "CVS" | xargs rm -rf 
     
     mkdir -p $DST/alloy/META-INF
     cp MANIFEST.MF $DST/alloy/META-INF
@@ -53,30 +57,47 @@ function dist {
     # 	cp -r template/$d alloy/
     # done
 
-    cp $MACOSDST.zip $DST
-
     pushd $(pwd) &> /dev/null
     cd $DST/alloy
-    find -type f -name "*.java" | xargs rm -f
+    # find -type f -name "*.java" | xargs rm -f
     zip -q -r alloy-dev.jar *
     chmod +x alloy-dev.jar
     mv alloy-dev.jar ../
     cd ..
-    rm -rf alloy
-
-    unzip -q $MACOSDST.zip
-    rm $MACOSDST.zip
-    cd $MACOSDST
-    echo "[copying JAR file to OSX dist folder...]"
-    cp -f ../alloy-dev.jar dist/alloy4.2-rc.app/Contents/Resources/Java/alloy-dev.jar 
-    cd ..
-    echo "[zipping the OSX dist folder...]"
-    zip -q -r $MACOSDST.zip $MACOSDST
-    rm -rf $MACOSDST
+    rm -rf allo
     popd &> /dev/null
 
     echo " *** jar file created:    $DST/alloy-dev.jar"
-    echo " *** osx bundle created:  $DST/$MACOSDST.zip"
+
+    echo "[building OSX app...]"
+    ant
+
+    echo "[packaging OSX...]"
+    osxdir="alloy-osx"
+    rm -rf $DST/$osxdir
+    mkdir -p $DST/$osxdir/dist
+    cp -r $DST/*.app $DST/$osxdir/dist
+    cp -r OSX-extra/* $DST/$osxdir/dist
+    cp build-dmg.sh $DST/$osxdir/
+    cd $DST
+    zip -q -r $osxdir.zip $osxdir
+    rm -rf $osxdir
+    
+
+    # cp $MACOSDST.zip $DST
+    # pushd $(pwd) &> /dev/null
+    # unzip -q $MACOSDST.zip
+    # rm $MACOSDST.zip
+    # cd $MACOSDST
+    # echo "[copying JAR file to OSX dist folder...]"
+    # cp -f ../alloy-dev.jar dist/alloy4.2-rc.app/Contents/Resources/Java/alloy-dev.jar 
+    # cd ..
+    # echo "[zipping the OSX dist folder...]"
+    # zip -q -r $MACOSDST.zip $MACOSDST
+    # rm -rf $MACOSDST
+    # popd &> /dev/null
+
+    # echo " *** osx bundle created:  $DST/$MACOSDST.zip"
 }
 
 if [[ "X"$1 == "X" ]]
