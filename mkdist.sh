@@ -78,6 +78,7 @@ function dist {
     mkdir -p $DST/$osxdir/dist
     cp -r $DST/*.app $DST/$osxdir/dist
     cp -r OSX-extra/* $DST/$osxdir/dist
+    find $DST/$osxdir/dist -type d -name ".svn" | xargs rm -rf
     cp build-dmg.sh $DST/$osxdir/
     cd $DST
     zip -q -r $osxdir.zip $osxdir

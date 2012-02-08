@@ -193,7 +193,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         file.printf("  ==================================================%n");
         file.printf("    kodkod formula: %n");
         file.printf("  ==================================================%n");
-        file.printf(PrettyPrinter.print(x, 4) + "%n");
+        file.print(PrettyPrinter.print(x, 4) + "\n");
         file.printf("  ==================================================%n");
         file.printf("*/%n");
         file.printf("public final class Test {%n%n");
@@ -333,6 +333,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         String left=make(x.left());
         String right=make(x.right());
         switch(x.op()) {
+           case NEQ: file.printf("Formula %s=%s.neq(%s);%n", newname, left, right); break;
            case EQ: file.printf("Formula %s=%s.eq(%s);%n", newname, left, right); break;
            case GT: file.printf("Formula %s=%s.gt(%s);%n", newname, left, right); break;
            case GTE: file.printf("Formula %s=%s.gte(%s);%n", newname, left, right); break;

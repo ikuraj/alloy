@@ -157,4 +157,4 @@ assert WriteLocal {
 }
 
 check WriteIdempotent for 5 but 5 int, 8 seq
-check WriteLocal for 5 but 5 int, 8 seq
+check WriteLocal for 12 but 6 int, 18 seq

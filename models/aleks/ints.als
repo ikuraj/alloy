@@ -2,9 +2,12 @@ open util/integer
 
 one sig S {
   a: one Int, 
-  b: one Int
+  b: one Int,
+  c: one Int
 } { 
-  add[a, b] < 3 and a >= 0 and b >= 0
+  b != 0 => c = div[a, b] else c = a
 }
 
-run {} for 1
+run {
+  S.b = 0
+} for 3 Int
