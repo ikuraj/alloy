@@ -159,7 +159,7 @@ public class Simplifier {
                 sol.shrink((Relation)b, b0, b1=a1);
             }
           } catch(Exception ex) {
-             // safe to ignore;
+             ex.printStackTrace();
           }
         }
        return true;

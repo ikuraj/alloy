@@ -502,7 +502,7 @@ public final class A4Solution {
        return factory.setOf(expression.arity(), Translator.approximate(expression, bounds, solver.options()).denseIndices());
     }
 
-    /** Query the Bounds object to find the lower/upper bound; throws ErrorFatal if expr is not Relation, nor a union of Relations. */
+    /** Query the Bounds object to find the lower/upper bound; throws ErrorFatal if expr is not Relation, nor a {union, product} of Relations. */
     TupleSet query(boolean findUpper, Expression expr, boolean makeMutable) throws ErrorFatal {
        if (expr==Relation.NONE) return factory.noneOf(1);
        if (expr==Relation.INTS) return makeMutable ? sigintBounds.clone() : sigintBounds;
@@ -519,6 +519,10 @@ public final class A4Solution {
              TupleSet right = query(findUpper, b.right(), false);
              left.addAll(right);
              return left;
+          } else if (b.op() == ExprOperator.PRODUCT) {
+              TupleSet left = query(findUpper, b.left(), true);
+              TupleSet right = query(findUpper, b.right(), false);
+              return left.product(right);
           }
        }
        throw new ErrorFatal("Unknown expression encountered during bounds computation: "+expr);
