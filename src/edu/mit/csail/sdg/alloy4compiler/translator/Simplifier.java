@@ -158,9 +158,7 @@ public class Simplifier {
                 rep.debug("Comment: Simplify "+b+" "+(b1.size()-b0.size())+"->"+(a1.size()-b0.size())+"\n");
                 sol.shrink((Relation)b, b0, b1=a1);
             }
-          } catch(Exception ex) {
-             ex.printStackTrace();
-          }
+          } catch(Exception ex) {}
         }
        return true;
     }
