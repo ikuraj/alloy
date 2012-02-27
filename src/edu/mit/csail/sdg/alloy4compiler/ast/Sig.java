@@ -81,7 +81,7 @@ public abstract class Sig extends Expr {
    @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
    /** {@inheritDoc} */
-   @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
+   @Override public final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
    /**
     * Store the list of attributes.
@@ -486,7 +486,7 @@ public abstract class Sig extends Expr {
       @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
       /** {@inheritDoc} */
-      @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
+      @Override public final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
       /** {@inheritDoc} */
       @Override public String getHTML() { return "<b>field</b> " + label + " <i>" + type + "</i>"; }

@@ -156,7 +156,7 @@ public final class ExprITE extends Expr {
     }
 
     /** {@inheritDoc} */
-    @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
+    @Override public final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
     /** {@inheritDoc} */
     @Override public String getHTML() { return "<b>if-then-else</b>" + " <i>" + type + "</i>"; }

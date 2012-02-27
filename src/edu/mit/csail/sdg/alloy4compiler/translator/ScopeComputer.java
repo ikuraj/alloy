@@ -37,7 +37,10 @@ import edu.mit.csail.sdg.alloy4.UniqueNameGenerator;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.CommandScope;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary.Op;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
+import edu.mit.csail.sdg.alloy4compiler.ast.VisitQuery;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type.ProductType;
@@ -265,7 +268,7 @@ final class ScopeComputer {
     private ScopeComputer(A4Reporter rep, Iterable<Sig> sigs, Command cmd) throws Err {
         this.rep = rep;
         this.cmd = cmd;
-        boolean shouldUseInts = areIntsUsed(sigs);
+        boolean shouldUseInts = areIntsUsed(sigs, cmd);
         // Process each sig listed in the command
         for(CommandScope entry:cmd.scope) {
             Sig s = entry.sig;
@@ -324,7 +327,8 @@ final class ScopeComputer {
     }
 
     /** Whether or not Int appears in the relation types found in these sigs */
-    private boolean areIntsUsed(Iterable<Sig> sigs) {
+    private boolean areIntsUsed(Iterable<Sig> sigs, Command cmd) {
+        /* check for Int-typed relations */
         for (Sig s : sigs) {
             for (Field f : s.getFields()) {
                 for (ProductType pt : f.type()) {
@@ -335,6 +339,20 @@ final class ScopeComputer {
                 }
             }
         }
+        /* check expressions; look for CAST2SIGING (Int[]) */
+        try {
+            Object intTriggerNode;
+            intTriggerNode = cmd.formula.accept(new VisitQuery<Object>() {
+                @Override
+                public Object visit(ExprUnary x) throws Err {
+                    if (x.op == Op.CAST2SIGINT)
+                        return x;                    
+                    return super.visit(x);
+                }                
+            });
+            if (intTriggerNode != null) return true;
+        } catch (Err e) {}
+        
         return false;
     }
 

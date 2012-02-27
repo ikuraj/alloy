@@ -146,7 +146,7 @@ public abstract class Expr extends Browsable {
    //================================================================================================================//
 
    /** Accepts the return visitor. */
-   abstract<T> T accept(VisitReturn<T> visitor) throws Err;
+   public abstract<T> T accept(VisitReturn<T> visitor) throws Err;
 
    /** Converts this into a "formula" if possible; otherwise, returns an Expr with a nonempty error list */
    public final Expr typecheck_as_formula() {

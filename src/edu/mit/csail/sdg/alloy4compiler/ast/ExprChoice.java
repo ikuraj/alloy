@@ -194,7 +194,7 @@ public final class ExprChoice extends Expr {
     }
 
     /** {@inheritDoc} */
-    @Override final<T> T accept(VisitReturn<T> visitor) throws Err {
+    @Override public final<T> T accept(VisitReturn<T> visitor) throws Err {
         if (!errors.isEmpty()) throw errors.pick();
         throw new ErrorType(span(), "This expression failed to be resolved.");
     }

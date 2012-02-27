@@ -511,7 +511,7 @@ public final class ExprBinary extends Expr {
    }
 
    /** {@inheritDoc} */
-   @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
+   @Override public final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
    /** {@inheritDoc} */
    @Override public String getHTML() { return op.toHTML() + " <i>" + type + "</i>"; }
