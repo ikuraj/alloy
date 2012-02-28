@@ -37,6 +37,7 @@ import edu.mit.csail.sdg.alloy4.UniqueNameGenerator;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.CommandScope;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary.Op;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
@@ -342,7 +343,16 @@ final class ScopeComputer {
         /* check expressions; look for CAST2SIGING (Int[]) */
         try {
             Object intTriggerNode;
-            intTriggerNode = cmd.formula.accept(new VisitQuery<Object>() {
+            intTriggerNode = cmd.formula.accept(new VisitQuery<Object>() {                
+                @Override
+                public Object visit(ExprCall x) throws Err {
+                    // skip integer arithmetic functions, because their
+                    // arguments are always explicitly cast to SIGINT using Int[]
+                    if (x.fun.label.startsWith("integer/"))
+                        return null;
+                    return super.visit(x);
+                }
+
                 @Override
                 public Object visit(ExprUnary x) throws Err {
                     if (x.op == Op.CAST2SIGINT)
