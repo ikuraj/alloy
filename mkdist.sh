@@ -33,8 +33,12 @@ function dist {
     mkdir -p $DST/alloy
 
     for f in lib/*jar
-    do
-	unzip -q -o $f -d $DST/alloy
+    do 
+        if [[ "$f" != "lib/kodkod.jar" ]]
+	then
+            echo "[extracting]: $f"
+	    unzip -q -o $f -d $DST/alloy
+	fi
     done
     
     rm -rf bin/tmp
