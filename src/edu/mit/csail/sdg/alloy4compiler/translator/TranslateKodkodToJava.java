@@ -252,7 +252,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         String result=make(x);
         file.printf("%nSolver solver = new Solver();");
         file.printf("%nsolver.options().setSolver(SATFactory.DefaultSAT4J);");
-        file.printf("%nsolver.options().setBitwidth(%d);",bitwidth);
+        file.printf("%nsolver.options().setBitwidth(%d);",bitwidth != 0 ? bitwidth : 1);
         file.printf("%nsolver.options().setFlatten(false);");
         file.printf("%nsolver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);");
         file.printf("%nsolver.options().setSymmetryBreaking(20);");
