@@ -31,7 +31,7 @@ public class EvaluatorExample {
         opt.originalFilename = tmpAls.getAbsolutePath();
         opt.solver = A4Options.SatSolver.SAT4J;
         Command cmd = world.getAllCommands().get(0);
-        A4Solution sol = TranslateAlloyToKodkod.execute_commandFromBook(rep, world.getAllReachableSigs(), cmd, opt);
+        A4Solution sol = TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), cmd, opt);
         assert sol.satisfiable();
         
         // eval: univ
