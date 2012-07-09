@@ -3,7 +3,9 @@ module util/integer
 /*
  * A collection of utility functions for using Integers in Alloy.
  * Note that integer overflows are silently truncated to the current bitwidth
- * using the 2's complement arithmetic.
+ * using the 2's complement arithmetic, unless the "forbid overfows" option is
+ * turned on, in which case only models that don't have any overflows are 
+ * analyzed. 
  */
 
 fun add  [n1, n2: Int] : Int { this/plus[n1, n2] }

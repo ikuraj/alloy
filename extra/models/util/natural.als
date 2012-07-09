@@ -59,16 +59,16 @@ fun div [n1, n2: Natural] : lone Natural {
   {n: Natural | #ord/prevs[n1] = #(ord/prevs[n2]->ord/prevs[n])}
 }
 
-/** greater than */
+/**  returns true iff n1 is greater than n2 */
 pred gt  [n1, n2: Natural] { ord/gt [n1, n2] }
 
-/** less than */
+/**  returns true iff n1 is less than n2 */
 pred lt  [n1, n2: Natural] { ord/lt [n1, n2] }
 
-/** greater than or equal to*/
+/**  returns true iff n1 is greater than or equal to n2 */
 pred gte [n1, n2: Natural] { ord/gte[n1, n2] }
 
-/** less than or equal to */
+/**  returns true iff n1 is less than or equal to n2 */
 pred lte [n1, n2: Natural] { ord/lte[n1, n2] }
 
 /** returns the maximum integer in ns */
