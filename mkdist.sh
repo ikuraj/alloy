@@ -40,6 +40,8 @@ function dist {
 	    unzip -q -o $f -d $DST/alloy
 	fi
     done
+    # copy the content of the extra folder
+    cp -r extra/* $DST/alloy
     
     rm -rf bin/tmp
     cp -r bin/* $DST/alloy/
