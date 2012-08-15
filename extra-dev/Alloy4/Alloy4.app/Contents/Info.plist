@@ -48,10 +48,12 @@
         <key>WorkingDirectory</key> <string>$APP_PACKAGE/Contents/Resources/Java</string>
         <key>Properties</key>
         <dict>
-            <key>apple.laf.useScreenMenuBar</key> <string>true</string>
+            <key>apple.laf.useScreenMenuBar</key>       <string>true</string>
+            <key>apple.awt.antialiasing</key>           <string>true</string>
+            <key>apple.awt.graphics.UseQuartz</key>     <string>true</string>
             <key>com.apple.macos.useScreenMenuBar</key> <string>true</string>
-            <key>com.apple.mrj.application.apple.menu.about.name</key> <string>Alloy 4</string>
-            <key>com.apple.mrj.application.live-resize</key> <string>true</string>
+            <key>com.apple.mrj.application.apple.menu.about.name</key> <string>Alloy 4.2</string>
+            <key>com.apple.mrj.application.live-resize</key>           <string>true</string>
         </dict>
     </dict>
 </dict>
