@@ -78,6 +78,10 @@ function dist {
     echo "[building OSX app...]"
     ant
 
+    ###############################
+    # for Mac dist
+    ###############################
+
     echo "[packaging OSX...]"
     osxdir="alloy-osx"
     rm -rf $DST/$osxdir

@@ -7,7 +7,7 @@
              classname="net.sourceforge.jarbundler.JarBundler" />
 
     <jarbundler dir="dist"
-		name="Alloy4.2-rc"
+		name="Alloy4.2"
 		mainclass="edu.mit.csail.sdg.alloy4whole.SimpleGUI"
 		jar="dist/alloy-dev.jar" 
 		build="4.2"
