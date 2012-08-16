@@ -10,17 +10,24 @@
 		name="Alloy4.2"
 		mainclass="edu.mit.csail.sdg.alloy4whole.SimpleGUI"
 		jar="dist/alloy-dev.jar" 
+                jvmversion="1.6+"
+                vmoptions="-Xmx1024m -Xdock:name=Alloy4.2"
+                signature="AA42"
 		build="4.2"
 		bundleid="edu.mit.csail.sdg.alloy4whole.SimpleGUI"
 		stubfile="OSX-JavaStub/JavaApplicationStub"
 		icon="OSX-icons/AlloyLogo.icns"
 		infostring="Alloy Analyzer"
-		shortname="Alloy">
+		shortname="Alloy4.2">
 
-      <documenttype name="Alloy model file"
-                    extensions="als" 
-                    iconFile="OSX-icons/AlloyFile.icns"
-                    role="Editor"/>
+        <javaproperty name="apple.laf.useScreenMenuBar" value="true" />
+        <javaproperty name="apple.awt.antialiasing" value="true" />
+        <javaproperty name="apple.awt.graphics.UseQuartz" value="true" />
+
+        <documenttype name="Alloy model file"
+                      extensions="als" 
+                      iconFile="OSX-icons/AlloyFile.icns"
+                      role="Editor"/>
 
     </jarbundler>
 
