@@ -35,6 +35,7 @@ import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.Module;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompModule.Open;
 
 /** This class provides convenience methods for calling the parser and the compiler. */
@@ -250,6 +251,10 @@ public final class CompUtil {
             loaded.clear();
             List<Object> seenDollar = new ArrayList<Object>();
             CompModule root = parseRecursively(seenDollar, loaded, fc, new Pos(filename,1,1), filename, null, "", thispath, initialResolutionMode);
+            // if no sigs are defined by the user, add one
+            if (root.getAllReachableUserDefinedSigs().isEmpty()) {
+                root.addGhostSig(); 
+            }
             root.seenDollar = seenDollar.size()>0;
             return CompModule.resolveAll(rep==null ? A4Reporter.NOP : rep, root);
         } catch(FileNotFoundException ex) {

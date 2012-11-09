@@ -1,24 +1,32 @@
+<!-- 
+   required environment properties:
+     VERSION - version number (e.g., 4.2), 
+     jarName - jar file name inside the 'dist' folder (e.g., alloy4.2.jar) 
+-->
+
 <project name="Alloy" basedir=".">
     <description>
         ANT build file for Alloy; Currently only for building OSX .app file.
     </description>
 
+    <property environment="env"/>
+
     <taskdef name="jarbundler" 
              classname="net.sourceforge.jarbundler.JarBundler" />
 
     <jarbundler dir="dist"
-		name="Alloy4.2"
+		name="Alloy${env.VERSION}"
 		mainclass="edu.mit.csail.sdg.alloy4whole.SimpleGUI"
-		jar="dist/alloy-dev.jar" 
+		jar="dist/${env.jarName}" 
                 jvmversion="1.6+"
-                vmoptions="-Xmx1024m -Xdock:name=Alloy4.2"
+                vmoptions="-Xmx1024m -Xdock:name=Alloy${env.VERSION}"
                 signature="AA42"
-		build="4.2"
+		build="${env.VERSION}"
 		bundleid="edu.mit.csail.sdg.alloy4whole.SimpleGUI"
 		stubfile="OSX-JavaStub/JavaApplicationStub"
 		icon="OSX-icons/AlloyLogo.icns"
 		infostring="Alloy Analyzer"
-		shortname="Alloy4.2">
+		shortname="Alloy">
 
         <javaproperty name="apple.laf.useScreenMenuBar" value="true" />
         <javaproperty name="apple.awt.antialiasing" value="true" />

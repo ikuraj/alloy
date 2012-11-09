@@ -42,6 +42,7 @@ import java.util.Set;
 
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4.Env;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
@@ -54,7 +55,6 @@ import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.Version;
-import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Attr;
 import edu.mit.csail.sdg.alloy4compiler.ast.Browsable;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
@@ -78,11 +78,11 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Module;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
-import edu.mit.csail.sdg.alloy4compiler.ast.Type;
-import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
+import edu.mit.csail.sdg.alloy4compiler.ast.Type;
+import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
 
 /** Mutable; this class represents an Alloy module; equals() uses object identity. */
 
@@ -711,8 +711,16 @@ public final class CompModule extends Browsable implements Module {
       x.add(SEQIDX);
       x.add(STRING);
       x.add(NONE);
-      for(CompModule m:getAllReachableModules()) x.addAll(m.sigs.values());
+      x.addAll(getAllReachableUserDefinedSigs());
       return x.makeConst();
+   }
+   
+   /** Return the list containing all sigs defined in this module or a reachable submodule. */
+   public ConstList<Sig> getAllReachableUserDefinedSigs() {
+       TempList<Sig> x = new TempList<Sig>();
+       for(CompModule m:getAllReachableModules()) 
+           x.addAll(m.sigs.values());
+       return x.makeConst();
    }
 
    /** Lookup non-fully-qualified Sig/Func/Assertion from the current module; it skips PARAMs. */
@@ -1044,8 +1052,9 @@ public final class CompModule extends Browsable implements Module {
 
    /** Returns an unmodifiable list of all signatures defined inside this module. */
    public SafeList<Sig> getAllSigs() {
-      SafeList<Sig> x = new SafeList<Sig>(sigs.values());
-      return x.dup();
+      return new SafeList<Sig>(sigs.values());
+      // SafeList<Sig> x = new SafeList<Sig>(sigs.values());
+      // return x.dup();
    }
 
    //============================================================================================================================//
@@ -1257,6 +1266,7 @@ public final class CompModule extends Browsable implements Module {
    //============================================================================================================================//
 
    /** Add a COMMAND declaration. */
+   @SuppressWarnings("unused")
    void addCommand(boolean followUp, Pos p, String n, boolean c, int o, int b, int seq, int exp, List<CommandScope> s, ExprVar label) throws Err {
       if (followUp && !Version.experimental) throw new ErrorSyntax(p, "Syntax error encountering => symbol.");
       if (label!=null) p=Pos.UNKNOWN.merge(p).merge(label.pos);
@@ -1270,6 +1280,7 @@ public final class CompModule extends Browsable implements Module {
    }
 
    /** Add a COMMAND declaration. */
+   @SuppressWarnings("unused")
    void addCommand(boolean followUp, Pos p, Expr e, boolean c, int o, int b, int seq, int exp, List<CommandScope> s, ExprVar label) throws Err {
       if (followUp && !Version.experimental) throw new ErrorSyntax(p, "Syntax error encountering => symbol.");
       if (label!=null) p=Pos.UNKNOWN.merge(p).merge(label.pos);

@@ -277,10 +277,6 @@ parser code {:
         CompParser p = new CompParser(s);
         p.alloymodule=u;
         try {p.parse();} catch(Throwable ex) {if (ex instanceof Err) throw (Err)ex; throw new ErrorFatal("Parser Exception", ex);}
-        // if no sigs are defined by the user, add one
-        if (root == null && u.getAllSigs().isEmpty()) {
-            u.addGhostSig(); 
-        }
         return u;
     } finally {
         Util.close(isr);

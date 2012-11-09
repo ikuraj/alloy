@@ -1,7 +1,7 @@
 #!/bin/bash
 
 BUILD_DATE=$(date +"%F %H:%M %Z")
-VERSION="4.2"
+VERSION="4.2_$(date +"%F")"
 
 if [[ -z $KODKOD_HOME ]]
 then
@@ -66,17 +66,20 @@ function dist {
     pushd $(pwd) &> /dev/null
     cd $DST/alloy
     # find -type f -name "*.java" | xargs rm -f
-    zip -q -r alloy-dev.jar *
-    chmod +x alloy-dev.jar
-    mv alloy-dev.jar ../
+    jarName="alloy$VERSION.jar"
+    zip -q -r $jarName *
+    chmod +x $jarName
+    mv $jarName ../
     cd ..
     rm -rf allo
     popd &> /dev/null
 
-    echo " *** jar file created:    $DST/alloy-dev.jar"
+    echo " *** jar file created:    $DST/$jarName"
 
     echo "[building OSX app...]"
-    ant
+
+    export jarName VERSION
+    ant 
 
     ###############################
     # for Mac dist
@@ -89,26 +92,11 @@ function dist {
     cp -r $DST/*.app $DST/$osxdir/dist
     cp -r OSX-extra/* $DST/$osxdir/dist
     find $DST/$osxdir/dist -type d -name ".svn" | xargs rm -rf
-    cp build-dmg.sh $DST/$osxdir/
+    cat build-dmg.sh | sed 's/VERSION=X/VERSION='$VERSION'/g' > $DST/$osxdir/build-dmg.sh
     cd $DST
     zip -q -r $osxdir.zip $osxdir
     rm -rf $osxdir
     
-
-    # cp $MACOSDST.zip $DST
-    # pushd $(pwd) &> /dev/null
-    # unzip -q $MACOSDST.zip
-    # rm $MACOSDST.zip
-    # cd $MACOSDST
-    # echo "[copying JAR file to OSX dist folder...]"
-    # cp -f ../alloy-dev.jar dist/alloy4.2-rc.app/Contents/Resources/Java/alloy-dev.jar 
-    # cd ..
-    # echo "[zipping the OSX dist folder...]"
-    # zip -q -r $MACOSDST.zip $MACOSDST
-    # rm -rf $MACOSDST
-    # popd &> /dev/null
-
-    # echo " *** osx bundle created:  $DST/$MACOSDST.zip"
 }
 
 if [[ "X"$1 == "X" ]]
