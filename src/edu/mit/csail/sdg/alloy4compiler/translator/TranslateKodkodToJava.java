@@ -321,7 +321,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         List<String> names=new ArrayList<String>();
         for(Iterator<IntExpression> i = x.columns(); i.hasNext(); ) { names.add(make(i.next())); }
         for(int i=0; i<names.size(); i++) {
-            if (i==0) file.printf("Expression %s=%s.over(", newname, expr); else file.printf(",");
+            if (i==0) file.printf("Expression %s=%s.project(", newname, expr); else file.printf(",");
             file.printf("%s", names.get(i));
         }
         file.printf(");%n");
