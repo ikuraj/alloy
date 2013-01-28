@@ -70,9 +70,9 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
-import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 
 /** Translate an Alloy AST into Kodkod AST then attempt to solve it using Kodkod. */
 
@@ -937,18 +937,16 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     }
 
     private Decls am(final Expression a, Decls d, int i, Variable v) {
-        kodkod.ast.Decl ddd;
+        Expression colType;
         if (a.arity() == 1) {
             assert i == 1; 
-            ddd = v.oneOf(a);
+            colType = a;
         } else {
-            ddd = v.oneOf(a.project(IntConstant.constant(i - 1)));
+            // colType = a.project(IntConstant.constant(i - 1))); //UNSOUND
+            colType = Relation.UNIV;
         }
-        if (d == null)
-            d = ddd;
-        else
-            d = ddd.and(d);
-        return d;
+        return (d == null) ? v.oneOf(colType)
+                           : d.and(v.oneOf(colType));
     }
 
     /*===========================*/
