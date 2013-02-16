@@ -256,6 +256,7 @@ parser code {:
     }
   }
 
+  static final String INT_LIB_NAME = "util/integer";
   static CompModule alloy_parseStream (List<Object> seenDollar,
   Map<String,String> loaded, Map<String,String> fc, CompModule root,
   int lineOffset, String filename, String prefix, int initialResolutionMode) throws Err, FileNotFoundException, IOException {
@@ -264,8 +265,8 @@ parser code {:
         if (root==null && prefix.length()!=0) throw new ErrorFatal("Internal error (parse subfile with root==null)");
         if (root!=null && prefix.length()==0) throw new ErrorFatal("Internal error (parse topfile with root!=null)");
         CompModule u = new CompModule(root, filename, prefix);
-        if (root == null)
-            u.addOpen(null, null, ExprVar.make(null, "util/integer"), null, ExprVar.make(null, "integer"));
+        if (!filename.endsWith(INT_LIB_NAME + ".als"))
+            u.addOpen(null, null, ExprVar.make(null, INT_LIB_NAME), null, ExprVar.make(null, "integer"));
         u.resolution = initialResolutionMode;
         String content = fc!=null ? fc.get(filename) : null;
         if (content==null && loaded!=null) content = loaded.get(filename);
