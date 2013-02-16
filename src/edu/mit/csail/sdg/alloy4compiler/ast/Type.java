@@ -788,18 +788,35 @@ public final class Type implements Iterable<Type.ProductType> {
      * <p> If it does not contain any binary entries, then result.size()==0
      */
     public Type closure() {
+        Type ans=extract(2);
+        Type u=ans;
+        Type uu = u;
+        while (true) {
+           uu = uu.join(u);
+           Type oldans = ans;
+           ans = ans.unionWithCommonArity(uu);
+           if (oldans == ans) break; // The special guarantee of unionWithCommonArity() 
+                                     // allows us to use the cheaper "oldans==ans" here
+                                     // instead of doing the more expensive "oldans.equals(ans)"
+        }
+        return ans;
+    }
+
+    Type __closure_old_bug() {
         Type ans=extract(2), u=ans, uu=u.join(u);
         while(uu.hasTuple()) {
             Type oldans=ans, olduu=uu;
             ans=ans.unionWithCommonArity(uu);
             uu=uu.join(u);
-            if (oldans==ans && olduu.equals(uu)) break;
+            //[AM] olduu.equals(uu) never gets satisfied in some cases (e.g., when the union type
+            //     contains tuples that are mutually recursive, for instance {S->T, T->S}
+            if (oldans==ans && olduu.equals(uu)) break; 
             // The special guarantee of unionWithCommonArity() allows us to use the cheaper "oldans==ans" here
             // instead of doing the more expensive "oldans.equals(ans)"
         }
         return ans;
     }
-
+    
     /** Convert this type into a UNION of PRODUCT of sigs.
      * @throws ErrorType if it does not contain exactly one arity
      * @throws ErrorType if is_int is true

@@ -1226,7 +1226,8 @@ public final class CompModule extends Browsable implements Module {
       for(int i=0; i<facts.size(); i++) {
          String name = facts.get(i).a;
          Expr expr = facts.get(i).b;
-         expr = cx.check(expr).resolve_as_formula(warns);
+         Expr checked = cx.check(expr);
+         expr = checked.resolve_as_formula(warns);
          if (expr.errors.isEmpty()) {
             facts.set(i, new Pair<String,Expr>(name, expr));
             rep.typecheck("Fact " + name + ": " + expr.type()+"\n");
