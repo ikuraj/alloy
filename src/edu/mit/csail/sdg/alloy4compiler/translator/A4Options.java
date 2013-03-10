@@ -107,7 +107,7 @@ public final class A4Options implements Serializable {
         /** MiniSatProver1 via JNI */
         public static final SatSolver MiniSatProverJNI = new SatSolver("minisatprover(jni)", "MiniSat with Unsat Core", null, null, true);
         /** ZChaff via JNI */
-        public static final SatSolver ZChaffJNI = new SatSolver("zchaff(jni)", "ZChaff", null, null, true);
+        public static final SatSolver ZChaffJNI = new SatSolver("zchaff(jni)", "ZChaff with mincost", null, null, true);
         /** SAT4J using native Java */
         public static final SatSolver SAT4J = new SatSolver("sat4j", "SAT4J", null, null, true);
         /** Outputs the raw CNF file only */

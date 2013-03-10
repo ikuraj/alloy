@@ -437,7 +437,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
         Util.copy(true, false, platformBinary,
            arch+"/libminisat.so", arch+"/libminisatx1.so", arch+"/libminisat.jnilib",
            arch+"/libminisatprover.so", arch+"/libminisatproverx1.so", arch+"/libminisatprover.jnilib",
-           arch+"/libzchaff.so", arch+"/libzchaffx1.so", arch+"/libzchaff.jnilib",
+           arch+"/libzchaff.so", arch+"/libzchaffmincost.so", arch+"/libzchaffx1.so", arch+"/libzchaff.jnilib",
            arch+"/berkmin", arch+"/spear");
         Util.copy(false, false, platformBinary,
            arch+"/minisat.dll", arch+"/minisatprover.dll", arch+"/zchaff.dll",
@@ -1953,7 +1953,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
                 satChoices.remove(SatSolver.MiniSatJNI);
             }
             if (!loadLibrary("minisatprover")) satChoices.remove(SatSolver.MiniSatProverJNI);
-            if (!loadLibrary("zchaff"))        satChoices.remove(SatSolver.ZChaffJNI);
+            if (!loadLibrary("libzchaffmincost")) satChoices.remove(SatSolver.ZChaffJNI);
             SatSolver now = SatSolver.get();
             if (!satChoices.contains(now)) {
                 now=SatSolver.ZChaffJNI;

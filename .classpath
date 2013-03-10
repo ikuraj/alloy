@@ -4,7 +4,7 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="extra"/>
 	<classpathentry kind="lib" path="lib/apple-osx-ui.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/kodkod"/>
 	<classpathentry kind="lib" path="lib/sat4j.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/kodkod"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

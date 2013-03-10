@@ -15,12 +15,13 @@
 
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.STRING;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.STRING;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static kodkod.engine.Solution.Outcome.UNSATISFIABLE;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -35,6 +36,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.Decl;
@@ -86,9 +88,9 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
-import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
+import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options.SatSolver;
 
 /** This class stores a SATISFIABLE or UNSATISFIABLE solution.
@@ -275,11 +277,11 @@ public final class A4Solution {
             try {
                 File tmp = File.createTempFile("tmp", ".cnf", new File(opt.tempDirectory));
                 tmp.deleteOnExit(); 
-	            solver.options().setSolver(SATFactory.externalFactory(ext, tmp.getAbsolutePath(), "", opt.solver.options()));
+	            solver.options().setSolver(SATFactory.externalFactory(ext, tmp.getAbsolutePath(), opt.solver.options()));
                 //solver.options().setSolver(SATFactory.externalFactory(ext, tmp.getAbsolutePath(), opt.solver.options()));
             } catch(IOException ex) { throw new ErrorFatal("Cannot create temporary directory.", ex); }
         } else if (opt.solver.equals(A4Options.SatSolver.ZChaffJNI)) {
-            solver.options().setSolver(SATFactory.ZChaff);
+            solver.options().setSolver(SATFactory.ZChaffMincost);
         } else if (opt.solver.equals(A4Options.SatSolver.MiniSatJNI)) {
             solver.options().setSolver(SATFactory.MiniSat);
         } else if (opt.solver.equals(A4Options.SatSolver.MiniSatProverJNI)) {
