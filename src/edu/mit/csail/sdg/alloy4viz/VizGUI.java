@@ -17,6 +17,7 @@ package edu.mit.csail.sdg.alloy4viz;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
@@ -145,6 +146,9 @@ public final class VizGUI implements ComponentListener {
 
    /** Returns the JSplitPane containing the customization/evaluator panel in the left and the graph on the right. */
    public JSplitPane getPanel() { return splitpane; }
+
+   /** Returns the main frame of the visualizer */
+   public JFrame getFrame() { return frame; }
 
    /** The last known divider position between the customization panel and the graph panel. */
    private int lastDividerPosition=0;

@@ -3,6 +3,8 @@
 BUILD_DATE=$(date +"%F %H:%M %Z")
 VERSION="4.2_$(date +"%F")"
 
+PATH=$JDK6/bin:$PATH
+
 if [[ -z $KODKOD_HOME ]]
 then
     KODKOD_HOME=../kodkod  #../relations-experimental

@@ -16,10 +16,9 @@
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
 import java.io.Serializable;
-import java.util.prefs.Preferences;
+
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.SafeList;
-import edu.mit.csail.sdg.alloy4.Util;
 
 /** Mutable; this class encapsulates the customizable options of the Alloy-to-Kodkod translator. */
 
@@ -94,10 +93,6 @@ public final class A4Options implements Serializable {
             synchronized(SatSolver.class) { for(SatSolver x:values) if (x.id.equals(id)) return x; }
             return SAT4J;
         }
-        /** Saves this value into the Java preference object. */
-        public void set() { Preferences.userNodeForPackage(Util.class).put("SatSolver2",id); }
-        /** Reads the current value of the Java preference object (if it's not set, then return SAT4J). */
-        public static SatSolver get() { return parse(Preferences.userNodeForPackage(Util.class).get("SatSolver2","")); }
         /** BerkMin via pipe */
         public static final SatSolver BerkMinPIPE = new SatSolver("berkmin", "BerkMin", "berkmin", null, true);
         /** Spear via pipe */
@@ -114,6 +109,7 @@ public final class A4Options implements Serializable {
         public static final SatSolver CNF = new SatSolver("cnf", "Output CNF to file", null, null, true);
         /** Outputs the raw Kodkod file only */
         public static final SatSolver KK = new SatSolver("kodkod", "Output Kodkod to file", null, null, true);
+
     }
 
     /** This ensures the class can be serialized reliably. */

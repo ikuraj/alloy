@@ -17,6 +17,34 @@ package edu.mit.csail.sdg.alloy4whole;
 
 import static edu.mit.csail.sdg.alloy4.OurUtil.menu;
 import static edu.mit.csail.sdg.alloy4.OurUtil.menuItem;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.AnalyzerHeight;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.AnalyzerWidth;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.AnalyzerX;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.AnalyzerY;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.AntiAlias;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.AutoVisualize;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.CoreGranularity;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.CoreMinimization;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.FontName;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.FontSize;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.ImplicitThis;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.LAF;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.Model0;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.Model1;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.Model2;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.Model3;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.NoOverflow;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.RecordKodkod;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.SkolemDepth;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.Solver;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.SubMemory;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.SubStack;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.SyntaxDisabled;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.TabSize;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.Unrolls;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.VerbosityPref;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.WarningNonfatal;
+import static edu.mit.csail.sdg.alloy4whole.PreferencesDialog.Welcome;
 import static java.awt.event.KeyEvent.VK_A;
 import static java.awt.event.KeyEvent.VK_ALT;
 import static java.awt.event.KeyEvent.VK_E;
@@ -41,7 +69,6 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,8 +77,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
-import java.util.prefs.Preferences;
 
+import javax.swing.Action;
 import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.JButton;
@@ -77,11 +104,18 @@ import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.text.html.HTMLDocument;
 
 import kodkod.engine.fol2sat.HigherOrderDeclException;
+
+import com.apple.eawt.Application;
+import com.apple.eawt.ApplicationAdapter;
+import com.apple.eawt.ApplicationEvent;
+
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.Computer;
 import edu.mit.csail.sdg.alloy4.Err;
@@ -101,14 +135,11 @@ import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Runner;
-import edu.mit.csail.sdg.alloy4.Subprocess;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.Util.BooleanPref;
-import edu.mit.csail.sdg.alloy4.Util.IntPref;
-import edu.mit.csail.sdg.alloy4.Util.StringPref;
+import edu.mit.csail.sdg.alloy4.Util.ChoicePref;
 import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4.WorkerEngine;
-import edu.mit.csail.sdg.alloy4.WorkerEngine.WorkerCallback;
 import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.alloy4compiler.ast.Browsable;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
@@ -128,6 +159,7 @@ import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionReader;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Tuple;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4TupleSet;
 import edu.mit.csail.sdg.alloy4viz.VizGUI;
+import edu.mit.csail.sdg.alloy4whole.PreferencesDialog.Verbosity;
 import edu.mit.csail.sdg.alloy4whole.SimpleReporter.SimpleCallback1;
 import edu.mit.csail.sdg.alloy4whole.SimpleReporter.SimpleTask1;
 import edu.mit.csail.sdg.alloy4whole.SimpleReporter.SimpleTask2;
@@ -140,11 +172,10 @@ import edu.mit.csail.sdg.alloy4whole.SimpleReporter.SimpleTask2;
  * <br> (1) the run() method in SatRunner is launched from a fresh thread
  * <br> (2) the run() method in the instance watcher (in constructor) is launched from a fresh thread
  */
-
 public final class SimpleGUI implements ComponentListener, Listener {
 
     /** The latest welcome screen; each time we update the welcome screen, we increment this number. */
-    private static final int welcomeLevel = 2;
+//    private static final int welcomeLevel = 2;
 
     // Verify that the graphics environment is set up
     static {
@@ -161,116 +192,6 @@ public final class SimpleGUI implements ComponentListener, Listener {
             System.exit(1);
         }
     }
-
-    //======== The Preferences ======================================================================================//
-    //======== Note: you must make sure each preference has a unique key ============================================//
-
-    /** The list of allowable memory sizes. */
-    private List<Integer> allowedMemorySizes;
-
-    /** True if Alloy Analyzer should let warning be nonfatal. */
-    private static final BooleanPref WarningNonfatal = new BooleanPref("WarningNonfatal");
-
-    /** True if Alloy Analyzer should automatically visualize the latest instance. */
-    private static final BooleanPref AutoVisualize = new BooleanPref("AutoVisualize");
-
-    /** True if Alloy Analyzer should insist on antialias. */
-    private static final BooleanPref AntiAlias = new BooleanPref("AntiAlias");
-
-    /** True if Alloy Analyzer should record the raw Kodkod input and output. */
-    private static final BooleanPref RecordKodkod = new BooleanPref("RecordKodkod");
-
-    /** True if Alloy Analyzer should enable the new Implicit This name resolution. */
-    private static final BooleanPref ImplicitThis = new BooleanPref("ImplicitThis");
-    
-    /** True if Alloy Analyzer should not report models that overflow. */
-    private static final BooleanPref NoOverflow = new BooleanPref("NoOverflow");
-
-    /** The latest X corrdinate of the Alloy Analyzer's main window. */
-    private static final IntPref AnalyzerX = new IntPref("AnalyzerX",0,-1,65535);
-
-    /** The latest Y corrdinate of the Alloy Analyzer's main window. */
-    private static final IntPref AnalyzerY = new IntPref("AnalyzerY",0,-1,65535);
-
-    /** The latest width of the Alloy Analyzer's main window. */
-    private static final IntPref AnalyzerWidth = new IntPref("AnalyzerWidth",0,-1,65535);
-
-    /** The latest height of the Alloy Analyzer's main window. */
-    private static final IntPref AnalyzerHeight = new IntPref("AnalyzerHeight",0,-1,65535);
-
-    /** The latest font size of the Alloy Analyzer. */
-    private static final IntPref FontSize = new IntPref("FontSize",9,12,72);
-
-    /** The latest font name of the Alloy Analyzer. */
-    private static final StringPref FontName = new StringPref("FontName","Lucida Grande");
-
-    /** The latest tab distance of the Alloy Analyzer. */
-    private static final IntPref TabSize = new IntPref("TabSize",1,2,16);
-
-    /** The latest welcome screen that the user has seen. */
-    private static final IntPref Welcome = new IntPref("Welcome",0,0,1000);
-
-    /** Whether syntax highlighting should be disabled or not. */
-    private static final BooleanPref SyntaxDisabled = new BooleanPref("SyntaxHighlightingDisabled");
-
-    /** The number of recursion unrolls. */
-    private static final IntPref Unrolls = new IntPref("Unrolls", -1, -1, 3);
-
-    /** The skolem depth. */
-    private static final IntPref SkolemDepth = new IntPref("SkolemDepth3", 0, 1, 4);
-
-    /** The unsat core minimization strategy. */
-    private static final IntPref CoreMinimization = new IntPref("CoreMinimization",0,2,2);
-    
-    /** The unsat core granularity. */
-    private static final IntPref CoreGranularity = new IntPref("CoreGranularity",0,0,3);
-
-    /** The amount of memory (in M) to allocate for Kodkod and the SAT solvers. */
-    private static final IntPref SubMemory = new IntPref("SubMemory",16,768,65535);
-
-    /** The amount of stack (in K) to allocate for Kodkod and the SAT solvers. */
-    private static final IntPref SubStack = new IntPref("SubStack",16,8192,65536);
-
-    /** The first file in Alloy Analyzer's "open recent" list. */
-    private static final StringPref Model0 = new StringPref("Model0");
-
-    /** The second file in Alloy Analyzer's "open recent" list. */
-    private static final StringPref Model1 = new StringPref("Model1");
-
-    /** The third file in Alloy Analyzer's "open recent" list. */
-    private static final StringPref Model2 = new StringPref("Model2");
-
-    /** The fourth file in Alloy Analyzer's "open recent" list. */
-    private static final StringPref Model3 = new StringPref("Model3");
-
-    /** This enum defines the set of possible message verbosity levels. */
-    private enum Verbosity {
-        /** Level 0. */  DEFAULT("0", "low"),
-        /** Level 1. */  VERBOSE("1", "medium"),
-        /** Level 2. */  DEBUG("2", "high"),
-        /** Level 3. */  FULLDEBUG("3", "debug only");
-        /** Returns true if it is greater than or equal to "other". */
-        public boolean geq(Verbosity other) { return ordinal() >= other.ordinal(); }
-        /** This is a unique String for this value; it should be kept consistent in future versions. */
-        private final String id;
-        /** This is the label that the toString() method will return. */
-        private final String label;
-        /** Constructs a new Verbosity value with the given id and label. */
-        private Verbosity(String id, String label) { this.id=id; this.label=label; }
-        /** Given an id, return the enum value corresponding to it (if there's no match, then return DEFAULT). */
-        private static Verbosity parse(String id) {
-            for(Verbosity vb: values()) if (vb.id.equals(id)) return vb;
-            return DEFAULT;
-        }
-        /** Returns the human-readable label for this enum value. */
-        @Override public final String toString() { return label; }
-        /** Saves this value into the Java preference object. */
-        private void set() { Preferences.userNodeForPackage(Util.class).put("Verbosity",id); }
-        /** Reads the current value of the Java preference object (if it's not set, then return DEFAULT). */
-        private static Verbosity get() { return parse(Preferences.userNodeForPackage(Util.class).get("Verbosity","")); }
-    };
-
-    //===================================================================================================//
 
     /** The JFrame for the main window. */
     private JFrame frame;
@@ -341,10 +262,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
     /** The latest executed command. */
     private int latestCommand = 0;
 
-    /** The current choices of SAT solver. */
-    private List<SatSolver> satChoices;
-
-     /** The most recent Alloy version (as queried from alloy.mit.edu); -1 if alloy.mit.edu has not replied yet. */
+    /** The most recent Alloy version (as queried from alloy.mit.edu); -1 if alloy.mit.edu has not replied yet. */
     private int latestAlloyVersion = (-1);
 
     /** The most recent Alloy version name (as queried from alloy.mit.edu); "unknown" if alloy.mit.edu has not replied yet. */
@@ -358,6 +276,9 @@ public final class SimpleGUI implements ComponentListener, Listener {
 
     /** If true, that means the event handlers should return a Runner encapsulating them, rather than perform the actual work. */
     private boolean wrap = false;
+
+    /** The preferences dialog. */
+    private PreferencesDialog prefDialog;
 
     //====== helper methods =================================================//
 
@@ -796,6 +717,8 @@ public final class SimpleGUI implements ComponentListener, Listener {
             editmenu.addSeparator();
             menuItem(editmenu, "Find...",   'F', 'F', doFind());
             menuItem(editmenu, "Find Next", 'G', 'G', doFindNext());
+            editmenu.addSeparator();
+            menuItem(editmenu, "Preferences", 'P', 'P', doPreferences());
         } finally {
             wrap = false;
         }
@@ -868,6 +791,33 @@ public final class SimpleGUI implements ComponentListener, Listener {
         t.requestFocusInWindow();
         return null;
     }
+    
+    /** This method performs Edit->Preferences. */
+    private Runner doPreferences() {
+        if (wrap) return wrapMe();
+        prefDialog.setVisible(true);
+        return null;
+    }
+    
+   /**
+    * This method applies the look and feel stored in a user preference. Default
+    * look and feel for Mac and Windows computers is "Native", and for other is
+    * "Cross-platform".
+    */
+    private Runner doLookAndFeel() {
+       if (wrap) return wrapMe();
+       try {
+          if ("Native".equals(LAF.get())) {
+             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+          } else {
+             UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+          }
+          SwingUtilities.updateComponentTreeUI(frame);
+          SwingUtilities.updateComponentTreeUI(prefDialog);
+          SwingUtilities.updateComponentTreeUI(viz.getFrame());
+       } catch (Throwable e) { }
+       return null;
+    }
 
     /** This method performs Edit->Goto. */
     private Runner doGoto() {
@@ -934,7 +884,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
                 runmenu.getItem(0).setEnabled(false);
                 runmenu.getItem(3).setEnabled(false);
                 text.shade(new Pos(text.get().getFilename(), e.pos.x, e.pos.y, e.pos.x2, e.pos.y2));
-                if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG)
+                if ("yes".equals(System.getProperty("debug")) && VerbosityPref.get()==Verbosity.FULLDEBUG)
                     log.logRed("Fatal Exception!" + e.dump() + "\n\n");
                 else
                     log.logRed(e.toString()+"\n\n");
@@ -995,7 +945,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
         if (commands.size()==0 && index!=-2 && index!=-3) { log.logRed("There are no commands to execute.\n\n"); return null; }
         int i=index;
         if (i>=commands.size()) i=commands.size()-1;
-        SimpleCallback1 cb = new SimpleCallback1(this, null, log, Verbosity.get().ordinal(), latestAlloyVersionName, latestAlloyVersion);
+        SimpleCallback1 cb = new SimpleCallback1(this, null, log, VerbosityPref.get().ordinal(), latestAlloyVersionName, latestAlloyVersion);
         SimpleTask1 task = new SimpleTask1();
         A4Options opt = new A4Options();
         opt.tempDirectory = alloyHome() + fs + "tmp";
@@ -1007,7 +957,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
         opt.coreMinimization = CoreMinimization.get();
         opt.coreGranularity = CoreGranularity.get();
         opt.originalFilename = Util.canon(text.get().getFilename());
-        opt.solver = SatSolver.get();
+        opt.solver = Solver.get();
         task.bundleIndex = i;
         task.bundleWarningNonFatal = WarningNonfatal.get();
         task.map = text.takeSnapshot();
@@ -1021,7 +971,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
             stopbutton.setVisible(true);
             int newmem = SubMemory.get(), newstack = SubStack.get();
             if (newmem != subMemoryNow || newstack != subStackNow) WorkerEngine.stop();
-            if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG)
+            if ("yes".equals(System.getProperty("debug")) && VerbosityPref.get()==Verbosity.FULLDEBUG)
                 WorkerEngine.runLocally(task, cb);
             else
                 WorkerEngine.run(task, newmem, newstack, alloyHome() + fs + "binary", "", cb);
@@ -1181,228 +1131,70 @@ public final class SimpleGUI implements ComponentListener, Listener {
     }
 
     //===============================================================================================================//
-
+    
     /** This method refreshes the "Option" menu. */
     private Runner doRefreshOption() {
         if (wrap) return wrapMe();
         try {
             wrap = true;
             optmenu.removeAll();
-            menuItem(optmenu, "Welcome Message at Start Up: "+(Welcome.get() < welcomeLevel ? "Yes" : "No"), doOptWelcome());
-            //
-            final SatSolver now = SatSolver.get();
-            final JMenu sat = new JMenu("SAT Solver: "+now);
-            for(SatSolver sc:satChoices) { menuItem(sat, ""+sc, doOptSolver(sc), sc==now?iconYes:iconNo); }
-            optmenu.add(sat);
-            //
-            menuItem(optmenu, "Warnings are Fatal: "+(WarningNonfatal.get()?"No":"Yes"), doOptWarning());
-            //
-            final int mem = SubMemory.get();
-            final JMenu subMemoryMenu = new JMenu("Maximum Memory to Use: " + mem + "M");
-            for(int n: allowedMemorySizes) {
-               menuItem(subMemoryMenu, ""+n+"M", doOptMemory(n), n==mem?iconYes:iconNo);
-            }
-            optmenu.add(subMemoryMenu);
-            //
-            final int stack = SubStack.get();
-            final JMenu subStackMenu = new JMenu("Maximum Stack to Use: " + stack + "k");
-            boolean debug = "yes".equals(System.getProperty("debug"));
-            for(int n: new int[]{16,32,64,128,256,512,1024,2048,4096,8192,16384,32768,65536}) {
-               if (debug || n>=1024) menuItem(subStackMenu, ""+n+"k", doOptStack(n), n==stack?iconYes:iconNo);
-            }
-            optmenu.add(subStackMenu);
-            //
-            final Verbosity vnow = Verbosity.get();
-            final JMenu verb = new JMenu("Message Verbosity: "+vnow);
-            for(Verbosity vb: Verbosity.values()) { menuItem(verb, ""+vb, doOptVerbosity(vb), vb==vnow?iconYes:iconNo); }
-            optmenu.add(verb);
-            //
-            menuItem(optmenu, "Syntax Highlighting: "+(SyntaxDisabled.get()?"No":"Yes"), doOptSyntaxHighlighting());
-            //
-            final int fontSize = FontSize.get();
-            final JMenu size = new JMenu("Font Size: "+fontSize);
-            for(int n: new Integer[]{9,10,11,12,14,16,18,20,22,24,26,28,32,36,40,44,48,54,60,66,72}) {
-               menuItem(size, ""+n, doOptFontsize(n), n==fontSize?iconYes:iconNo);
-            }
-            optmenu.add(size);
-            //
-            menuItem(optmenu, "Font: "+FontName.get()+"...", doOptFontname());
-            //
-            if (Util.onMac() || Util.onWindows()) menuItem(optmenu, "Use anti-aliasing: Yes", false);
-            else menuItem(optmenu, "Use anti-aliasing: "+(AntiAlias.get()?"Yes":"No"), doOptAntiAlias());
-            //
-            final int tabSize = TabSize.get();
-            final JMenu tabSizeMenu = new JMenu("Tab Size: "+tabSize);
-            for(int n=1; n<=12; n++) { menuItem(tabSizeMenu, ""+n, doOptTabsize(n), n==tabSize?iconYes:iconNo); }
-            optmenu.add(tabSizeMenu);
-            //
-            final int skDepth = SkolemDepth.get();
-            final JMenu skDepthMenu = new JMenu("Skolem Depth: "+skDepth);
-            for(int n=0; n<=4; n++) { menuItem(skDepthMenu, ""+n, doOptSkolemDepth(n), n==skDepth?iconYes:iconNo); }
-            optmenu.add(skDepthMenu);
-            //
+            addToMenu(optmenu, Welcome);
+            
+            optmenu.addSeparator();
+
+            addToMenu(optmenu, WarningNonfatal);
+            addToMenu(optmenu, SubMemory, SubStack, VerbosityPref);
+            
+            optmenu.addSeparator();
+            
+            addToMenu(optmenu, SyntaxDisabled);
+            addToMenu(optmenu, FontSize, FontName, TabSize);
+            if (Util.onMac() || Util.onWindows()) 
+               menuItem(optmenu, "Use anti-aliasing: Yes", false);
+            else 
+               addToMenu(optmenu, AntiAlias); 
+            
+            optmenu.addSeparator();
+            
+            addToMenu(optmenu, Solver);
+            addToMenu(optmenu, SkolemDepth);
+            JMenu cmMenu = addToMenu(optmenu, CoreMinimization); cmMenu.setEnabled(Solver.get() == SatSolver.MiniSatProverJNI); 
+            JMenu cgMenu = addToMenu(optmenu, CoreGranularity); cgMenu.setEnabled(Solver.get() == SatSolver.MiniSatProverJNI); 
+            
+            addToMenu(optmenu, AutoVisualize, RecordKodkod);
+
             if (Version.experimental) {
-              final int unrolls = Unrolls.get();
-              final JMenu unrollsMenu = new JMenu("Recursion Depth: "+(unrolls<0 ? "Disabled" : (""+unrolls)));
-              for(int n=(-1); n<=3; n++) { menuItem(unrollsMenu, (n<0 ? "Disabled" : (""+n)), doOptUnrolls(n), n==unrolls?iconYes:iconNo); }
-              optmenu.add(unrollsMenu);
+              addToMenu(optmenu, Unrolls);
+              addToMenu(optmenu, ImplicitThis, NoOverflow);
             }
-            //
-            final int min = CoreMinimization.get();
-            final String[] minLabelLong=new String[]{"Slow (guarantees local minimum)", "Medium", "Fast (initial unsat core)"};
-            final String[] minLabelShort=new String[]{"Slow", "Medium", "Fast"};
-            final JMenu cmMenu = new JMenu("Unsat Core Minimization Strategy: "+minLabelShort[min]);
-            for(int n=0; n<=2; n++) { menuItem(cmMenu, minLabelLong[n], doOptCore(n), n==min?iconYes:iconNo); }
-            if (now!=SatSolver.MiniSatProverJNI) cmMenu.setEnabled(false);
-            optmenu.add(cmMenu);
-            //
-            final int gran = CoreGranularity.get();
-            final String[] granLabelLong=new String[]{"Top-level conjuncts only", "Flatten the formula once at the beginning", "Flatten the formula at the beginning and after skolemizing", "In addition to flattening the formula twice, expand the quantifiers"};
-            final String[] granLabelShort=new String[]{"Top-level", "Flatten once", "Flatten twice", "Expand quantifiers"};
-            final JMenu cgMenu = new JMenu("Core Granularity: "+granLabelShort[gran]);
-            for(int n=0; n<granLabelLong.length; n++) { menuItem(cgMenu, granLabelLong[n], doCoreGran(n), n==gran?iconYes:iconNo); }
-            if (now!=SatSolver.MiniSatProverJNI) cgMenu.setEnabled(false);
-            optmenu.add(cgMenu);
-            //
-            menuItem(optmenu, "Visualize Automatically: "+(AutoVisualize.get()?"Yes":"No"), doOptAutoVisualize());
-            menuItem(optmenu, "Record the Kodkod Input/Output: "+(RecordKodkod.get()?"Yes":"No"), doOptRecordKodkod());
-            if (Version.experimental) menuItem(optmenu, "Enable \"implicit this\" name resolution: "+(ImplicitThis.get()?"Yes":"No"), doOptImplicitThis());
-            if (Version.experimental) menuItem(optmenu, "Forbid Overflow: "+(NoOverflow.get()?"Yes":"No"), doOptNoOverflow());
+            
         } finally {
             wrap = false;
         }
         return null;
     }
 
-    /** This method toggles the "show welcome message at startup" checkbox. */
-    private Runner doOptWelcome() {
-        if (!wrap) Welcome.set(Welcome.get() < welcomeLevel ? welcomeLevel : 0);
-        return wrapMe();
-    }
-
-    /** This method toggles the "warning is fatal" checkbox. */
-    private Runner doOptWarning() {
-        if (!wrap) WarningNonfatal.set(!WarningNonfatal.get());
-        return wrapMe();
-    }
-
-    /** This method changes the SAT solver to the given solver. */
-    private Runner doOptSolver(SatSolver solver) {
-        if (!wrap) solver.set();
-        return wrapMe(solver);
-    }
-
-    /** This method changes the amount of memory to use. */
-    private Runner doOptMemory(Integer size) {
-        if (!wrap) SubMemory.set(size);
-        return wrapMe(size);
-    }
-
-    /** This method changes the amount of stack to use. */
-    private Runner doOptStack(Integer size) {
-        if (!wrap) SubStack.set(size);
-        return wrapMe(size);
-    }
-
-    /** This method changes the message verbosity. */
-    private Runner doOptVerbosity(Verbosity verbosity) {
-        if (!wrap) verbosity.set();
-        return wrapMe(verbosity);
-    }
-
-    /** This method changes the font name. */
-    private Runner doOptFontname() {
-        if (wrap) return wrapMe();
-        int size=FontSize.get();
-        String f = OurDialog.askFont();
-        if (f.length()>0) {
-           FontName.set(f);
-           text.setFont(f, size, TabSize.get());
-           status.setFont(new Font(f, Font.PLAIN, size));
-           log.setFontName(f);
-        }
-        return null;
-    }
-
-    /** This method changes the font size. */
-    private Runner doOptFontsize(Integer size) {
-        if (wrap) return wrapMe(size);
-        int n=size;
-        FontSize.set(n);
-        String f = FontName.get();
-        text.setFont(f, n, TabSize.get());
-        status.setFont(new Font(f, Font.PLAIN, n));
-        log.setFontSize(n);
-        viz.doSetFontSize(n);
-        return null;
-    }
-
-    /** This method changes the tab size. */
-    private Runner doOptTabsize(Integer size) {
-        if (!wrap) { TabSize.set(size.intValue()); text.setFont(FontName.get(), FontSize.get(), size.intValue()); }
-        return wrapMe(size);
-    }
-
-    /** This method changes the number of unrolls. */
-    private Runner doOptUnrolls(Integer num) {
-        if (!wrap) Unrolls.set(num.intValue());
-        return wrapMe(num);
-    }
-
-    /** This method changes the skolem depth. */
-    private Runner doOptSkolemDepth(Integer size) {
-        if (!wrap) SkolemDepth.set(size.intValue());
-        return wrapMe(size);
-    }
-
-    /** This method changes the speed of unsat core minimization (larger integer means faster but less optimal). */
-    private Runner doOptCore(Integer speed) {
-        if (!wrap) CoreMinimization.set(speed.intValue());
-        return wrapMe(speed);
-    }
-    
-    /** This method changes the granularity of the unsat core (larger integer means more granular). */
-    private Runner doCoreGran(Integer gran) {
-        if (!wrap) CoreGranularity.set(gran.intValue());
-        return wrapMe(gran);
+    /** This method applies the changes to the font-related settings. */
+    private Runner doOptRefreshFont() {
+       if (wrap) return wrapMe();
+       String f = FontName.get();
+       int n = FontSize.get();
+       text.setFont(f, n, TabSize.get());
+       status.setFont(new Font(f, Font.PLAIN, n));
+       log.setFontSize(n);
+       viz.doSetFontSize(n);
+       return null;
     }
 
     /** This method toggles the "antialias" checkbox. */
     private Runner doOptAntiAlias() {
-        if (!wrap) { boolean newValue = !AntiAlias.get(); AntiAlias.set(newValue); OurAntiAlias.enableAntiAlias(newValue); }
-        return wrapMe();
-    }
-
-    /** This method toggles the "visualize automatically" checkbox. */
-    private Runner doOptAutoVisualize() {
-        if (!wrap) AutoVisualize.set(!AutoVisualize.get());
-        return wrapMe();
-    }
-
-    /** This method toggles the "record Kodkod input/output" checkbox. */
-    private Runner doOptRecordKodkod() {
-        if (!wrap) RecordKodkod.set(!RecordKodkod.get());
-        return wrapMe();
-    }
-
-    /** This method toggles the "enable new `implicit this' name resolution" checkbox. */
-    private Runner doOptImplicitThis() {
-        if (!wrap) ImplicitThis.set(!ImplicitThis.get());
-        return wrapMe();
-    }
-
-    private Runner doOptNoOverflow() {
-        if (!wrap) NoOverflow.set(!NoOverflow.get());
+        if (!wrap) { OurAntiAlias.enableAntiAlias(AntiAlias.get()); }
         return wrapMe();
     }
     
     /** This method toggles the "syntax highlighting" checkbox. */
     private Runner doOptSyntaxHighlighting() {
-        if (!wrap) {
-            boolean flag = SyntaxDisabled.get();
-            text.enableSyntax(flag);
-            SyntaxDisabled.set(!flag);
-        }
+        if (!wrap) { text.enableSyntax(!SyntaxDisabled.get()); }
         return wrapMe();
     }
 
@@ -1535,14 +1327,14 @@ public final class SimpleGUI implements ComponentListener, Listener {
         if (arg.startsWith("CORE: ")) { // CORE: filename
             String filename = Util.canon(arg.substring(6));
             Pair<Set<Pos>,Set<Pos>> hCore;
-            Set<Pos> lCore;
+            //Set<Pos> lCore;
             InputStream is = null;
             ObjectInputStream ois = null;
             try {
                 is = new FileInputStream(filename);
                 ois = new ObjectInputStream(is);
                 hCore = (Pair<Set<Pos>,Set<Pos>>) ois.readObject();
-                lCore = (Set<Pos>) ois.readObject();
+                //lCore = (Set<Pos>) ois.readObject();
             } catch(Throwable ex) {
                 log.logRed("Error reading or parsing the core \""+filename+"\"\n");
                 return null;
@@ -1595,7 +1387,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
             OurUtil.show(frame);
             if (WorkerEngine.isBusy())
                 throw new RuntimeException("Alloy4 is currently executing a SAT solver command. Please wait until that command has finished.");
-            SimpleCallback1 cb = new SimpleCallback1(SimpleGUI.this, viz, log, Verbosity.get().ordinal(), latestAlloyVersionName, latestAlloyVersion);
+            SimpleCallback1 cb = new SimpleCallback1(SimpleGUI.this, viz, log, VerbosityPref.get().ordinal(), latestAlloyVersionName, latestAlloyVersion);
             SimpleTask2 task = new SimpleTask2();
             task.filename = arg;
             try {
@@ -1682,7 +1474,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
             }
             try {
                 Expr e = CompUtil.parseOneExpression_fromString(root, str);
-                if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG) {
+                if ("yes".equals(System.getProperty("debug")) && VerbosityPref.get()==Verbosity.FULLDEBUG) {
                     SimInstance simInst = convert(root, ans);
                     return simInst.visitThis(e).toString() + (simInst.wasOverflow() ? " (OF)" : "");
                 } else
@@ -1692,18 +1484,6 @@ public final class SimpleGUI implements ComponentListener, Listener {
             }
         }
     };
-
-    /** Returns true iff the output says "s SATISFIABLE" (while ignoring comment lines and value lines) */
-    private static boolean isSat(String output) {
-        int i=0, n=output.length();
-        // skip COMMENT lines and VALUE lines
-        while(i<n && (output.charAt(i)=='c' || output.charAt(i)=='v')) {
-            while(i<n && (output.charAt(i)!='\r' && output.charAt(i)!='\n')) i++;
-            while(i<n && (output.charAt(i)=='\r' || output.charAt(i)=='\n')) i++;
-            continue;
-        }
-        return output.substring(i).startsWith("s SATISFIABLE");
-    }
 
     //====== Main Method ====================================================//
 
@@ -1716,20 +1496,11 @@ public final class SimpleGUI implements ComponentListener, Listener {
 
     //====== Constructor ====================================================//
 
-    private static boolean loadLibrary(String library) {
-        try { System.loadLibrary(library);      return true; } catch(UnsatisfiedLinkError ex) { }
-        try { System.loadLibrary(library+"x1"); return true; } catch(UnsatisfiedLinkError ex) { }
-        try { System.loadLibrary(library+"x2"); return true; } catch(UnsatisfiedLinkError ex) { }
-        try { System.loadLibrary(library+"x3"); return true; } catch(UnsatisfiedLinkError ex) { }
-        try { System.loadLibrary(library+"x4"); return true; } catch(UnsatisfiedLinkError ex) { }
-        try { System.loadLibrary(library+"x5"); return true; } catch(UnsatisfiedLinkError ex) { return false; }
-    }
-
-    /** Create a dummy task object for testing purpose. */
-    private static final WorkerEngine.WorkerTask dummyTask = new WorkerEngine.WorkerTask() {
-        private static final long serialVersionUID = 0;
-        public void run(WorkerCallback out) { }
-    };
+//    /** Create a dummy task object for testing purpose. */
+//    private static final WorkerEngine.WorkerTask dummyTask = new WorkerEngine.WorkerTask() {
+//        private static final long serialVersionUID = 0;
+//        public void run(WorkerCallback out) { }
+//    };
 
     /** The constructor; this method will be called by the AWT event thread, using the "invokeLater" method. */
     private SimpleGUI (final String[] args) {
@@ -1739,13 +1510,23 @@ public final class SimpleGUI implements ComponentListener, Listener {
 
         // Enable better look-and-feel
         if (Util.onMac() || Util.onWindows()) {
-            System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Alloy Analyzer "+Version.version());
-            System.setProperty("com.apple.mrj.application.growbox.intrudes","true");
-            System.setProperty("com.apple.mrj.application.live-resize","true");
-            System.setProperty("com.apple.macos.useScreenMenuBar","true");
-            System.setProperty("apple.laf.useScreenMenuBar","true");
-            try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Throwable e) { }
+           System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Alloy");
+           System.setProperty("com.apple.mrj.application.growbox.intrudes","true");
+           System.setProperty("com.apple.mrj.application.live-resize","true");
+           System.setProperty("com.apple.macos.useScreenMenuBar","true");
+           System.setProperty("apple.laf.useScreenMenuBar","true");
         }
+        if (Util.onMac()) {
+           Application.getApplication().addPreferencesMenuItem();
+           Application.getApplication().addAboutMenuItem();
+           Application.getApplication().addApplicationListener(new ApplicationAdapter() {
+              @Override public void handleAbout(ApplicationEvent ae)       { doAbout(); }
+              @Override public void handlePreferences(ApplicationEvent ae) { doPreferences(); }
+              @Override public void handleQuit(ApplicationEvent arg0)      { doQuit(); }               
+           });
+        }
+        
+        doLookAndFeel();
 
         // Figure out the desired x, y, width, and height
         int screenWidth=OurUtil.getScreenWidth(), screenHeight=OurUtil.getScreenHeight();
@@ -1781,33 +1562,36 @@ public final class SimpleGUI implements ComponentListener, Listener {
         // since we want the minimized window title on Linux/FreeBSD to just say Alloy Analyzer
 
         // Test the allowed memory sizes
-        final WorkerEngine.WorkerCallback c = new WorkerEngine.WorkerCallback() {
-            private final List<Integer> allowed = new ArrayList<Integer>();
-            private final List<Integer> toTry = new ArrayList<Integer>(Arrays.asList(256,512,768,1024,1536,2048,2560,3072,3584,4096));
-            private int mem;
-            public synchronized void callback(Object msg) {
-                if (toTry.size()==0) {
-                    SwingUtilities.invokeLater(new Runnable() {
-                        public void run() { SimpleGUI.this.frame=frame; SimpleGUI.this.finishInit(args, allowed, windowWidth); }
-                    });
-                    return;
-                }
-                try { mem=toTry.remove(0); WorkerEngine.stop(); WorkerEngine.run(dummyTask, mem, 128, "", "", this); return; } catch(IOException ex) { fail(); }
-            }
-            public synchronized void done() {
-                //System.out.println("Alloy4 can use "+mem+"M"); System.out.flush();
-                allowed.add(mem);
-                callback(null);
-            }
-            public synchronized void fail() {
-                //System.out.println("Alloy4 cannot use "+mem+"M"); System.out.flush();
-                callback(null);
-            }
-        };
-        c.callback(null);
+//        final WorkerEngine.WorkerCallback c = new WorkerEngine.WorkerCallback() {
+//            private final List<Integer> allowed = new ArrayList<Integer>();
+//            private final List<Integer> toTry = new ArrayList<Integer>(Arrays.asList(256,512,768,1024,1536,2048,2560,3072,3584,4096));
+//            private int mem;
+//            public synchronized void callback(Object msg) {
+//                if (toTry.size()==0) {
+//                    SwingUtilities.invokeLater(new Runnable() {
+//                        public void run() { SimpleGUI.this.frame=frame; SimpleGUI.this.finishInit(args, windowWidth); }
+//                    });
+//                    return;
+//                }
+//                try { mem=toTry.remove(0); WorkerEngine.stop(); WorkerEngine.run(dummyTask, mem, 128, "", "", this); return; } catch(IOException ex) { fail(); }
+//            }
+//            public synchronized void done() {
+//                //System.out.println("Alloy4 can use "+mem+"M"); System.out.flush();
+//                allowed.add(mem);
+//                callback(null);
+//            }
+//            public synchronized void fail() {
+//                //System.out.println("Alloy4 cannot use "+mem+"M"); System.out.flush();
+//                callback(null);
+//            }
+//        };
+//        c.callback(null);
+        
+        SimpleGUI.this.frame = frame; 
+        finishInit(args, windowWidth);
     }
 
-    private void finishInit(String[] args, List<Integer> initialAllowedMemorySizes, int width) {
+    private void finishInit(String[] args, int width) {
 
         // Add the listeners
         try {
@@ -1819,15 +1603,15 @@ public final class SimpleGUI implements ComponentListener, Listener {
         frame.addComponentListener(this);
 
         // initialize the "allowed memory sizes" array
-        allowedMemorySizes = new ArrayList<Integer>(initialAllowedMemorySizes);
-        int newmem = SubMemory.get();
-        if (!allowedMemorySizes.contains(newmem)) {
-           int newmemlen = allowedMemorySizes.size();
-           if (allowedMemorySizes.contains(768) || newmemlen==0)
-              SubMemory.set(768); // a nice default value
-           else
-              SubMemory.set(allowedMemorySizes.get(newmemlen-1));
-        }
+//        allowedMemorySizes = new ArrayList<Integer>(initialAllowedMemorySizes);
+//        int newmem = SubMemory.get();
+//        if (!allowedMemorySizes.contains(newmem)) {
+//           int newmemlen = allowedMemorySizes.size();
+//           if (allowedMemorySizes.contains(768) || newmemlen==0)
+//              SubMemory.set(768); // a nice default value
+//           else
+//              SubMemory.set(allowedMemorySizes.get(newmemlen-1));
+//        }
 
         // Choose the appropriate font
         int fontSize=FontSize.get();
@@ -1844,7 +1628,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
         // Copy required files from the JAR
         copyFromJAR();
         final String binary = alloyHome() + fs + "binary";
-
+        
         // Create the menu bar
         JMenuBar bar = new JMenuBar();
         try {
@@ -1866,7 +1650,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
         // Pre-load the visualizer
         viz = new VizGUI(false, "", windowmenu2, enumerator, evaluator);
         viz.doSetFontSize(FontSize.get());
-
+        
         // Create the toolbar
         try {
             wrap = true;
@@ -1935,38 +1719,18 @@ public final class SimpleGUI implements ComponentListener, Listener {
             old.setAccessible(true);
             old.set(null,newarray);
         } catch (Throwable ex) { }
-
-        // Testing the SAT solvers
-        if (1==1) {
-            satChoices = SatSolver.values().makeCopy();
-//            String test1 = Subprocess.exec(20000, new String[]{binary+fs+"berkmin", binary+fs+"tmp.cnf"});
-//            if (!isSat(test1)) satChoices.remove(SatSolver.BerkMinPIPE);
-            satChoices.remove(SatSolver.BerkMinPIPE);
-            String test2 = Subprocess.exec(20000, new String[]{binary+fs+"spear", "--model", "--dimacs", binary+fs+"tmp.cnf"});
-            if (!isSat(test2)) satChoices.remove(SatSolver.SpearPIPE);
-            if (!loadLibrary("minisat")) {
-                log.logBold("Warning: JNI-based SAT solver does not work on this platform.\n");
-                log.log("This is okay, since you can still use SAT4J as the solver.\n"+
-                "For more information, please visit http://alloy.mit.edu/alloy4/\n");
-                log.logDivider();
-                log.flush();
-                satChoices.remove(SatSolver.MiniSatJNI);
-            }
-            if (!loadLibrary("minisatprover")) satChoices.remove(SatSolver.MiniSatProverJNI);
-            if (!loadLibrary("libzchaffmincost")) satChoices.remove(SatSolver.ZChaffJNI);
-            SatSolver now = SatSolver.get();
-            if (!satChoices.contains(now)) {
-                now=SatSolver.ZChaffJNI;
-                if (!satChoices.contains(now)) now=SatSolver.SAT4J;
-                now.set();
-            }
-            if (now==SatSolver.SAT4J && satChoices.size()>3 && satChoices.contains(SatSolver.CNF) && satChoices.contains(SatSolver.KK)) {
-                log.logBold("Warning: Alloy4 defaults to SAT4J since it is pure Java and very reliable.\n");
-                log.log("For faster performance, go to Options menu and try another solver like MiniSat.\n");
-                log.log("If these native solvers fail on your computer, remember to change back to SAT4J.\n");
-                log.logDivider();
-                log.flush();
-            }
+        
+        // Pre-load the preferences dialog
+        prefDialog = new PreferencesDialog(log, binary);
+        prefDialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);        
+        try {
+           wrap = true;
+           prefDialog.addChangeListener(wrapToChangeListener(doOptRefreshFont()), FontName, FontSize, TabSize);
+           prefDialog.addChangeListener(wrapToChangeListener(doOptAntiAlias()), AntiAlias);
+           prefDialog.addChangeListener(wrapToChangeListener(doOptSyntaxHighlighting()), SyntaxDisabled);
+           prefDialog.addChangeListener(wrapToChangeListener(doLookAndFeel()), LAF);
+        } finally {
+           wrap = false;
         }
 
         // If the temporary directory has become too big, then tell the user they can "clear temporary directory".
@@ -1999,7 +1763,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
         text.get().requestFocusInWindow();
 
         // Launch the welcome screen if needed
-        if (!"yes".equals(System.getProperty("debug")) && Welcome.get() < welcomeLevel) {
+        if (!"yes".equals(System.getProperty("debug")) && Welcome.get()) {
            JCheckBox again = new JCheckBox("Show this message every time you start the Alloy Analyzer");
            again.setSelected(true);
            OurDialog.showmsg("Welcome",
@@ -2023,7 +1787,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
                  again
            );
            doShow();
-           if (!again.isSelected()) Welcome.set(welcomeLevel);
+           Welcome.set(again.isSelected());
         }
 
         // Periodically ask the MailBug thread to see if there is a newer version or not
@@ -2063,5 +1827,48 @@ public final class SimpleGUI implements ComponentListener, Listener {
         text.shade(p);
       }
       return true;
+   }
+   
+   /** Creates menu items from boolean preferences (<code>prefs</code>) 
+    *  and adds them to a given parent menu (<code>parent</code>). */
+   private static void addToMenu(JMenu parent, BooleanPref... prefs) {      
+      for (BooleanPref pref : prefs) {
+        Action action = pref.getTitleAction();
+        Object name = action.getValue(Action.NAME);
+        menuItem(parent, name + ": " + (pref.get() ? "Yes" : "No"), action);
+      }
+   }
+   
+   /** Creates a menu item for each choice preference (from <code>prefs</code>)  
+    *  and adds it to a given parent menu (<code>parent</code>).*/
+   @SuppressWarnings({ "rawtypes", "unchecked" })
+   private static JMenu addToMenu(JMenu parent, ChoicePref... prefs) {
+      JMenu last = null;
+      for (ChoicePref pref : prefs) {
+         last = new JMenu(pref.title + ": " + pref.renderValueShort(pref.get()));
+         addSubmenuItems(last, pref);
+         parent.add(last);
+      }
+      return last;
+   }
+   
+   /** Creates a sub-menu item for each choice of a given preference (<code>pref</code>)  
+    *  and adds it to a given parent menu (<code>parent</code>).*/
+   @SuppressWarnings({ "rawtypes", "unchecked" })
+   private static void addSubmenuItems(JMenu parent, ChoicePref pref) {
+      Object selected = pref.get();
+      for(Object item: pref.validChoices()) {
+         menuItem(parent, pref.renderValueLong(item).toString(), pref.getAction(item), item==selected?iconYes:iconNo);
+      }      
+   }   
+   
+   /** Takes a <code>Runner</code> and wraps it into a <code>ChangeListener</code> */
+   private static ChangeListener wrapToChangeListener(final Runner r) {
+      assert r != null;
+      return new ChangeListener() {        
+         public void stateChanged(ChangeEvent e) {
+            r.run();
+         }
+      };
    }
 }
