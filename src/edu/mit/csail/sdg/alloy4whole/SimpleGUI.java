@@ -718,7 +718,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
             menuItem(editmenu, "Find...",   'F', 'F', doFind());
             menuItem(editmenu, "Find Next", 'G', 'G', doFindNext());
             editmenu.addSeparator();
-            menuItem(editmenu, "Preferences", 'P', 'P', doPreferences());
+            if (!Util.onMac()) menuItem(editmenu, "Preferences", 'P', 'P', doPreferences());
         } finally {
             wrap = false;
         }
