@@ -17,6 +17,8 @@ function compile {
       -e 's/public static String buildDate.*/public static String buildDate() { return "'"$BUILD_DATE"'"; }/' \
       -e 's/public static String version.*/public static String version() { return "'"$VERSION"'"; }/' $version_file
 
+    mkdir -p bin
+
     echo "[cleaning up the bin folder...]"
     rm -rf bin/*
 
