@@ -15,6 +15,7 @@
 
 package edu.mit.csail.sdg.alloy4;
 
+
 /** This class receives diagnostic, progress, and warning messages from Alloy4.
  * (This default implementation ignores all calls; you should subclass it to do the appropriate screen output)
  */

@@ -1,14 +1,34 @@
 package edu.mit.csail.sdg.alloy4whole;
 
+import static edu.mit.csail.sdg.alloy4.A4Preferences.AntiAlias;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.AutoVisualize;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.CoreGranularity;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.CoreMinimization;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.FontName;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.FontSize;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.ImplicitThis;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.InferPartialInstance;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.LAF;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.NoOverflow;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.RecordKodkod;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.SkolemDepth;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.Solver;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.SubMemory;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.SubStack;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.SyntaxDisabled;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.TabSize;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.Unrolls;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.VerbosityPref;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.WarningNonfatal;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.Welcome;
+
 import java.awt.Component;
 import java.awt.Font;
-import java.awt.GraphicsEnvironment;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -31,19 +51,13 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.plaf.basic.BasicComboBoxRenderer;
 
+import edu.mit.csail.sdg.alloy4.A4Preferences.BooleanPref;
+import edu.mit.csail.sdg.alloy4.A4Preferences.ChoicePref;
+import edu.mit.csail.sdg.alloy4.A4Preferences.Pref;
 import edu.mit.csail.sdg.alloy4.OurBorder;
 import edu.mit.csail.sdg.alloy4.OurUtil;
-import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.OurUtil.GridBagConstraintsBuilder;
 import edu.mit.csail.sdg.alloy4.Subprocess;
-import edu.mit.csail.sdg.alloy4.Util.BooleanPref;
-import edu.mit.csail.sdg.alloy4.Util.ChoicePref;
-import edu.mit.csail.sdg.alloy4.Util.DelayedChoicePref;
-import edu.mit.csail.sdg.alloy4.Util.IntChoicePref;
-import edu.mit.csail.sdg.alloy4.Util.IntPref;
-import edu.mit.csail.sdg.alloy4.Util.Pref;
-import edu.mit.csail.sdg.alloy4.Util.StringChoicePref;
-import edu.mit.csail.sdg.alloy4.Util.StringPref;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options.SatSolver;
 
 @SuppressWarnings("serial")
@@ -109,151 +123,7 @@ public class PreferencesDialog extends JFrame {
       }
       protected abstract Object render(Object value);         
    }
-      
-   // ======== The Preferences ======================================================================================//
-   // ======== Note: you must make sure each preference has a unique key ============================================//
-
-   /** True if Alloy Analyzer should let warning be nonfatal. */
-   public static final BooleanPref WarningNonfatal = new BooleanPref("WarningNonfatal", "Allow warnings");
-
-   /** True if Alloy Analyzer should automatically visualize the latest instance. */
-   public static final BooleanPref AutoVisualize = new BooleanPref("AutoVisualize", "Visualize automatically");
-
-   /** True if Alloy Analyzer should insist on antialias. */
-   public static final BooleanPref AntiAlias = new BooleanPref("AntiAlias", "Use anti-aliasing");
-
-   /** True if Alloy Analyzer should record the raw Kodkod input and output. */
-   public static final BooleanPref RecordKodkod = new BooleanPref("RecordKodkod", "Record the Kodkod input/output");
-
-   /** True if Alloy Analyzer should enable the new Implicit This name resolution. */
-   public static final BooleanPref ImplicitThis = new BooleanPref("ImplicitThis", 
-         "Enable 'implicit this' name resolution");
-
-   /** True if Alloy Analyzer should not report models that overflow. */
-   public static final BooleanPref NoOverflow = new BooleanPref("NoOverflow", "Prevent overflows");
-
-   /** The latest X corrdinate of the Alloy Analyzer's main window. */
-   public static final IntPref AnalyzerX = new IntPref("AnalyzerX", 0, -1, 65535);
-
-   /** The latest Y corrdinate of the Alloy Analyzer's main window. */
-   public static final IntPref AnalyzerY = new IntPref("AnalyzerY", 0, -1, 65535);
-
-   /** The latest width of the Alloy Analyzer's main window. */
-   public static final IntPref AnalyzerWidth = new IntPref("AnalyzerWidth", 0, -1, 65535);
-
-   /** The latest height of the Alloy Analyzer's main window. */
-   public static final IntPref AnalyzerHeight = new IntPref("AnalyzerHeight", 0, -1, 65535);
-
-   /** The latest font size of the Alloy Analyzer. */
-   public static final IntChoicePref FontSize = new IntChoicePref("FontSize", "Font size",
-         Arrays.asList(9,10,11,12,14,16,18,20,22,24,26,28,32,36,40,44,48,54,60,66,72), 14);
-
-   /** The latest font name of the Alloy Analyzer. */
-   public static final StringChoicePref FontName = new StringChoicePref("FontName", "Font family", 
-         Arrays.asList(GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames()), 
-         "Lucida Grande");
-
-   /** The latest tab distance of the Alloy Analyzer. */
-   public static final IntChoicePref TabSize = IntChoicePref.range("TabSize", "Tab size", 1, 1, 16, 4);
-
-   /** The latest welcome screen that the user has seen. */
-   public static final BooleanPref Welcome = new BooleanPref("Welcome", "Show welcome message at start up");
-
-   /** Look and feel */
-   public static final StringChoicePref LAF = new StringChoicePref("LAF", "Look and feel", Arrays.asList("Native", "Cross-platform"), 
-         Util.onMac() || Util.onWindows() ? "Native" : "Cross-platform");
    
-   /** Whether syntax highlighting should be disabled or not. */
-   public static final BooleanPref SyntaxDisabled = new BooleanPref("SyntaxHighlightingDisabled", "Disable syntax highlighting");
-
-   /** The number of recursion unrolls. */ 
-   public static final IntChoicePref Unrolls = new IntChoicePref("Unrolls", "Recursion depth", Arrays.asList(-1, 0, 1, 2, 3), -1) {
-      @Override public Object renderValueShort(Integer value) { return (value != null && value.intValue() == -1) ? "disabled" : value; }
-   };
-   
-   /** The skolem depth. */
-   public static final IntChoicePref SkolemDepth = new IntChoicePref("SkolemDepth3", "Skolem depth", Arrays.asList(0, 1, 2, 3, 4), 1);
-
-   /** The unsat core minimization strategy. */
-   private static final String[] coreMinimizationLabels = new String[] {
-      "Slow", "Slow (guarantees local minimum)", 
-      "Medium", "Medium", 
-      "Fast", "Fast (initial unsat core)"
-   };
-   public static final IntChoicePref CoreMinimization = new IntChoicePref("CoreMinimization", "Unsat core minimization", 
-         Arrays.asList(0, 1, 2), 2) {
-      @Override public Object renderValueShort(Integer value) { return coreMinimizationLabels[value*2]; }
-      @Override public Object renderValueLong(Integer value)  { return coreMinimizationLabels[value*2+1]; }
-   };
-   
-   /** The unsat core granularity. */
-   private static final String[] coreGranularityLabels = new String[] {
-      "Top-level", "Top-level conjuncts only", 
-      "Flatten once", "Flatten the formula once at the beginning", 
-      "Flatten twice", "Flatten the formula at the beginning and after skolemizing", 
-      "Expand quantifiers", "In addition to flattening the formula twice, expand the quantifiers" 
-   };
-   public static final IntChoicePref CoreGranularity = new IntChoicePref("CoreGranularity", "Unsat core granularity", 
-         Arrays.asList(0, 1, 2, 3), 0) {
-      @Override public Object renderValueShort(Integer value) { return coreGranularityLabels[value*2]; }
-      @Override public Object renderValueLong(Integer value)  { return coreGranularityLabels[value*2+1]; }
-   };
-
-   /** The amount of memory (in M) to allocate for Kodkod and the SAT solvers. */
-   public static final IntChoicePref SubMemory = new IntChoicePref("SubMemory", "Maximum memory", 
-         Arrays.asList(256,512,768,1024,1536,2048,2560,3072,3584,4096), 768) {
-      @Override public Object renderValueShort(Integer value) { return value.toString() + " MB"; }
-   };
-   
-   /** The amount of stack (in K) to allocate for Kodkod and the SAT solvers. */
-   public static final IntChoicePref SubStack = new IntChoicePref("SubStack", "Maximum stack", 
-         Arrays.asList(1024,2048,4096,8192,16384,32768,65536), 8192) {
-      @Override public Object renderValueShort(Integer value) { return value.toString() + " k"; }
-   };
-   
-   /** The first file in Alloy Analyzer's "open recent" list. */
-   public static final StringPref Model0 = new StringPref("Model0");
-
-   /** The second file in Alloy Analyzer's "open recent" list. */
-   public static final StringPref Model1 = new StringPref("Model1");
-
-   /** The third file in Alloy Analyzer's "open recent" list. */
-   public static final StringPref Model2 = new StringPref("Model2");
-
-   /** The fourth file in Alloy Analyzer's "open recent" list. */
-   public static final StringPref Model3 = new StringPref("Model3");
-    
-   public static final DelayedChoicePref<SatSolver> Solver = new DelayedChoicePref<SatSolver>("SatSolver2", "Solver", 
-         SatSolver.values(), SatSolver.SAT4J) {
-      @Override protected String serialize(SatSolver value) { return value.id(); }
-   };  
-     
-   public static final ChoicePref<Verbosity> VerbosityPref = new ChoicePref<Verbosity>("Verbosity", Verbosity.values(), Verbosity.DEFAULT) {
-      @Override protected String serialize(Verbosity value) { return value.id; }
-   };
-   
-   // ==============================================================================================//
-   
-   public enum Verbosity {
-      /** Level 0. */  DEFAULT("0", "low"),
-      /** Level 1. */  VERBOSE("1", "medium"),
-      /** Level 2. */  DEBUG("2", "high"),
-      /** Level 3. */  FULLDEBUG("3", "debug");
-      /** Returns true if it is greater than or equal to "other". */
-      public boolean geq(Verbosity other) { return ordinal() >= other.ordinal(); }
-      /** This is a unique String for this value; it should be kept consistent in future versions. */
-      private final String id;
-      /** This is the label that the toString() method will return. */
-      private final String label;
-      /** Constructs a new Verbosity value with the given id and label. */
-      private Verbosity(String id, String label) { this.id=id; this.label=label; }
-      /** Given an id, return the enum value corresponding to it (if there's no match, then return DEFAULT). */
-      /** Returns the human-readable label for this enum value. */
-      @Override public final String toString() { return label; }
-   };
-   
-   // ==============================================================================================//
-
    private final Map<Pref<?>, JComponent> pref2comp = new HashMap<Pref<?>, JComponent>();
    private final String binary;
    private final SwingLogPanel log;
@@ -354,9 +224,11 @@ public class PreferencesDialog extends JFrame {
    protected Component initSolverPane() {
       JPanel p = OurUtil.makeGrid(2, gbc().make(), mkCombo(Solver), mkSlider(SkolemDepth), 
             mkCombo(Unrolls), mkCombo(CoreGranularity), mkSlider(CoreMinimization));
-      addToGrid(p, mkCheckBox(NoOverflow), gbc().pos(0, 5).gridwidth(2));
-      addToGrid(p, mkCheckBox(ImplicitThis), gbc().pos(0, 6).gridwidth(2));
-      addToGrid(p, mkCheckBox(RecordKodkod), gbc().pos(0, 7).gridwidth(2));
+      int r = 5;
+      addToGrid(p, mkCheckBox(NoOverflow),           gbc().pos(0, r++).gridwidth(2));
+      addToGrid(p, mkCheckBox(ImplicitThis),         gbc().pos(0, r++).gridwidth(2));
+      addToGrid(p, mkCheckBox(InferPartialInstance), gbc().pos(0, r++).gridwidth(2));
+      addToGrid(p, mkCheckBox(RecordKodkod),         gbc().pos(0, r++).gridwidth(2));
       
       Solver.addChangeListener(new ChangeListener() {
          public void stateChanged(ChangeEvent e) {
@@ -373,9 +245,9 @@ public class PreferencesDialog extends JFrame {
       JPanel p = OurUtil.makeGrid(2, gbc().make(), mkCombo(SubMemory), mkCombo(SubStack), 
             mkCombo(VerbosityPref), mkCombo(LAF));
       int r = 4;
-      addToGrid(p, mkCheckBox(Welcome),          gbc().pos(0, r).gridwidth(2));
-      addToGrid(p, mkCheckBox(WarningNonfatal),  gbc().pos(0, r+1).gridwidth(2));
-      addToGrid(p, mkCheckBox(AutoVisualize),    gbc().pos(0, r+2).gridwidth(2));
+      addToGrid(p, mkCheckBox(Welcome),          gbc().pos(0, r++).gridwidth(2));
+      addToGrid(p, mkCheckBox(WarningNonfatal),  gbc().pos(0, r++).gridwidth(2));
+      addToGrid(p, mkCheckBox(AutoVisualize),    gbc().pos(0, r++).gridwidth(2));
       
 //      addToGrid(p, mkCheckBox(Welcome),          gbc().pos(0, 0).gridwidth(2));
 //      addToGrid(p, mkCheckBox(WarningNonfatal),  gbc().pos(0, 1).gridwidth(2));
