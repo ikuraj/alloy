@@ -22,7 +22,11 @@ function compile {
     echo "[cleaning up the bin folder...]"
     rm -rf bin/*
 
-    CP=$KODKOD_HOME/bin:$(ls -1 lib/*.jar | xargs | sed 's/\ /:/g')
+    CP=$(ls -1 lib/*.jar | xargs | sed 's/\ /:/g')
+    if [[ -d $KODKOD_HOME ]]
+    then
+        CP=$KODKOD_HOME/bin:$CP
+    fi
     echo "[compiling...]"
     find src -name "*.java" | xargs javac -cp $CP -d bin -target 1.5
 
@@ -38,25 +42,27 @@ function dist {
 
     for f in lib/*jar
     do 
-        if [[ "$f" != "lib/kodkod.jar" ]]
-	then
-            echo "[extracting]: $f"
-	    unzip -q -o $f -d $DST/alloy
-	fi
+        echo "[extracting]: $f"
+	unzip -q -o $f -d $DST/alloy
     done
+
     # copy the content of the extra folder
     cp -r extra/* $DST/alloy
     
     rm -rf bin/tmp
     cp -r bin/* $DST/alloy/
     cp -r src/* $DST/alloy/
-    rm -rf $DST/alloy/kodkod
-    cp -r $KODKOD_HOME/bin/kodkod $DST/alloy/kodkod
-    cp -r $KODKOD_HOME/src/kodkod/* $DST/alloy/kodkod/
+    if [[ -d $KODKOD_HOME ]]; then
+        rm -rf $DST/alloy/kodkod
+        echo "[copying kodkod binaries]: $KODKOD_HOME/bin/kodkod"
+        cp -r $KODKOD_HOME/bin/kodkod $DST/alloy/kodkod
+        echo "[copying kodkod sources]: $KODKOD_HOME/src/kodkod"
+        cp -r $KODKOD_HOME/src/kodkod/* $DST/alloy/kodkod/
+    fi
     rm -rf $DST/alloy/META-INF
  
-    find $DST/alloy -type d -name ".svn" | xargs rm -rf 
-    find $DST/alloy -type d -name "CVS" | xargs rm -rf 
+    find $DST/alloy -type d -name ".svn" -exec rm -rf {} \;
+    find $DST/alloy -type d -name "CVS" -exec rm -rf {} \;
     
     mkdir -p $DST/alloy/META-INF
     cp MANIFEST.MF $DST/alloy/META-INF
@@ -69,7 +75,7 @@ function dist {
 
     pushd $(pwd) &> /dev/null
     cd $DST/alloy
-    # find -type f -name "*.java" | xargs rm -f
+    # find -type f -name "*.java" -exec rm -f {} \;
     jarName="alloy$VERSION.jar"
     zip -q -r $jarName *
     chmod +x $jarName
@@ -95,7 +101,7 @@ function dist {
     mkdir -p $DST/$osxdir/dist
     cp -r $DST/*.app $DST/$osxdir/dist
     cp -r OSX-extra/* $DST/$osxdir/dist
-    find $DST/$osxdir/dist -type d -name ".svn" | xargs rm -rf
+    find $DST/$osxdir/dist -type d -name ".svn" -exec rm -rf {} \;
     cat build-dmg.sh | sed 's/VERSION=X/VERSION='$VERSION'/g' > $DST/$osxdir/build-dmg.sh
     cd $DST
     zip -q -r $osxdir.zip $osxdir
