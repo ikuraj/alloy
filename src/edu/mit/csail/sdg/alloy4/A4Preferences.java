@@ -214,11 +214,11 @@ public class A4Preferences {
     * <p><b>Thread Safety:</b>  Safe. */
    public static final class IntPref extends Pref<Integer> {
       /** The minimum value for this preference. */
-      private final int min;
+      public final int min;
       /** The maximum value for this preference. */
-      private final int max;
+      public final int max;
       /** The default value for this preference. */
-      private final int def;
+      public final int def;
       /** If min>n, we return min; else if n>max, we return max; otherwise we return n. */
       private int bound (int n) { return n<min ? min : (n>max? max : n); }
             
@@ -388,5 +388,12 @@ public class A4Preferences {
       /** Returns the human-readable label for this enum value. */
       @Override public final String toString() { return label; }
    };
+   
+   /** The visualization algorithm */
+   public static final StringChoicePref VisualizationAlgorithm = new StringChoicePref("VizAlg", "Visualization algorightm", 
+           Arrays.asList("Sugiyama", "Circle", "Grid"), "Sugiyama");
+   
+   public static final IntPref GridLayoutRows = new IntPref("GridLayoutRows", 1, 5, 100);
+   public static final IntPref GridLayoutCols = new IntPref("GridLayoutCols", 1, 5, 100);
    
 }

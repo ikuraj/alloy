@@ -6,6 +6,8 @@ import static edu.mit.csail.sdg.alloy4.A4Preferences.CoreGranularity;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.CoreMinimization;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.FontName;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.FontSize;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.GridLayoutCols;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.GridLayoutRows;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.ImplicitThis;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.InferPartialInstance;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.LAF;
@@ -19,6 +21,7 @@ import static edu.mit.csail.sdg.alloy4.A4Preferences.SyntaxDisabled;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.TabSize;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.Unrolls;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.VerbosityPref;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.VisualizationAlgorithm;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.WarningNonfatal;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.Welcome;
 
@@ -27,6 +30,8 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.HashMap;
@@ -35,8 +40,10 @@ import java.util.List;
 import java.util.Map;
 
 import javax.swing.AbstractListModel;
+import javax.swing.AbstractSpinnerModel;
 import javax.swing.BoundedRangeModel;
 import javax.swing.ComboBoxModel;
+import javax.swing.InputVerifier;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -45,14 +52,20 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
+import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextField;
+import javax.swing.SpinnerModel;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.plaf.basic.BasicComboBoxRenderer;
 
 import edu.mit.csail.sdg.alloy4.A4Preferences.BooleanPref;
 import edu.mit.csail.sdg.alloy4.A4Preferences.ChoicePref;
+import edu.mit.csail.sdg.alloy4.A4Preferences.IntPref;
 import edu.mit.csail.sdg.alloy4.A4Preferences.Pref;
 import edu.mit.csail.sdg.alloy4.OurBorder;
 import edu.mit.csail.sdg.alloy4.OurUtil;
@@ -60,7 +73,7 @@ import edu.mit.csail.sdg.alloy4.OurUtil.GridBagConstraintsBuilder;
 import edu.mit.csail.sdg.alloy4.Subprocess;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options.SatSolver;
 
-@SuppressWarnings("serial")
+@SuppressWarnings({"serial", "rawtypes"})
 public class PreferencesDialog extends JFrame {
 
    private static final long serialVersionUID = 5577892964740788892L;
@@ -68,6 +81,22 @@ public class PreferencesDialog extends JFrame {
 //   private JPanel editorPane;
 //   private JPanel solverPane;
 //   private JPanel miscPane;
+   
+   private static class MyIntSpinnerModel extends AbstractSpinnerModel {
+      private final IntPref pref;
+      public MyIntSpinnerModel(final IntPref pref) { 
+         this.pref = pref;
+         this.pref.addChangeListener(new ChangeListener() {            
+            public void stateChanged(ChangeEvent e) {
+               fireStateChanged();
+            }
+         });
+      }
+      public Object getValue()           { return pref.get(); }
+      public void setValue(Object value) { pref.set((Integer) value); }
+      public Object getNextValue()       { return Math.min(pref.max, pref.get() + 1); }
+      public Object getPreviousValue()   { return Math.max(pref.min, pref.get() - 1); }
+   }
    
    @SuppressWarnings("unchecked")
    private static class CBModel<T> extends AbstractListModel implements ComboBoxModel {
@@ -196,6 +225,7 @@ public class PreferencesDialog extends JFrame {
       tab.addTab("Editor", initEditorPane());
       tab.addTab("Solver", initSolverPane());
       tab.addTab("Miscellaneous", initMiscPane());
+      tab.addTab("Visualizer", initVizPane());
 
       add(tab);
       setTitle("Alloy Preferences");
@@ -248,16 +278,18 @@ public class PreferencesDialog extends JFrame {
       addToGrid(p, mkCheckBox(Welcome),          gbc().pos(0, r++).gridwidth(2));
       addToGrid(p, mkCheckBox(WarningNonfatal),  gbc().pos(0, r++).gridwidth(2));
       addToGrid(p, mkCheckBox(AutoVisualize),    gbc().pos(0, r++).gridwidth(2));
-      
-//      addToGrid(p, mkCheckBox(Welcome),          gbc().pos(0, 0).gridwidth(2));
-//      addToGrid(p, mkCheckBox(WarningNonfatal),  gbc().pos(0, 1).gridwidth(2));
-//      addToGrid(p, mkCheckBox(AutoVisualize),    gbc().pos(0, 2).gridwidth(2));      
-//      addRowToGrid(p, gbc().pos(0, 3), mkComboArr(SubMemory));
-//      addRowToGrid(p, gbc().pos(0, 4), mkComboArr(SubStack));
-//      addRowToGrid(p, gbc().pos(0, 5), mkComboArr(VerbosityPref));
-      
       return makeTabPane(p);
    }
+   
+   protected Component initVizPane() {
+       JPanel p = OurUtil.makeGrid(2, gbc().make(), 
+               mkCombo(VisualizationAlgorithm), 
+               mkEditor(GridLayoutRows), 
+               mkEditor(GridLayoutCols));
+//       int r = 4;
+//       addToGrid(p, mkCheckBox(Welcome),          gbc().pos(0, r++).gridwidth(2));
+       return makeTabPane(p);
+    }
  
    protected JCheckBox mkCheckBox(final BooleanPref pref) {
       final JCheckBox cb = make(new JCheckBox(pref.getTitleAction()));
@@ -308,7 +340,48 @@ public class PreferencesDialog extends JFrame {
       return dict;
    }
    
-   @SuppressWarnings("unchecked")
+   protected JPanel mkSpinner(final IntPref pref) {
+       JSpinner jsp = new JSpinner(mkSpinnerModelFor(pref));
+       return OurUtil.makeH(pref.title + ": ", jsp);   
+   }
+   
+   protected JPanel mkEditor(final IntPref pref) {
+       final JTextField jtf = new JTextField(pref.get().toString());
+       jtf.setInputVerifier(new InputVerifier() {        
+           @Override public boolean verify(JComponent input) {
+               try {
+                   JTextField src = (JTextField) input;
+                   Integer.parseInt(src.getText());
+                   return true;
+               } catch (NumberFormatException e) {
+                   return false;
+               }
+           }
+       });
+       jtf.addKeyListener(new KeyAdapter() {
+           public void keyTyped(KeyEvent e) {
+               char c = e.getKeyChar();
+               if (c < '0' || c > '9') {
+                   e.consume();  // ignore event
+               }             
+            }
+       });
+       jtf.getDocument().addDocumentListener(new DocumentListener() {        
+           public void removeUpdate(DocumentEvent e)  { updatePref(); }        
+           public void insertUpdate(DocumentEvent e)  { updatePref(); }
+           public void changedUpdate(DocumentEvent e) { updatePref(); }
+           private void updatePref() {
+               String val = jtf.getText();
+               try { 
+                   pref.set(Integer.parseInt(val)); 
+               } catch (NumberFormatException ex) {
+               }            
+           }
+       });
+       return OurUtil.makeH(pref.title + ": ", jtf);   
+   }
+   
+   @SuppressWarnings({ "unchecked" })
    protected <T> JPanel mkCombo(final ChoicePref<T> pref) {
       JComboBox cb = make(new JComboBox(mkComboBoxModelFor(pref)));
       pref2comp.put(pref, cb);
@@ -322,6 +395,7 @@ public class PreferencesDialog extends JFrame {
       return mkCombo(pref).getComponents();
    }
    
+   private SpinnerModel mkSpinnerModelFor(IntPref pref            )      { return new MyIntSpinnerModel(pref); }
    private <T> ComboBoxModel mkComboBoxModelFor(ChoicePref<T> pref)      { return new CBModel<T>(pref); }
    private <T> BoundedRangeModel mkBoundedRangeModel(ChoicePref<T> pref) { return new BRModel<T>(pref); }
    

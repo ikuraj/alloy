@@ -42,6 +42,7 @@ import static edu.mit.csail.sdg.alloy4.A4Preferences.SyntaxDisabled;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.TabSize;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.Unrolls;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.VerbosityPref;
+import static edu.mit.csail.sdg.alloy4.A4Preferences.VisualizationAlgorithm;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.WarningNonfatal;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.Welcome;
 import static edu.mit.csail.sdg.alloy4.OurUtil.menu;
@@ -1157,6 +1158,12 @@ public final class SimpleGUI implements ComponentListener, Listener {
             else 
                addToMenu(optmenu, AntiAlias); 
             addToMenu(optmenu, A4Preferences.LAF);
+            
+            optmenu.addSeparator();
+            
+            addToMenu(optmenu, VisualizationAlgorithm);
+            
+            optmenu.addSeparator();
             
             optmenu.addSeparator();
             
