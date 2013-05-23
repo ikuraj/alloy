@@ -270,7 +270,7 @@ public final class A4Solution {
         int sym = (expected==1 ? 0 : opt.symmetry);
         solver = new Solver();
         solver.options().setNoOverflow(opt.noOverflow);
-        solver.options().setFlatten(false); // added for now, since multiplication and division circuit takes forever to flatten
+        //solver.options().setFlatten(false); // added for now, since multiplication and division circuit takes forever to flatten
         if (opt.solver.external()!=null) {
             String ext = opt.solver.external();
             if (opt.solverDirectory.length()>0 && ext.indexOf(File.separatorChar)<0) ext=opt.solverDirectory+File.separatorChar+ext;
@@ -280,8 +280,12 @@ public final class A4Solution {
 	            solver.options().setSolver(SATFactory.externalFactory(ext, tmp.getAbsolutePath(), opt.solver.options()));
                 //solver.options().setSolver(SATFactory.externalFactory(ext, tmp.getAbsolutePath(), opt.solver.options()));
             } catch(IOException ex) { throw new ErrorFatal("Cannot create temporary directory.", ex); }
-        } else if (opt.solver.equals(A4Options.SatSolver.ZChaffJNI)) {
-            solver.options().setSolver(SATFactory.ZChaffMincost);
+        } else if (opt.solver.equals(A4Options.SatSolver.LingelingJNI)) {
+            solver.options().setSolver(SATFactory.Lingeling);
+        } else if (opt.solver.equals(A4Options.SatSolver.GlucoseJNI)) {
+            solver.options().setSolver(SATFactory.Glucose);
+        } else if (opt.solver.equals(A4Options.SatSolver.CryptoMiniSatJNI)) {
+            solver.options().setSolver(SATFactory.CryptoMiniSat);
         } else if (opt.solver.equals(A4Options.SatSolver.MiniSatJNI)) {
             solver.options().setSolver(SATFactory.MiniSat);
         } else if (opt.solver.equals(A4Options.SatSolver.MiniSatProverJNI)) {
@@ -937,7 +941,7 @@ public final class A4Solution {
             rep.resultCNF(out);
             return null;
          }
-        if (solver.options().solver()==SATFactory.ZChaffMincost || !solver.options().solver().incremental()) {
+        if (!solver.options().solver().incremental() /* || solver.options().solver()==SATFactory.ZChaffMincost */) {
            if (sol==null) sol = solver.solve(fgoal, bounds);
         } else {
            kEnumerator = new Peeker<Solution>(solver.solveAll(fgoal, bounds));

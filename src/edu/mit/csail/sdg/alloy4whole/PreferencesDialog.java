@@ -6,8 +6,6 @@ import static edu.mit.csail.sdg.alloy4.A4Preferences.CoreGranularity;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.CoreMinimization;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.FontName;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.FontSize;
-import static edu.mit.csail.sdg.alloy4.A4Preferences.GridLayoutCols;
-import static edu.mit.csail.sdg.alloy4.A4Preferences.GridLayoutRows;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.ImplicitThis;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.InferPartialInstance;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.LAF;
@@ -73,7 +71,7 @@ import edu.mit.csail.sdg.alloy4.OurUtil.GridBagConstraintsBuilder;
 import edu.mit.csail.sdg.alloy4.Subprocess;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options.SatSolver;
 
-@SuppressWarnings({"serial", "rawtypes"})
+@SuppressWarnings({"serial"})
 public class PreferencesDialog extends JFrame {
 
    private static final long serialVersionUID = 5577892964740788892L;
@@ -181,10 +179,12 @@ public class PreferencesDialog extends JFrame {
           satChoices.remove(SatSolver.MiniSatJNI);
       }
       if (!loadLibrary("minisatprover")) satChoices.remove(SatSolver.MiniSatProverJNI);
-      if (!loadLibrary("libzchaffmincost")) satChoices.remove(SatSolver.ZChaffJNI);
+      if (!loadLibrary("lingeling")) satChoices.remove(SatSolver.LingelingJNI);
+      if (!loadLibrary("glucose")) satChoices.remove(SatSolver.GlucoseJNI);
+      if (!loadLibrary("cryptominisat")) satChoices.remove(SatSolver.CryptoMiniSatJNI);
       SatSolver now = Solver.get();
       if (!satChoices.contains(now)) {
-          now=SatSolver.ZChaffJNI;
+          now=SatSolver.LingelingJNI;
           if (!satChoices.contains(now)) now=SatSolver.SAT4J;
           Solver.set(now);
       }
@@ -282,10 +282,9 @@ public class PreferencesDialog extends JFrame {
    }
    
    protected Component initVizPane() {
-       JPanel p = OurUtil.makeGrid(2, gbc().make(), 
-               mkCombo(VisualizationAlgorithm), 
-               mkEditor(GridLayoutRows), 
-               mkEditor(GridLayoutCols));
+       JPanel p = OurUtil.makeGrid(2, gbc().make(), mkCombo(VisualizationAlgorithm)); 
+//               mkEditor(GridLayoutRows), 
+//               mkEditor(GridLayoutCols));
 //       int r = 4;
 //       addToGrid(p, mkCheckBox(Welcome),          gbc().pos(0, r++).gridwidth(2));
        return makeTabPane(p);

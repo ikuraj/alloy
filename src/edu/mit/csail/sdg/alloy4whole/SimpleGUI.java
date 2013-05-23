@@ -363,6 +363,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
            arch+"/libminisat.so", arch+"/libminisatx1.so", arch+"/libminisat.jnilib",
            arch+"/libminisatprover.so", arch+"/libminisatproverx1.so", arch+"/libminisatprover.jnilib",
            arch+"/libzchaff.so", arch+"/libzchaffmincost.so", arch+"/libzchaffx1.so", arch+"/libzchaff.jnilib",
+           arch+"/liblingeling.so", arch+"/libglucose.so", arch+"/libcryptominisat.so", arch+"/libcryptominisat",
            arch+"/berkmin", arch+"/spear");
         Util.copy(false, false, platformBinary,
            arch+"/minisat.dll", arch+"/minisatprover.dll", arch+"/zchaff.dll",
