@@ -360,11 +360,13 @@ public final class SimpleGUI implements ComponentListener, Listener {
         }
         // Copy the platform-dependent binaries
         Util.copy(true, false, platformBinary,
-           arch+"/libminisat.so", arch+"/libminisatx1.so", arch+"/libminisat.jnilib",
-           arch+"/libminisatprover.so", arch+"/libminisatproverx1.so", arch+"/libminisatprover.jnilib",
+           arch+"/libminisat.so", arch+"/libminisatx1.so", arch+"/libminisat.jnilib", arch+"/libminisat.dylib",
+           arch+"/libminisatprover.so", arch+"/libminisatproverx1.so", arch+"/libminisatprover.jnilib", arch+"/libminisatprover.dylib",
            arch+"/libzchaff.so", arch+"/libzchaffmincost.so", arch+"/libzchaffx1.so", arch+"/libzchaff.jnilib",
-           arch+"/liblingeling.so", arch+"/libglucose.so", arch+"/libcryptominisat.so", arch+"/libcryptominisat",
-           arch+"/berkmin", arch+"/spear");
+           arch+"/liblingeling.so", arch+"/liblingeling.dylib", arch+"/liblingeling.jnilib", 
+           arch+"/libglucose.so", arch+"/libglucose.dylib", arch+"/libglucose.jnilib",
+           arch+"/libcryptominisat.so", arch+"/libcryptominisat.la", arch+"/libcryptominisat.dylib", arch+"/libcryptominisat.jnilib",
+           arch+"/berkmin", arch+"/spear", arch+"/cryptominisat");
         Util.copy(false, false, platformBinary,
            arch+"/minisat.dll", arch+"/minisatprover.dll", arch+"/zchaff.dll",
            arch+"/berkmin.exe", arch+"/spear.exe");
