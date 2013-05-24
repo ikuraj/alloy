@@ -211,6 +211,14 @@ public class PreferencesDialog extends JFrame {
    }
    
    private static boolean loadLibrary(String library) {
+       boolean loaded = _loadLibrary(library);
+       String libName = System.mapLibraryName(library); 
+       if (loaded) System.out.println("Loaded: " + libName); 
+       else System.out.println("Failed to load: " + libName); 
+       return loaded;
+   }
+
+   private static boolean _loadLibrary(String library) {
       try { System.loadLibrary(library);      return true; } catch(UnsatisfiedLinkError ex) { }
       try { System.loadLibrary(library+"x1"); return true; } catch(UnsatisfiedLinkError ex) { }
       try { System.loadLibrary(library+"x2"); return true; } catch(UnsatisfiedLinkError ex) { }

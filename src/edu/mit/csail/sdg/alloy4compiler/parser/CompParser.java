@@ -2235,7 +2235,7 @@ public class CompParser extends java_cup.runtime.lr_parser {
     }
   }
 
-  static final String INT_LIB_NAME = "util/integer";
+  static final String INT_LIB_NAME = "util" + java.io.File.separator + "integer";
   static CompModule alloy_parseStream (List<Object> seenDollar,
   Map<String,String> loaded, Map<String,String> fc, CompModule root,
   int lineOffset, String filename, String prefix, int initialResolutionMode) throws Err, FileNotFoundException, IOException {

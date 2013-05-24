@@ -368,8 +368,10 @@ public final class SimpleGUI implements ComponentListener, Listener {
            arch+"/libcryptominisat.so", arch+"/libcryptominisat.la", arch+"/libcryptominisat.dylib", arch+"/libcryptominisat.jnilib",
            arch+"/berkmin", arch+"/spear", arch+"/cryptominisat");
         Util.copy(false, false, platformBinary,
-           arch+"/minisat.dll", arch+"/minisatprover.dll", arch+"/zchaff.dll",
-           arch+"/berkmin.exe", arch+"/spear.exe");
+           arch+"/minisat.dll", arch+"/cygminisat.dll", arch+"/libminisat.dll.a", 
+           arch+"/minisatprover.dll", arch+"/cygminisatprover.dll", arch+"/libminisatprover.dll.a", 
+           arch+"/glucose.dll", arch+"/cygglucose.dll", arch+"/libglucose.dll.a", 
+           arch+"/zchaff.dll", arch+"/berkmin.exe", arch+"/spear.exe");
         // Copy the model files
         Util.copy(false, true, alloyHome(),
            "models/book/appendixA/addressBook1.als", "models/book/appendixA/addressBook2.als", "models/book/appendixA/barbers.als",

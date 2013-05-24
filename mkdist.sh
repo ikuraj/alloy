@@ -3,6 +3,8 @@
 BUILD_DATE=$(date +"%F %H:%M %Z")
 VERSION="4.2_$(date +"%F")"
 
+CP_SEP=";"
+
 PATH=$JDK6/bin:$PATH
 
 if [[ -z $KODKOD_HOME ]]
@@ -22,13 +24,13 @@ function compile {
     echo "[cleaning up the bin folder...]"
     rm -rf bin/*
 
-    CP=$(ls -1 lib/*.jar | xargs | sed 's/\ /:/g')
+    CP=$(ls -1 lib/*.jar | xargs | sed 's/\ /'$CP_SEP'/g')
     if [[ -d $KODKOD_HOME ]]
     then
         CP=$KODKOD_HOME/bin:$CP
     fi
     echo "[compiling...]"
-    find src -name "*.java" | xargs javac -cp $CP -d bin -target 1.5
+    find src -name "*.java" | xargs javac -cp $CP -d bin # -source 1.5 -target 1.5
 
     mv $version_file.bak $version_file
 }
