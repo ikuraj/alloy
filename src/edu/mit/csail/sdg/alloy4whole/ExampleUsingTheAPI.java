@@ -85,10 +85,14 @@ public final class ExampleUsingTheAPI {
         // run { some f && SomeG[] } for 3 but 2 int, 1 seq, 5 A, exactly 6 B
         Expr expr2 = f.some().and(someG.call());
         Command cmd2 = new Command(false, 3, 2, 1, expr2);
-        cmd2 = cmd2.change(A, false, 5);
-        cmd2 = cmd2.change(B, true, 6);
+        cmd2 = cmd2.change(A, false, 1);
+        cmd2 = cmd2.change(B, true, 1);
         A4Solution sol2 = TranslateAlloyToKodkod.execute_command(NOP, sigs, cmd2, opt);
-        System.out.println("[Solution2]:");
-        System.out.println(sol2.toString());
+
+        while (sol2.satisfiable()) {
+            System.out.println("[Solution2]:");
+            System.out.println(sol2.toString());
+            sol2 = sol2.next();
+        }
     }
 }

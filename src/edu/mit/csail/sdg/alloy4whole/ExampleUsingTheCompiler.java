@@ -63,6 +63,7 @@ public final class ExampleUsingTheCompiler {
 
             // Choose some default options for how you want to execute the commands
             A4Options options = new A4Options();
+
             options.solver = A4Options.SatSolver.SAT4J;
 
             for (Command command: world.getAllCommands()) {

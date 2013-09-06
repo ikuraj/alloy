@@ -41,12 +41,12 @@ fun dec [n: Natural] : lone Natural { ord/prev[n] }
 
 /** returns n1 + n2 */
 fun add [n1, n2: Natural] : lone Natural {
-  {n: Natural | #ord/prevs[n] = #ord/prevs[n1] + #ord/prevs[n2]}
+  {n: Natural | #ord/prevs[n] = plus[#ord/prevs[n1], #ord/prevs[n2]]}
 }
 
 /** returns n1 - n2 */
 fun sub [n1, n2: Natural] : lone Natural {
-  {n: Natural | #ord/prevs[n1] = #ord/prevs[n2] + #ord/prevs[n]}
+  {n: Natural | #ord/prevs[n1] = plus[#ord/prevs[n2], #ord/prevs[n]]}
 }
 
 /** returns n1 * n2 */
