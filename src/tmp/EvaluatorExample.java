@@ -1,9 +1,6 @@
 package tmp;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.XMLNode;
@@ -23,11 +20,9 @@ public class EvaluatorExample {
 
     public static void main(String[] args) throws Exception {
         A4Reporter rep = new A4Reporter();
-        File tmpAls = File.createTempFile("alloyEvaluator", ".als");
-        tmpAls.deleteOnExit();
-        flushModelToFile(tmpAls);
+        File tmpAls = CompUtil.flushModelToFile(model, null);
         {
-            Module world = CompUtil.parseEverything_fromFile(rep, null, tmpAls.getAbsolutePath());
+            Module world = CompUtil.parseEverything_fromString(rep, model);
             A4Options opt = new A4Options();
             opt.originalFilename = tmpAls.getAbsolutePath();
             opt.solver = A4Options.SatSolver.SAT4J;
@@ -53,18 +48,6 @@ public class EvaluatorExample {
             System.out.println(ans.eval(e));
             e = CompUtil.parseOneExpression_fromString(ansWorld, "Point");
             System.out.println(ans.eval(e));
-        }
-    }
-
-    private static void flushModelToFile(File tmpAls) throws IOException {
-        BufferedOutputStream bos = null;
-        try {
-            bos = new BufferedOutputStream(new FileOutputStream(tmpAls));
-            bos.write(model.getBytes());
-            bos.flush();
-        } finally {
-            if (bos != null)
-                bos.close();
         }
     }
 

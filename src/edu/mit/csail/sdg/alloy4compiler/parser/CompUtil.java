@@ -15,8 +15,10 @@
 
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -35,7 +37,6 @@ import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.Module;
-import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompModule.Open;
 
 /** This class provides convenience methods for calling the parser and the compiler. */
@@ -105,7 +106,7 @@ public final class CompUtil {
      * @param thispath - the set of filenames involved in the current chain_of_file_opening
      */
     private static CompModule parseRecursively
-    (List<Object> seenDollar, Map<String,String> loaded, Map<String,String> fc, Pos pos, String filename, CompModule root, String prefix, Set<String> thispath, int initialResolution)
+    (List<Object> seenDollar, Map<String,String> loaded, Map<String,String> fc, Pos pos, String filename,  CompModule root, String prefix, Set<String> thispath, int initialResolution)
     throws Err, FileNotFoundException, IOException {
         // Add the filename into a ArrayList, so that we can detect cycles in the module import graph
         // How? I'll argue that (filename appears > 1 time along a chain) <=> (infinite loop in the import graph)
@@ -263,6 +264,43 @@ public final class CompUtil {
             throw new ErrorFatal("IOException occurred: "+ex.getMessage(), ex);
         } catch(Throwable ex) {
             if (ex instanceof Err) throw (Err)ex; else throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
+        }
+    }
+    
+    /**
+     * @param rep - may be null
+     * @param content - alloy model
+     */
+    public static CompModule parseEverything_fromString(A4Reporter rep, String content) throws Err {
+        if (rep == null) rep = new A4Reporter();
+        try {
+            File tmpAls = flushModelToFile(content, null);
+            return CompUtil.parseEverything_fromFile(rep, null, tmpAls.getAbsolutePath());
+        } catch (IOException ex) {
+            throw new ErrorFatal("IOException occurred: "+ex.getMessage(), ex);
+        }
+    }
+    
+    /**
+     * Saves the given alloy model to a file. 
+     * 
+     * @param model - alloy model
+     * @param tmpAls - if null, a temporary file will be created and returned
+     */
+    public static File flushModelToFile(String model, File tmpAls) throws IOException {
+        if (tmpAls == null) {
+            tmpAls = File.createTempFile("alloy_heredoc", ".als");
+            tmpAls.deleteOnExit();
+        }        
+        BufferedOutputStream bos = null;
+        try {
+            bos = new BufferedOutputStream(new FileOutputStream(tmpAls));
+            bos.write(model.getBytes());
+            bos.flush();
+            return tmpAls;
+        } finally {
+            if (bos != null)
+                bos.close();
         }
     }
 }
