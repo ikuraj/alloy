@@ -31,7 +31,9 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
+
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -44,6 +46,7 @@ import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
+
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.OurBorder;
 import edu.mit.csail.sdg.alloy4.OurCombobox;
@@ -262,9 +265,9 @@ public final class VizGraphPanel extends JPanel {
       seeDot=yesOrNo;
       remakeAll();
    }
-   
+
    public String toDot() {
-       return vizState.getGraph(currentProjection).toString(); 
+       return vizState.getGraph(currentProjection).toString();
    }
 
    /** Retrieves the actual GraphViewer object that contains the graph (or null if the graph hasn't loaded yet) */
@@ -279,5 +282,12 @@ public final class VizGraphPanel extends JPanel {
             - split.getDividerSize()
             - split.getRightComponent().getPreferredSize().height
       );
+   }
+
+   public void resetProjectionAtomCombos() {
+       for (Entry<AlloyType, TypePanel> e : type2panel.entrySet()) {
+           if (e.getValue().atomCombo != null)
+               e.getValue().atomCombo.setSelectedIndex(0);
+       }
    }
 }

@@ -19,7 +19,6 @@ import static edu.mit.csail.sdg.alloy4.A4Preferences.SyntaxDisabled;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.TabSize;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.Unrolls;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.VerbosityPref;
-import static edu.mit.csail.sdg.alloy4.A4Preferences.VisualizationAlgorithm;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.WarningNonfatal;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.Welcome;
 
@@ -79,12 +78,12 @@ public class PreferencesDialog extends JFrame {
 //   private JPanel editorPane;
 //   private JPanel solverPane;
 //   private JPanel miscPane;
-   
+
    private static class MyIntSpinnerModel extends AbstractSpinnerModel {
       private final IntPref pref;
-      public MyIntSpinnerModel(final IntPref pref) { 
+      public MyIntSpinnerModel(final IntPref pref) {
          this.pref = pref;
-         this.pref.addChangeListener(new ChangeListener() {            
+         this.pref.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
                fireStateChanged();
             }
@@ -95,19 +94,19 @@ public class PreferencesDialog extends JFrame {
       public Object getNextValue()       { return Math.min(pref.max, pref.get() + 1); }
       public Object getPreviousValue()   { return Math.max(pref.min, pref.get() - 1); }
    }
-   
+
    @SuppressWarnings("unchecked")
    private static class CBModel<T> extends AbstractListModel implements ComboBoxModel {
       private final ChoicePref<T> pref;
-      public CBModel(final ChoicePref<T> pref) { 
+      public CBModel(final ChoicePref<T> pref) {
          this.pref = pref;
-         this.pref.addChangeListener(new ChangeListener() {            
+         this.pref.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
                fireContentsChanged(pref, -1, -1);
             }
          });
       }
-      
+
       public int getSize()                       { return pref.validChoices().size(); }
       public Object getElementAt(int index)      { return pref.validChoices().get(index); }
       public void setSelectedItem(Object anItem) { pref.set((T)anItem); }
@@ -116,7 +115,7 @@ public class PreferencesDialog extends JFrame {
 
    private static class BRModel<T> implements BoundedRangeModel {
       private final ChoicePref<T> pref;
-      
+
       public BRModel(ChoicePref<T> pref) {
          this.pref = pref;
       }
@@ -125,12 +124,12 @@ public class PreferencesDialog extends JFrame {
       public int getMaximum() { return pref.validChoices().size() - 1; }
       public int getValue()   { return pref.getSelectedIndex(); }
       public int getExtent()  { return 0; }
-      
+
       public void setValueIsAdjusting(boolean b) {}
       public boolean getValueIsAdjusting() { return false; }
-      
+
       public void setRangeProperties(int value, int extent, int min, int max, boolean adjusting) {
-         throw new UnsupportedOperationException();         
+         throw new UnsupportedOperationException();
       }
 
       public void addChangeListener(ChangeListener x)    { pref.addChangeListener(x); }
@@ -139,31 +138,31 @@ public class PreferencesDialog extends JFrame {
       public void setValue(int n)   { if (n >= getMinimum() && n <= getMaximum()) pref.setSelectedIndex(n); }
       public void setExtent(int n)  { throw new UnsupportedOperationException(); }
       public void setMinimum(int n) { throw new UnsupportedOperationException(); }
-      public void setMaximum(int n) { throw new UnsupportedOperationException(); }      
+      public void setMaximum(int n) { throw new UnsupportedOperationException(); }
    }
 
    private abstract class CBRenderer extends BasicComboBoxRenderer {
       @Override
-      public Component getListCellRendererComponent(JList list, Object value, int index, 
+      public Component getListCellRendererComponent(JList list, Object value, int index,
             boolean isSelected, boolean cellHasFocus) {
          return super.getListCellRendererComponent(list, render(value), index, isSelected, cellHasFocus);
       }
-      protected abstract Object render(Object value);         
+      protected abstract Object render(Object value);
    }
-   
+
    private final Map<Pref<?>, JComponent> pref2comp = new HashMap<Pref<?>, JComponent>();
    private final String binary;
    private final SwingLogPanel log;
-   
+
    public PreferencesDialog(SwingLogPanel log, String binary) {
-      this.log = log; 
+      this.log = log;
       this.binary = binary;
       if (log != null && binary != null) {
          Solver.setChoices(testSolvers(), SatSolver.SAT4J);
-      } 
+      }
       initUI();
    }
-   
+
    protected Iterable<SatSolver> testSolvers() {
       List<SatSolver> satChoices = SatSolver.values().makeCopy();
       satChoices.remove(SatSolver.BerkMinPIPE);
@@ -197,7 +196,7 @@ public class PreferencesDialog extends JFrame {
       }
       return satChoices;
    }
-   
+
    /** Returns true iff the output says "s SATISFIABLE" (while ignoring comment lines and value lines) */
    private static boolean isSat(String output) {
        int i=0, n=output.length();
@@ -209,12 +208,12 @@ public class PreferencesDialog extends JFrame {
        }
        return output.substring(i).startsWith("s SATISFIABLE");
    }
-   
+
    private static boolean loadLibrary(String library) {
        boolean loaded = _loadLibrary(library);
-       String libName = System.mapLibraryName(library); 
-       if (loaded) System.out.println("Loaded: " + libName); 
-       else System.out.println("Failed to load: " + libName); 
+       String libName = System.mapLibraryName(library);
+       if (loaded) System.out.println("Loaded: " + libName);
+       else System.out.println("Failed to load: " + libName);
        return loaded;
    }
 
@@ -233,7 +232,6 @@ public class PreferencesDialog extends JFrame {
       tab.addTab("Editor", initEditorPane());
       tab.addTab("Solver", initSolverPane());
       tab.addTab("Miscellaneous", initMiscPane());
-      tab.addTab("Visualizer", initVizPane());
 
       add(tab);
       setTitle("Alloy Preferences");
@@ -248,26 +246,26 @@ public class PreferencesDialog extends JFrame {
       JPanel p = OurUtil.makeGrid(2, gbc().make(), mkCombo(FontName), mkCombo(FontSize), mkCombo(TabSize));
       addToGrid(p, mkCheckBox(SyntaxDisabled), gbc().pos(0, 3).gridwidth(2));
       addToGrid(p, mkCheckBox(AntiAlias),      gbc().pos(0, 4).gridwidth(2));
-      
+
 //      JPanel p = new JPanel(new GridBagLayout());
 //      addToGrid(p, mkCheckBox(SyntaxDisabled), gbc().pos(0, 0).gridwidth(2));
 //      addToGrid(p, mkCheckBox(AntiAlias),      gbc().pos(0, 1).gridwidth(2));
 //      addRowToGrid(p, gbc().pos(0, 2), mkComboArr(FontName));
 //      addRowToGrid(p, gbc().pos(0, 3), mkComboArr(FontSize));
 //      addRowToGrid(p, gbc().pos(0, 4), mkComboArr(TabSize));
-      
+
       return makeTabPane(p);
    }
-   
+
    protected Component initSolverPane() {
-      JPanel p = OurUtil.makeGrid(2, gbc().make(), mkCombo(Solver), mkSlider(SkolemDepth), 
+      JPanel p = OurUtil.makeGrid(2, gbc().make(), mkCombo(Solver), mkSlider(SkolemDepth),
             mkCombo(Unrolls), mkCombo(CoreGranularity), mkSlider(CoreMinimization));
       int r = 5;
       addToGrid(p, mkCheckBox(NoOverflow),           gbc().pos(0, r++).gridwidth(2));
       addToGrid(p, mkCheckBox(ImplicitThis),         gbc().pos(0, r++).gridwidth(2));
       addToGrid(p, mkCheckBox(InferPartialInstance), gbc().pos(0, r++).gridwidth(2));
       addToGrid(p, mkCheckBox(RecordKodkod),         gbc().pos(0, r++).gridwidth(2));
-      
+
       Solver.addChangeListener(new ChangeListener() {
          public void stateChanged(ChangeEvent e) {
             boolean enableCore = Solver.get() == SatSolver.MiniSatProverJNI;
@@ -280,7 +278,7 @@ public class PreferencesDialog extends JFrame {
    }
 
    protected Component initMiscPane() {
-      JPanel p = OurUtil.makeGrid(2, gbc().make(), mkCombo(SubMemory), mkCombo(SubStack), 
+      JPanel p = OurUtil.makeGrid(2, gbc().make(), mkCombo(SubMemory), mkCombo(SubStack),
             mkCombo(VerbosityPref), mkCombo(LAF));
       int r = 4;
       addToGrid(p, mkCheckBox(Welcome),          gbc().pos(0, r++).gridwidth(2));
@@ -288,29 +286,20 @@ public class PreferencesDialog extends JFrame {
       addToGrid(p, mkCheckBox(AutoVisualize),    gbc().pos(0, r++).gridwidth(2));
       return makeTabPane(p);
    }
-   
-   protected Component initVizPane() {
-       JPanel p = OurUtil.makeGrid(2, gbc().make(), mkCombo(VisualizationAlgorithm)); 
-//               mkEditor(GridLayoutRows), 
-//               mkEditor(GridLayoutCols));
-//       int r = 4;
-//       addToGrid(p, mkCheckBox(Welcome),          gbc().pos(0, r++).gridwidth(2));
-       return makeTabPane(p);
-    }
- 
+
    protected JCheckBox mkCheckBox(final BooleanPref pref) {
       final JCheckBox cb = make(new JCheckBox(pref.getTitleAction()));
-      pref2comp.put(pref, cb); 
+      pref2comp.put(pref, cb);
       ChangeListener ctrl = new ChangeListener() {
          public void stateChanged(ChangeEvent e) {
-            cb.setSelected(pref.get());            
+            cb.setSelected(pref.get());
          }
       };
       pref.addChangeListener(ctrl);
       ctrl.stateChanged(null);
       return cb;
    }
-   
+
    protected <T> JPanel mkSlider(final ChoicePref<T> pref) {
       final JSlider sl = make(new JSlider(mkBoundedRangeModel(pref)));
       pref2comp.put(pref, sl);
@@ -346,15 +335,15 @@ public class PreferencesDialog extends JFrame {
       }
       return dict;
    }
-   
+
    protected JPanel mkSpinner(final IntPref pref) {
        JSpinner jsp = new JSpinner(mkSpinnerModelFor(pref));
-       return OurUtil.makeH(pref.title + ": ", jsp);   
+       return OurUtil.makeH(pref.title + ": ", jsp);
    }
-   
+
    protected JPanel mkEditor(final IntPref pref) {
        final JTextField jtf = new JTextField(pref.get().toString());
-       jtf.setInputVerifier(new InputVerifier() {        
+       jtf.setInputVerifier(new InputVerifier() {
            @Override public boolean verify(JComponent input) {
                try {
                    JTextField src = (JTextField) input;
@@ -370,24 +359,24 @@ public class PreferencesDialog extends JFrame {
                char c = e.getKeyChar();
                if (c < '0' || c > '9') {
                    e.consume();  // ignore event
-               }             
+               }
             }
        });
-       jtf.getDocument().addDocumentListener(new DocumentListener() {        
-           public void removeUpdate(DocumentEvent e)  { updatePref(); }        
+       jtf.getDocument().addDocumentListener(new DocumentListener() {
+           public void removeUpdate(DocumentEvent e)  { updatePref(); }
            public void insertUpdate(DocumentEvent e)  { updatePref(); }
            public void changedUpdate(DocumentEvent e) { updatePref(); }
            private void updatePref() {
                String val = jtf.getText();
-               try { 
-                   pref.set(Integer.parseInt(val)); 
+               try {
+                   pref.set(Integer.parseInt(val));
                } catch (NumberFormatException ex) {
-               }            
+               }
            }
        });
-       return OurUtil.makeH(pref.title + ": ", jtf);   
+       return OurUtil.makeH(pref.title + ": ", jtf);
    }
-   
+
    @SuppressWarnings({ "unchecked" })
    protected <T> JPanel mkCombo(final ChoicePref<T> pref) {
       JComboBox cb = make(new JComboBox(mkComboBoxModelFor(pref)));
@@ -395,35 +384,35 @@ public class PreferencesDialog extends JFrame {
       cb.setRenderer(new CBRenderer() {
          @Override protected Object render(Object value) { return pref.renderValueShort((T)value); }
       });
-      return OurUtil.makeH(pref.title + ": ", cb);      
+      return OurUtil.makeH(pref.title + ": ", cb);
    }
-   
+
    protected <T> Component[] mkComboArr(final ChoicePref<T> pref) {
       return mkCombo(pref).getComponents();
    }
-   
+
    private SpinnerModel mkSpinnerModelFor(IntPref pref            )      { return new MyIntSpinnerModel(pref); }
    private <T> ComboBoxModel mkComboBoxModelFor(ChoicePref<T> pref)      { return new CBModel<T>(pref); }
    private <T> BoundedRangeModel mkBoundedRangeModel(ChoicePref<T> pref) { return new BRModel<T>(pref); }
-   
+
    private <T extends JComponent> T make(T comp) {
       return OurUtil.make(comp);
    }
-   
+
    private JLabel makeLabel(Object obj) {
       return OurUtil.make(new JLabel(obj.toString()));
    }
-   
+
    private Component makeTabPane(JPanel pane) {
       JPanel p = new JPanel(new GridBagLayout());
       //pane.setBorder(new OurBorder(true, true, true, true));
-      p.add(pane, 
+      p.add(pane,
             gbc().pos(0, 0)
                  .fill(GridBagConstraints.BOTH)
                  .insets(new Insets(5, 5, 5, 5))
                  .anchor(GridBagConstraints.NORTH)
                  .make());
-      p.add(new JLabel(), 
+      p.add(new JLabel(),
             gbc().pos(0, 1)
                  .weighty(1)
                  .fill(GridBagConstraints.BOTH)
@@ -459,7 +448,7 @@ public class PreferencesDialog extends JFrame {
          pref.addChangeListener(l);
       }
    }
-   
+
    public static void main(String[] args) {
       SwingUtilities.invokeLater(new Runnable() {
          public void run() {

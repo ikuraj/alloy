@@ -553,7 +553,7 @@ public final class VizGUI implements ComponentListener {
 //            break;
 //         }
          default: {
-            if (myGraphPanel==null) { 
+            if (myGraphPanel==null) {
                 myGraphPanel=new VizGraphPanel(myState, false);
             } else {
                 myGraphPanel.seeDot(false);
@@ -644,9 +644,9 @@ public final class VizGUI implements ComponentListener {
           @Override public void setFont(Font font) { ta.setFont(font); }
        };
        ans.setBorder(new OurBorder(true, false, true, false));
-       return ans; 
+       return ans;
    }
-   
+
 //   /** Helper method that reads a file and then return a JTextArea containing it. */
 //   private JComponent getTextComponentFromFile(String filename) {
 //      String text = "";
@@ -683,6 +683,7 @@ public final class VizGUI implements ComponentListener {
          this.xmlFileName = xmlFileName;
       }
       if (!xmlLoaded.contains(xmlFileName)) xmlLoaded.add(xmlFileName);
+      if (myGraphPanel != null) myGraphPanel.resetProjectionAtomCombos();
       toolbar.setEnabled(true);
       settingsOpen=0;
       thememenu.setEnabled(true);
@@ -851,7 +852,7 @@ public final class VizGUI implements ComponentListener {
       saveThemeFile(file.getPath());
       return null;
    }
-   
+
    private Runner doExportDot() {
        if (wrap) return wrapMe();
        File file=OurDialog.askFile(false, null, ".dot", ".dot graph files");
@@ -881,7 +882,7 @@ public final class VizGUI implements ComponentListener {
        }
        return null;
    }
-   
+
    /** This method resets the current theme. */
    private Runner doResetTheme() {
       if (wrap) return wrapMe();
@@ -1015,7 +1016,7 @@ public final class VizGUI implements ComponentListener {
        if (!wrap) { currentMode = VisualizerMode.TEXT; updateDisplay(); return null; }
        return wrapMe();
     }
-   
+
 //   /** This method changes the display mode to show the equivalent dot text (the return value is always null). */
 //   public Runner doShowDot() {
 //      if (!wrap) { currentMode=VisualizerMode.DOT; updateDisplay(); return null; }

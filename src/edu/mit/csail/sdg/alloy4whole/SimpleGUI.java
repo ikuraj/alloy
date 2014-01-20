@@ -42,7 +42,6 @@ import static edu.mit.csail.sdg.alloy4.A4Preferences.SyntaxDisabled;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.TabSize;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.Unrolls;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.VerbosityPref;
-import static edu.mit.csail.sdg.alloy4.A4Preferences.VisualizationAlgorithm;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.WarningNonfatal;
 import static edu.mit.csail.sdg.alloy4.A4Preferences.Welcome;
 import static edu.mit.csail.sdg.alloy4.OurUtil.menu;
@@ -118,11 +117,11 @@ import com.apple.eawt.Application;
 import com.apple.eawt.ApplicationAdapter;
 import com.apple.eawt.ApplicationEvent;
 
+import edu.mit.csail.sdg.alloy4.A4Preferences;
 import edu.mit.csail.sdg.alloy4.A4Preferences.BooleanPref;
 import edu.mit.csail.sdg.alloy4.A4Preferences.ChoicePref;
 import edu.mit.csail.sdg.alloy4.A4Preferences.StringPref;
 import edu.mit.csail.sdg.alloy4.A4Preferences.Verbosity;
-import edu.mit.csail.sdg.alloy4.A4Preferences;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.Computer;
 import edu.mit.csail.sdg.alloy4.Err;
@@ -363,14 +362,14 @@ public final class SimpleGUI implements ComponentListener, Listener {
            arch+"/libminisat.so", arch+"/libminisatx1.so", arch+"/libminisat.jnilib", arch+"/libminisat.dylib",
            arch+"/libminisatprover.so", arch+"/libminisatproverx1.so", arch+"/libminisatprover.jnilib", arch+"/libminisatprover.dylib",
            arch+"/libzchaff.so", arch+"/libzchaffmincost.so", arch+"/libzchaffx1.so", arch+"/libzchaff.jnilib",
-           arch+"/liblingeling.so", arch+"/liblingeling.dylib", arch+"/liblingeling.jnilib", 
+           arch+"/liblingeling.so", arch+"/liblingeling.dylib", arch+"/liblingeling.jnilib",
            arch+"/libglucose.so", arch+"/libglucose.dylib", arch+"/libglucose.jnilib",
            arch+"/libcryptominisat.so", arch+"/libcryptominisat.la", arch+"/libcryptominisat.dylib", arch+"/libcryptominisat.jnilib",
            arch+"/berkmin", arch+"/spear", arch+"/cryptominisat");
         Util.copy(false, false, platformBinary,
-           arch+"/minisat.dll", arch+"/cygminisat.dll", arch+"/libminisat.dll.a", 
-           arch+"/minisatprover.dll", arch+"/cygminisatprover.dll", arch+"/libminisatprover.dll.a", 
-           arch+"/glucose.dll", arch+"/cygglucose.dll", arch+"/libglucose.dll.a", 
+           arch+"/minisat.dll", arch+"/cygminisat.dll", arch+"/libminisat.dll.a",
+           arch+"/minisatprover.dll", arch+"/cygminisatprover.dll", arch+"/libminisatprover.dll.a",
+           arch+"/glucose.dll", arch+"/cygglucose.dll", arch+"/libglucose.dll.a",
            arch+"/zchaff.dll", arch+"/berkmin.exe", arch+"/spear.exe");
         // Copy the model files
         Util.copy(false, true, alloyHome(),
@@ -800,14 +799,14 @@ public final class SimpleGUI implements ComponentListener, Listener {
         t.requestFocusInWindow();
         return null;
     }
-    
+
     /** This method performs Edit->Preferences. */
     private Runner doPreferences() {
         if (wrap) return wrapMe();
         prefDialog.setVisible(true);
         return null;
     }
-    
+
    /**
     * This method applies the look and feel stored in a user preference. Default
     * look and feel for Mac and Windows computers is "Native", and for other is
@@ -1140,7 +1139,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
     }
 
     //===============================================================================================================//
-    
+
     /** This method refreshes the "Option" menu. */
     private Runner doRefreshOption() {
         if (wrap) return wrapMe();
@@ -1148,35 +1147,29 @@ public final class SimpleGUI implements ComponentListener, Listener {
             wrap = true;
             optmenu.removeAll();
             addToMenu(optmenu, Welcome);
-            
+
             optmenu.addSeparator();
 
             addToMenu(optmenu, WarningNonfatal);
             addToMenu(optmenu, SubMemory, SubStack, VerbosityPref);
-            
+
             optmenu.addSeparator();
-            
+
             addToMenu(optmenu, SyntaxDisabled);
             addToMenu(optmenu, FontSize, FontName, TabSize);
-            if (Util.onMac() || Util.onWindows()) 
+            if (Util.onMac() || Util.onWindows())
                menuItem(optmenu, "Use anti-aliasing: Yes", false);
-            else 
-               addToMenu(optmenu, AntiAlias); 
+            else
+               addToMenu(optmenu, AntiAlias);
             addToMenu(optmenu, A4Preferences.LAF);
-            
+
             optmenu.addSeparator();
-            
-            addToMenu(optmenu, VisualizationAlgorithm);
-            
-            optmenu.addSeparator();
-            
-            optmenu.addSeparator();
-            
+
             addToMenu(optmenu, Solver);
             addToMenu(optmenu, SkolemDepth);
-            JMenu cmMenu = addToMenu(optmenu, CoreMinimization); cmMenu.setEnabled(Solver.get() == SatSolver.MiniSatProverJNI); 
-            JMenu cgMenu = addToMenu(optmenu, CoreGranularity); cgMenu.setEnabled(Solver.get() == SatSolver.MiniSatProverJNI); 
-            
+            JMenu cmMenu = addToMenu(optmenu, CoreMinimization); cmMenu.setEnabled(Solver.get() == SatSolver.MiniSatProverJNI);
+            JMenu cgMenu = addToMenu(optmenu, CoreGranularity); cgMenu.setEnabled(Solver.get() == SatSolver.MiniSatProverJNI);
+
             addToMenu(optmenu, AutoVisualize, RecordKodkod);
 
             if (Version.experimental) {
@@ -1184,7 +1177,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
               addToMenu(optmenu, ImplicitThis, NoOverflow);
               addToMenu(optmenu, ImplicitThis, InferPartialInstance);
             }
-            
+
         } finally {
             wrap = false;
         }
@@ -1208,7 +1201,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
         if (!wrap) { OurAntiAlias.enableAntiAlias(AntiAlias.get()); }
         return wrapMe();
     }
-    
+
     /** This method toggles the "syntax highlighting" checkbox. */
     private Runner doOptSyntaxHighlighting() {
         if (!wrap) { text.enableSyntax(!SyntaxDisabled.get()); }
@@ -1539,10 +1532,10 @@ public final class SimpleGUI implements ComponentListener, Listener {
            Application.getApplication().addApplicationListener(new ApplicationAdapter() {
               @Override public void handleAbout(ApplicationEvent ae)       { doAbout(); }
               @Override public void handlePreferences(ApplicationEvent ae) { doPreferences(); }
-              @Override public void handleQuit(ApplicationEvent arg0)      { doQuit(); }               
+              @Override public void handleQuit(ApplicationEvent arg0)      { doQuit(); }
            });
         }
-        
+
         doLookAndFeel();
 
         // Figure out the desired x, y, width, and height
@@ -1603,8 +1596,8 @@ public final class SimpleGUI implements ComponentListener, Listener {
 //            }
 //        };
 //        c.callback(null);
-        
-        SimpleGUI.this.frame = frame; 
+
+        SimpleGUI.this.frame = frame;
         finishInit(args, windowWidth);
     }
 
@@ -1645,7 +1638,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
         // Copy required files from the JAR
         copyFromJAR();
         final String binary = alloyHome() + fs + "binary";
-        
+
         // Create the menu bar
         JMenuBar bar = new JMenuBar();
         try {
@@ -1667,7 +1660,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
         // Pre-load the visualizer
         viz = new VizGUI(false, "", windowmenu2, enumerator, evaluator);
         viz.doSetFontSize(FontSize.get());
-        
+
         // Create the toolbar
         try {
             wrap = true;
@@ -1736,10 +1729,10 @@ public final class SimpleGUI implements ComponentListener, Listener {
             old.setAccessible(true);
             old.set(null,newarray);
         } catch (Throwable ex) { }
-        
+
         // Pre-load the preferences dialog
         prefDialog = new PreferencesDialog(log, binary);
-        prefDialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);        
+        prefDialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         try {
            wrap = true;
            prefDialog.addChangeListener(wrapToChangeListener(doOptRefreshFont()), FontName, FontSize, TabSize);
@@ -1845,18 +1838,18 @@ public final class SimpleGUI implements ComponentListener, Listener {
       }
       return true;
    }
-   
-   /** Creates menu items from boolean preferences (<code>prefs</code>) 
+
+   /** Creates menu items from boolean preferences (<code>prefs</code>)
     *  and adds them to a given parent menu (<code>parent</code>). */
-   private static void addToMenu(JMenu parent, BooleanPref... prefs) {      
+   private static void addToMenu(JMenu parent, BooleanPref... prefs) {
       for (BooleanPref pref : prefs) {
         Action action = pref.getTitleAction();
         Object name = action.getValue(Action.NAME);
         menuItem(parent, name + ": " + (pref.get() ? "Yes" : "No"), action);
       }
    }
-   
-   /** Creates a menu item for each choice preference (from <code>prefs</code>)  
+
+   /** Creates a menu item for each choice preference (from <code>prefs</code>)
     *  and adds it to a given parent menu (<code>parent</code>).*/
    @SuppressWarnings({ "rawtypes", "unchecked" })
    private static JMenu addToMenu(JMenu parent, ChoicePref... prefs) {
@@ -1868,21 +1861,21 @@ public final class SimpleGUI implements ComponentListener, Listener {
       }
       return last;
    }
-   
-   /** Creates a sub-menu item for each choice of a given preference (<code>pref</code>)  
+
+   /** Creates a sub-menu item for each choice of a given preference (<code>pref</code>)
     *  and adds it to a given parent menu (<code>parent</code>).*/
    @SuppressWarnings({ "rawtypes", "unchecked" })
    private static void addSubmenuItems(JMenu parent, ChoicePref pref) {
       Object selected = pref.get();
       for(Object item: pref.validChoices()) {
          menuItem(parent, pref.renderValueLong(item).toString(), pref.getAction(item), item==selected?iconYes:iconNo);
-      }      
-   }   
-   
+      }
+   }
+
    /** Takes a <code>Runner</code> and wraps it into a <code>ChangeListener</code> */
    private static ChangeListener wrapToChangeListener(final Runner r) {
       assert r != null;
-      return new ChangeListener() {        
+      return new ChangeListener() {
          public void stateChanged(ChangeEvent e) {
             r.run();
          }
