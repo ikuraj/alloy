@@ -198,7 +198,7 @@ public class A4Preferences {
       public BooleanPref(String id, boolean defaultValue)               { super(id); this.defaultValue = defaultValue; }
       public BooleanPref(String id)                                     { this(id, false); }
 
-      @Override protected String serialize(Boolean value) { return value ? "y" : ""; }
+      @Override protected String serialize(Boolean value) { return value ? "y" : "n"; }
       @Override protected Boolean parse(String str)       { return "y".equals(str); }
       @Override protected Boolean defaultValue()          { return defaultValue; }
 
