@@ -390,7 +390,9 @@ public class A4Preferences {
       @Override public final String toString() { return label; }
    }
    
-   public static Pref<?>[] allPrefs() {
+   public static Pref<?>[] nonUserPrefs = new Pref<?>[] { AnalyzerX, AnalyzerHeight, AnalyzerWidth, AnalyzerY };
+   
+   public static List<Pref<?>> allPrefs() {
       List<Pref<?>> ans = new ArrayList<A4Preferences.Pref<?>>();
       Class<A4Preferences> self = A4Preferences.class;
       for (Field f : self.getDeclaredFields()) {
@@ -398,9 +400,14 @@ public class A4Preferences {
             try { ans.add((Pref<?>) f.get(self)); } catch (Exception e) {} 
          }
       }
-      return ans.toArray(new Pref<?>[0]);
+      return ans;
    };
-
+   
+   public static List<Pref<?>> allUserPrefs() {
+       List<Pref<?>> ans = allPrefs();
+       for (Pref<?> p: nonUserPrefs) ans.remove(p);
+       return ans;
+   }
 
 //   /** The visualization algorithm */
 //   public static final StringChoicePref VisualizationAlgorithm = new StringChoicePref("VizAlg", "Visualization algorightm",

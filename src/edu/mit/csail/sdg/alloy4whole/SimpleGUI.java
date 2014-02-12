@@ -120,6 +120,7 @@ import com.apple.eawt.ApplicationEvent;
 import edu.mit.csail.sdg.alloy4.A4Preferences;
 import edu.mit.csail.sdg.alloy4.A4Preferences.BooleanPref;
 import edu.mit.csail.sdg.alloy4.A4Preferences.ChoicePref;
+import edu.mit.csail.sdg.alloy4.A4Preferences.Pref;
 import edu.mit.csail.sdg.alloy4.A4Preferences.StringPref;
 import edu.mit.csail.sdg.alloy4.A4Preferences.Verbosity;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
@@ -1689,7 +1690,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
         log = new SwingLogPanel(logpane, fontName, fontSize, background, Color.BLACK, new Color(.7f,.2f,.2f), this);
 
         // Create loggers for preference changes
-        PreferencesDialog.logOnChange(log, A4Preferences.allPrefs());
+        PreferencesDialog.logOnChange(log, A4Preferences.allUserPrefs().toArray(new Pref<?>[0]));
         
         // Create the text area
         text = new OurTabbedSyntaxWidget(fontName, fontSize, TabSize.get());
