@@ -2,6 +2,7 @@ package edu.mit.csail.sdg.alloy4;
 
 import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -387,7 +388,19 @@ public class A4Preferences {
       /** Given an id, return the enum value corresponding to it (if there's no match, then return DEFAULT). */
       /** Returns the human-readable label for this enum value. */
       @Override public final String toString() { return label; }
+   }
+   
+   public static Pref<?>[] allPrefs() {
+      List<Pref<?>> ans = new ArrayList<A4Preferences.Pref<?>>();
+      Class<A4Preferences> self = A4Preferences.class;
+      for (Field f : self.getDeclaredFields()) {
+         if (Pref.class.isAssignableFrom(f.getType())) {
+            try { ans.add((Pref<?>) f.get(self)); } catch (Exception e) {} 
+         }
+      }
+      return ans.toArray(new Pref<?>[0]);
    };
+
 
 //   /** The visualization algorithm */
 //   public static final StringChoicePref VisualizationAlgorithm = new StringChoicePref("VizAlg", "Visualization algorightm",

@@ -27,6 +27,7 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -36,10 +37,13 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.AbstractAction;
 import javax.swing.AbstractListModel;
 import javax.swing.AbstractSpinnerModel;
+import javax.swing.Action;
 import javax.swing.BoundedRangeModel;
 import javax.swing.ComboBoxModel;
+import javax.swing.Icon;
 import javax.swing.InputVerifier;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -281,9 +285,9 @@ public class PreferencesDialog extends JFrame {
       JPanel p = OurUtil.makeGrid(2, gbc().make(), mkCombo(SubMemory), mkCombo(SubStack),
             mkCombo(VerbosityPref), mkCombo(LAF));
       int r = 4;
-      addToGrid(p, mkCheckBox(Welcome),          gbc().pos(0, r++).gridwidth(2));
-      addToGrid(p, mkCheckBox(WarningNonfatal),  gbc().pos(0, r++).gridwidth(2));
-      addToGrid(p, mkCheckBox(AutoVisualize),    gbc().pos(0, r++).gridwidth(2));
+      addToGrid(p, mkCheckBox(Welcome),         gbc().pos(0, r++).gridwidth(2));
+      addToGrid(p, mkCheckBox(WarningNonfatal), gbc().pos(0, r++).gridwidth(2));
+      addToGrid(p, mkCheckBox(AutoVisualize),   gbc().pos(0, r++).gridwidth(2));
       return makeTabPane(p);
    }
 
@@ -446,6 +450,40 @@ public class PreferencesDialog extends JFrame {
    public void addChangeListener(ChangeListener l, Pref<?>... prefs) {
       for (Pref<?> pref : prefs) {
          pref.addChangeListener(l);
+      }
+   }
+   
+   public static Action decorateWithLogging(final SwingLogPanel log, final Pref<?> pref, final Action action) {
+       if (log == null) return action;
+       return new AbstractAction((String)action.getValue(Action.NAME), (Icon)action.getValue(Action.SMALL_ICON)) {        
+         private static final long serialVersionUID = -2790668001235140089L;
+         public void actionPerformed(ActionEvent e) {
+             Object oldVal = pref.get();
+             action.actionPerformed(e);
+             Object newVal = pref.get();
+             if (!newVal.equals(oldVal))
+                 logPrefChanged(log, pref);
+          }
+       };
+    }
+   
+   public static void logPrefChanged(SwingLogPanel log, Pref<?> pref) {
+       if (log == null) return;
+       log.log("Option ");
+       log.logBold(pref.title);
+       log.log(" changed to ");
+       log.logBold(pref.get() + "\n");
+       log.flush();
+   }
+
+   public static void logOnChange(final SwingLogPanel log, final Pref<?>... prefs) {
+      if (log == null) return;
+      for (final Pref<?> pref : prefs) {
+         pref.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+               logPrefChanged(log, pref);
+            }
+         });
       }
    }
 

@@ -1688,6 +1688,9 @@ public final class SimpleGUI implements ComponentListener, Listener {
         logpane = OurUtil.scrollpane(null);
         log = new SwingLogPanel(logpane, fontName, fontSize, background, Color.BLACK, new Color(.7f,.2f,.2f), this);
 
+        // Create loggers for preference changes
+        PreferencesDialog.logOnChange(log, A4Preferences.allPrefs());
+        
         // Create the text area
         text = new OurTabbedSyntaxWidget(fontName, fontSize, TabSize.get());
         text.listeners.add(this);
@@ -1825,6 +1828,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
       if (sender instanceof OurTabbedSyntaxWidget) switch(e) {
          case FOCUSED: notifyFocusGained(); break;
          case STATUS_CHANGE: notifyChange(); break;
+         default: break;
       }
       return true;
    }
@@ -1841,18 +1845,18 @@ public final class SimpleGUI implements ComponentListener, Listener {
 
    /** Creates menu items from boolean preferences (<code>prefs</code>)
     *  and adds them to a given parent menu (<code>parent</code>). */
-   private static void addToMenu(JMenu parent, BooleanPref... prefs) {
+   private void addToMenu(JMenu parent, BooleanPref... prefs) {
       for (BooleanPref pref : prefs) {
-        Action action = pref.getTitleAction();
-        Object name = action.getValue(Action.NAME);
-        menuItem(parent, name + ": " + (pref.get() ? "Yes" : "No"), action);
+         Action action = pref.getTitleAction();
+         Object name = action.getValue(Action.NAME);
+         menuItem(parent, name + ": " + (pref.get() ? "Yes" : "No"), action);
       }
    }
 
    /** Creates a menu item for each choice preference (from <code>prefs</code>)
     *  and adds it to a given parent menu (<code>parent</code>).*/
    @SuppressWarnings({ "rawtypes", "unchecked" })
-   private static JMenu addToMenu(JMenu parent, ChoicePref... prefs) {
+   private JMenu addToMenu(JMenu parent, ChoicePref... prefs) {
       JMenu last = null;
       for (ChoicePref pref : prefs) {
          last = new JMenu(pref.title + ": " + pref.renderValueShort(pref.get()));
@@ -1865,13 +1869,14 @@ public final class SimpleGUI implements ComponentListener, Listener {
    /** Creates a sub-menu item for each choice of a given preference (<code>pref</code>)
     *  and adds it to a given parent menu (<code>parent</code>).*/
    @SuppressWarnings({ "rawtypes", "unchecked" })
-   private static void addSubmenuItems(JMenu parent, ChoicePref pref) {
+   private void addSubmenuItems(JMenu parent, ChoicePref pref) {
       Object selected = pref.get();
       for(Object item: pref.validChoices()) {
-         menuItem(parent, pref.renderValueLong(item).toString(), pref.getAction(item), item==selected?iconYes:iconNo);
+         Action action = pref.getAction(item);
+         menuItem(parent, pref.renderValueLong(item).toString(), action, item==selected?iconYes:iconNo);
       }
    }
-
+   
    /** Takes a <code>Runner</code> and wraps it into a <code>ChangeListener</code> */
    private static ChangeListener wrapToChangeListener(final Runner r) {
       assert r != null;
