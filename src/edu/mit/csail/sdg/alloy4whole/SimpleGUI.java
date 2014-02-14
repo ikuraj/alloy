@@ -1175,8 +1175,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
 
             if (Version.experimental) {
               addToMenu(optmenu, Unrolls);
-              addToMenu(optmenu, ImplicitThis, NoOverflow);
-              addToMenu(optmenu, ImplicitThis, InferPartialInstance);
+              addToMenu(optmenu, ImplicitThis, NoOverflow, InferPartialInstance);
             }
 
         } finally {
