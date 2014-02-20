@@ -390,7 +390,8 @@ public class A4Preferences {
       @Override public final String toString() { return label; }
    }
    
-   public static Pref<?>[] nonUserPrefs = new Pref<?>[] { AnalyzerX, AnalyzerHeight, AnalyzerWidth, AnalyzerY };
+   public static Pref<?>[] nonUserPrefs = new Pref<?>[] { 
+       AnalyzerX, AnalyzerHeight, AnalyzerWidth, AnalyzerY, Model0, Model1, Model2, Model3 };
    
    public static List<Pref<?>> allPrefs() {
       List<Pref<?>> ans = new ArrayList<A4Preferences.Pref<?>>();
