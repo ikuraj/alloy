@@ -748,7 +748,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             return k2pos(f3.and(f4).and(f5).forAll(e.oneOf(elem)).and(f1).and(f2), x);
         }
         // This says  no(a&b) and no((a+b)&c) and no((a+b+c)&d)...
-        // Emperically this seems to be more efficient than "no(a&b) and no(a&c) and no(b&c)"
+        // Empirically this seems to be more efficient than "no(a&b) and no(a&c) and no(b&c)"
         Formula answer = null;
         Expression a = null;
         for(Expr arg:x.args) {
