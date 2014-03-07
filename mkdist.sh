@@ -17,15 +17,16 @@ then
     KODKOD_HOME=../kodkod  #../relations-experimental
 fi
 
-function fade_start { echo -e "$(tput setaf 8)"; }
-function fade_end   { echo -e "$(tput sgr0)"; }
+function fade_start { echo -ne "$(tput setaf 8)"; }
+function fade_end   { echo -ne "$(tput sgr0)"; }
 
-function step  { echo -e "$(tput setaf 12; tput bold)[$@...]$(tput sgr0)"; fade_start; }
-function info  { echo -e "$(tput setaf 4)$@$(tput sgr0)"; fade_start; }
-function emph  { echo -e "$(tput setaf 10; tput bold)$@$(tput sgr0)"; fade_start; }
-function warn  { echo -e "$(tput setaf 3)  [Warn] $@$(tput sgr0)"; fade_start; }
-function error { echo -e "$(tput setaf 9; tput bold)  [ERROR]: $@$(tput sgr0)"; fade_start; }
-function trace { echo -e "$(tput setaf 8)$@$(tput sgr0)"; fade_start; }
+function step  { echo -e "$(tput setaf 12; tput bold)[$@...]$(tput sgr0)"; }
+function info  { echo -e "$(tput setaf 4)$@$(tput sgr0)"; }
+function emph  { echo -e "$(tput setaf 10; tput bold)$@$(tput sgr0)"; }
+function warn  { echo -e "$(tput setaf 3)  [Warn] $@$(tput sgr0)"; }
+function error { echo -e "$(tput setaf 9; tput bold)  [ERROR]: $@$(tput sgr0)"; }
+function trace { echo -e "$(tput setaf 7)$@$(tput sgr0)"; }
+function fatal { error $@; fade_end; exit 1; }
 
 function compile {
     version_file=src/edu/mit/csail/sdg/alloy4/Version.java
@@ -54,11 +55,9 @@ function compile {
 
     mv $version_file.bak $version_file
 
-    if [[ $ok != "0" ]]
-    then
-        error "Could not compile from sources"
-        exit 1
-    fi
+    if [[ $ok != "0" ]]; then fatal "Could not compile from sources"; fi
+
+    fade_end
 }
 
 function dist {
@@ -150,6 +149,8 @@ function dist {
     emph " *** dmg file created:   $DST/$(ls *dmg)"
     info "  cleaning up on hudsonbay..."
     ssh hudsonbay 'rm alloy-osx.zip'
+
+    fade_end
 }
 
 if [[ "X"$1 == "X" ]]
