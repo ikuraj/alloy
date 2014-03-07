@@ -36,7 +36,8 @@ public class A4Preferences {
       /** Reads the value for this preference; if not set or is empty, we return the default value. */
       public T get() {
          String ans=Preferences.userNodeForPackage(Util.class).get(id, "");
-         return (ans==null || ans.length()==0) ? defaultValue() : parse(ans);
+         T ret = (ans!=null && ans.length()>0) ? ret = parse(ans) : null;
+         return (ret!=null) ? ret : defaultValue();
       }
 
       /** Sets the value for this preference. */
