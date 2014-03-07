@@ -120,7 +120,9 @@ public final class OurDialog {
 
    /** Returns true if a font with that name exists on the system (comparison is case-insensitive). */
    public synchronized static boolean hasFont(String fontname) {
+      //if (fontname == null) return false;
       if (allFonts == null) allFonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+      if (allFonts == null) return false;
       for(int i = 0; i < allFonts.length; i++) if (fontname.compareToIgnoreCase(allFonts[i]) == 0) return true;
       return false;
    }
