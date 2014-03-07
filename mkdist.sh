@@ -17,6 +17,16 @@ then
     KODKOD_HOME=../kodkod  #../relations-experimental
 fi
 
+function fade_start { echo -e "$(tput setaf 8)"; }
+function fade_end   { echo -e "$(tput sgr0)"; }
+
+function step  { echo -e "$(tput setaf 12; tput bold)[$@...]$(tput sgr0)"; fade_start; }
+function info  { echo -e "$(tput setaf 4)$@$(tput sgr0)"; fade_start; }
+function emph  { echo -e "$(tput setaf 10; tput bold)$@$(tput sgr0)"; fade_start; }
+function warn  { echo -e "$(tput setaf 3)  [Warn] $@$(tput sgr0)"; fade_start; }
+function error { echo -e "$(tput setaf 9; tput bold)  [ERROR]: $@$(tput sgr0)"; fade_start; }
+function trace { echo -e "$(tput setaf 8)$@$(tput sgr0)"; fade_start; }
+
 function compile {
     version_file=src/edu/mit/csail/sdg/alloy4/Version.java
     cp -r $version_file $version_file.bak
@@ -26,18 +36,29 @@ function compile {
 
     mkdir -p bin
 
-    echo "[cleaning up the bin folder...]"
+    info "cleaning up the bin folder"
     rm -rf bin/*
 
+    step "compiling"
     CP=$(ls -1 lib/*.jar | xargs | sed 's/\ /'$CP_SEP'/g')
-    if [[ -d $KODKOD_HOME ]]
-    then
+
+    if [[ -d $KODKOD_HOME ]]; then
         CP=$KODKOD_HOME/bin:$CP
+    else
+        warn "Kodkod project not found in $KODKOD_HOME; relying on kodkod.jar, which may be obsolete"
     fi
-    echo "[compiling...]"
+
+    trace "  using CLASSPATH: $CP"
     find src -name "*.java" | xargs javac -cp $CP -d bin # -source 1.5 -target 1.5
+    ok="$?"
 
     mv $version_file.bak $version_file
+
+    if [[ $ok != "0" ]]
+    then
+        error "Could not compile from sources"
+        exit 1
+    fi
 }
 
 function dist {
@@ -47,9 +68,11 @@ function dist {
     rm -rf $DST/*
     mkdir -p $DST/alloy
 
+    step "building JAR distribution"
+
     for f in lib/*jar
     do
-        echo "[extracting]: $f"
+        trace "  extracting: $f"
 	unzip -q -o $f -d $DST/alloy
     done
 
@@ -61,13 +84,14 @@ function dist {
     cp -r src/* $DST/alloy/
     if [[ -d $KODKOD_HOME ]]; then
         rm -rf $DST/alloy/kodkod
-        echo "[copying kodkod binaries]: $KODKOD_HOME/bin/kodkod"
+        trace "  copying kodkod binaries: $KODKOD_HOME/bin/kodkod"
         cp -r $KODKOD_HOME/bin/kodkod $DST/alloy/kodkod
-        echo "[copying kodkod sources]: $KODKOD_HOME/src/kodkod"
+        trace "  copying kodkod sources: $KODKOD_HOME/src/kodkod"
         cp -r $KODKOD_HOME/src/kodkod/* $DST/alloy/kodkod/
     fi
     rm -rf $DST/alloy/META-INF
 
+    find $DST/alloy -type d -name ".git" -exec rm -rf {} \;
     find $DST/alloy -type d -name ".svn" -exec rm -rf {} \;
     find $DST/alloy -type d -name "CVS" -exec rm -rf {} \;
 
@@ -91,9 +115,9 @@ function dist {
     rm -rf allo
     popd &> /dev/null
 
-    echo " *** jar file created:    $DST/$jarName"
+    emph " *** jar file created:    $DST/$jarName"
 
-    echo "[building OSX app...]"
+    step "building OSX app"
 
     export jarName VERSION
     ant
@@ -102,7 +126,7 @@ function dist {
     # for Mac dist
     ###############################
 
-    echo "[packaging OSX...]"
+    step "packaging OSX"
     osxdir="alloy-osx"
     rm -rf $DST/$osxdir
     mkdir -p $DST/$osxdir/dist
@@ -110,10 +134,22 @@ function dist {
     cp -r OSX-extra/* $DST/$osxdir/dist
     find $DST/$osxdir/dist -type d -name ".svn" -exec rm -rf {} \;
     cat build-dmg.sh | sed 's/VERSION=X/VERSION='$VERSION'/g' > $DST/$osxdir/build-dmg.sh
+
+    # build dmg on hudsonbay
+    step "building DMG"
     cd $DST
     zip -q -r $osxdir.zip $osxdir
     rm -rf $osxdir
-
+    info "  copying files to hudsonbay..."
+    scp -r $osxdir.zip hudsonbay:
+    exe_str="rm -rf $osxdir; unzip -q $osxdir; cd $osxdir; chmod +x *.sh; ./*.sh"
+    info "  building DMG on hudsonbay..."
+    ssh hudsonbay "$exe_str"
+    info "  copying files back from hudsonbay..."
+    scp hudsonbay:$osxdir/*dmg .
+    emph " *** dmg file created:   $DST/$(ls *dmg)"
+    info "  cleaning up on hudsonbay..."
+    ssh hudsonbay 'rm alloy-osx.zip'
 }
 
 if [[ "X"$1 == "X" ]]
