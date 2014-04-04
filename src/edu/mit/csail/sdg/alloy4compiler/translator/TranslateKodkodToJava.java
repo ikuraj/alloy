@@ -15,14 +15,15 @@
 
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.IdentityHashMap;
-import java.util.Map;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.BinaryIntExpression;
@@ -33,34 +34,35 @@ import kodkod.ast.ConstantFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.Decls;
 import kodkod.ast.ExprToIntCast;
+import kodkod.ast.Expression;
+import kodkod.ast.FixFormula;
+import kodkod.ast.Formula;
 import kodkod.ast.IfExpression;
 import kodkod.ast.IfIntExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
 import kodkod.ast.IntExpression;
 import kodkod.ast.IntToExprCast;
+import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.NaryExpression;
 import kodkod.ast.NaryFormula;
 import kodkod.ast.NaryIntExpression;
 import kodkod.ast.Node;
-import kodkod.ast.ProjectExpression;
-import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.NotFormula;
+import kodkod.ast.ProjectExpression;
 import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Relation;
 import kodkod.ast.RelationPredicate;
-import kodkod.ast.UnaryExpression;
+import kodkod.ast.RelationPredicate.Function;
 import kodkod.ast.SumExpression;
+import kodkod.ast.UnaryExpression;
 import kodkod.ast.UnaryIntExpression;
 import kodkod.ast.Variable;
-import kodkod.ast.Expression;
-import kodkod.ast.Formula;
-import kodkod.ast.RelationPredicate.Function;
 import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 import kodkod.instance.Bounds;
-import kodkod.instance.TupleSet;
 import kodkod.instance.Tuple;
+import kodkod.instance.TupleSet;
 import kodkod.util.ints.IndexedEntry;
 import kodkod.util.nodes.PrettyPrinter;
 
@@ -98,6 +100,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
             public Integer visit(IfIntExpression x)       { return 1 + max(x.condition().accept(this), x.thenExpr().accept(this), x.elseExpr().accept(this)); }
             public Integer visit(SumExpression x)         { return 1 + max(x.decls().accept(this), x.intExpr().accept(this)); }
             public Integer visit(QuantifiedFormula x)     { return 1 + max(x.decls().accept(this), x.formula().accept(this)); }
+            public Integer visit(FixFormula x)            { return 1 + max(x.condition().accept(this), x.formula().accept(this)); }
             public Integer visit(Comprehension x)         { return 1 + max(x.decls().accept(this), x.formula().accept(this)); }
             public Integer visit(Decls x) {
                 int max = 0, n = x.size();
@@ -188,7 +191,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         file.printf("import kodkod.engine.*;%n");
         file.printf("import kodkod.engine.satlab.SATFactory;%n");
         file.printf("import kodkod.engine.config.Options;%n%n");
-        
+
         file.printf("/* %n");
         file.printf("  ==================================================%n");
         file.printf("    kodkod formula: %n");
@@ -503,6 +506,14 @@ public final class TranslateKodkodToJava implements VoidVisitor {
            case SOME: file.printf("Formula %s=%s.forSome(%s);%n",newname,f,d); break;
            default: throw new RuntimeException("Unknown kodkod quantifier \""+x.quantifier()+"\" encountered");
         }
+    }
+
+    /** {@inheritDoc} */
+    public void visit(FixFormula x) {
+        String newname=makename(x); if (newname==null) return;
+        String f=make(x.formula());
+        String c=make(x.condition());
+        file.printf("Formula %s=%s.fix(%s);%n", newname, f, c);
     }
 
     /** {@inheritDoc} */
