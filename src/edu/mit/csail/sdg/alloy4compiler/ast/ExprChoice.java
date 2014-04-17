@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.List;
 
 import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
@@ -92,9 +93,22 @@ public final class ExprChoice extends Expr {
     //============================================================================================================//
 
     /** Construct an ExprChoice node. */
-    public static Expr make(Pos pos, ConstList<Expr> choices, ConstList<String> reasons) {
+    public static Expr make(boolean ignoreIntFuns, Pos pos, ConstList<Expr> choices, ConstList<String> reasons) {
         if (choices.size()==0) return new ExprBad(pos, "", new ErrorType(pos, "This expression failed to be typechecked."));
         if (choices.size()==1 && choices.get(0).errors.isEmpty()) return choices.get(0); // Shortcut
+        if (ignoreIntFuns) {
+            int n = choices.size();
+            TempList<Expr> ch = new TempList<Expr>(n);
+            TempList<String> rs = new TempList<String>(n);
+            for (int i = 0; i < n; i++) {
+                Expr e = choices.get(i);
+                if (!((e instanceof ExprCall) && e.toString().startsWith("integer/"))) {
+                    ch.add(e);
+                    rs.add(reasons.get(i));
+                }
+            }
+            return make(false, pos, ch.makeConst(), rs.makeConst());
+        }
         Type type=EMPTY;
         boolean first=true;
         long weight=0;

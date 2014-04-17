@@ -15,6 +15,9 @@
 
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -36,7 +39,14 @@ import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.Module;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
+import edu.mit.csail.sdg.alloy4compiler.ast.VisitQuery;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary.Op;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
+import edu.mit.csail.sdg.alloy4compiler.ast.Type.ProductType;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompModule.Open;
 
 /** This class provides convenience methods for calling the parser and the compiler. */
@@ -96,6 +106,51 @@ public final class CompUtil {
 
     //=============================================================================================================//
 
+    /** Whether or not Int appears in the relation types found in these sigs */
+    public static boolean areIntsUsed(Iterable<Sig> sigs, Command cmd) {
+        /* check for Int-typed relations */
+        for (Sig s : sigs) {
+            for (Field f : s.getFields()) {
+                for (ProductType pt : f.type()) {
+                    for (int k = 0; k < pt.arity(); k++) {
+                        if (pt.get(k) == SIGINT || pt.get(k) == SEQIDX)
+                            return true;
+                    }
+                }
+            }
+        }
+
+        if (cmd == null)
+            return false;
+
+        /* check expressions; look for CAST2SIGING (Int[]) */
+        try {
+            Object intTriggerNode;
+            intTriggerNode = cmd.formula.accept(new VisitQuery<Object>() {
+                @Override
+                public Object visit(ExprCall x) throws Err {
+                    // skip integer arithmetic functions, because their
+                    // arguments are always explicitly cast to SIGINT using Int[]
+                    if (x.fun.label.startsWith("integer/"))
+                        return null;
+                    return super.visit(x);
+                }
+
+                @Override
+                public Object visit(ExprUnary x) throws Err {
+                    if (x.op == Op.CAST2SIGINT)
+                        return x;
+                    return super.visit(x);
+                }
+            });
+            if (intTriggerNode != null) return true;
+        } catch (Err e) {}
+
+        return false;
+    }
+
+    //=============================================================================================================//
+
     /** Helper method that recursively parse a file and all its included subfiles
      * @param loaded - this stores the text files we've loaded while parsing; cannot be null
      * @param fc - if a file cannot be found, we consult this cache first before attempting to load it from disk/jar; cannot be null
@@ -122,7 +177,7 @@ public final class CompUtil {
         // No cycle detected so far. So now we parse the file.
         CompModule u = CompParser.alloy_parseStream(seenDollar, loaded, fc, root, 0, filename, prefix, initialResolution);
         if (prefix.length()==0) root = u;
-        
+
         // Here, we recursively open the included files
         for(Open x: u.getOpens()) {
             String cp=Util.canon(computeModulePath(u.getModelName(), filename, x.filename)), content=fc.get(cp);
@@ -158,7 +213,7 @@ public final class CompUtil {
         CompModule u = parseOneModule(content);
         return ConstList.make(u.getAllCommands());
     }
-    
+
     public static CompModule parseOneModule(String content) throws Err {
         try {
             Map<String,String> fc = new LinkedHashMap<String,String>();
@@ -254,7 +309,7 @@ public final class CompUtil {
             CompModule root = parseRecursively(seenDollar, loaded, fc, new Pos(filename,1,1), filename, null, "", thispath, initialResolutionMode);
             // if no sigs are defined by the user, add one
             if (root.getAllReachableUserDefinedSigs().isEmpty()) {
-                root.addGhostSig(); 
+                root.addGhostSig();
             }
             root.seenDollar = seenDollar.size()>0;
             return CompModule.resolveAll(rep==null ? A4Reporter.NOP : rep, root);
@@ -266,7 +321,7 @@ public final class CompUtil {
             if (ex instanceof Err) throw (Err)ex; else throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
         }
     }
-    
+
     /**
      * @param rep - may be null
      * @param content - alloy model
@@ -280,10 +335,10 @@ public final class CompUtil {
             throw new ErrorFatal("IOException occurred: "+ex.getMessage(), ex);
         }
     }
-    
+
     /**
-     * Saves the given alloy model to a file. 
-     * 
+     * Saves the given alloy model to a file.
+     *
      * @param model - alloy model
      * @param tmpAls - if null, a temporary file will be created and returned
      */
@@ -291,7 +346,7 @@ public final class CompUtil {
         if (tmpAls == null) {
             tmpAls = File.createTempFile("alloy_heredoc", ".als");
             tmpAls.deleteOnExit();
-        }        
+        }
         BufferedOutputStream bos = null;
         try {
             bos = new BufferedOutputStream(new FileOutputStream(tmpAls));

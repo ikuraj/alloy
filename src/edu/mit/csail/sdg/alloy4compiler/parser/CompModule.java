@@ -204,6 +204,8 @@ public final class CompModule extends Browsable implements Module {
       /** The level of macro substitution recursion. */
       public final int unrolls;
 
+      public final boolean isIntsNotUsed;
+
       /** Associates the given name with the given expression in the current lexical scope. */
       final void put(String name, Expr value) {
          env.put(name,value);
@@ -224,6 +226,15 @@ public final class CompModule extends Browsable implements Module {
          this.rootmodule = rootModule;
          this.unrolls = unrolls;
          this.warns = warns;
+         boolean noIntFields = !CompUtil.areIntsUsed(rootModule.getAllReachableSigs(), null);
+         boolean noOpenInteger = true;
+         for (Open o : rootModule.opens.values()) {
+             if (("util/integer".equals(o.filename) || "util\\integer".equals(o.filename)) && o.pos != null) {
+                 noOpenInteger = false;
+                 break;
+             }
+         }
+         this.isIntsNotUsed = noIntFields && noOpenInteger;
       }
 
       /** Resolve the given name to get a collection of Expr and Func objects. */
@@ -260,7 +271,7 @@ public final class CompModule extends Browsable implements Module {
          if (match!=null) {
             if (match instanceof Macro) return ((Macro)match).changePos(pos);
             match = ExprUnary.Op.NOOP.make(pos, match);
-            return ExprChoice.make(pos, asList(match), asList(name));
+            return ExprChoice.make(isIntsNotUsed, pos, asList(match), asList(name));
          }
          Expr th = env.get("this");
          if (th!=null) th = ExprUnary.Op.NOOP.make(pos, th);
@@ -268,7 +279,7 @@ public final class CompModule extends Browsable implements Module {
          TempList<String> re = new TempList<String>();
          Expr ans = rootmodule.populate(ch, re, rootfield, rootsig, rootfunparam, rootfunbody, pos, name, th);
          if (ans!=null) return ans;
-         if (ch.size()==0) return new ExprBad(pos, name, hint(pos, name)); else return ExprChoice.make(pos, ch.makeConst(), re.makeConst());
+         if (ch.size()==0) return new ExprBad(pos, name, hint(pos, name)); else return ExprChoice.make(isIntsNotUsed, pos, ch.makeConst(), re.makeConst());
       }
 
       Expr check(Expr x) throws Err {
@@ -319,7 +330,7 @@ public final class CompModule extends Browsable implements Module {
             list.add(y);
             reasons.add(oldReasons.get(i));
          }
-         return ExprChoice.make(rightPos, list.makeConst(), reasons.makeConst());
+         return ExprChoice.make(isIntsNotUsed, rightPos, list.makeConst(), reasons.makeConst());
       }
 
       /** {@inheritDoc} */
