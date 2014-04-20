@@ -136,7 +136,19 @@ final class SwingLogPanel {
                         if (!AbstractDocument.SectionElementName.equals(x.getName())) return defaultFactory.create(x);
                         return new BoxView(x, View.Y_AXIS) {
                             @Override public final float getMinimumSpan(int axis) { return super.getPreferredSpan(axis); }
-                            @Override public final void layout(int width,int height) { super.layout(30000, height); }
+                            @Override public final void layout(int width,int height) {
+                                int x = 0;
+                                int dec = 20;
+                                int w = 30000 + dec;
+                                while (x++ < 10) {
+                                    try {
+                                        super.layout(w - (int)Math.pow(2, x-1)*dec, height);
+                                        break;
+                                    } catch (Exception e) {
+                                        //System.out.println("---------error for ww = " + ww);
+                                    }
+                                }
+                            }
                         };
                     }
                 };
