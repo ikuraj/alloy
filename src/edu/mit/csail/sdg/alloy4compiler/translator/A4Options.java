@@ -105,8 +105,9 @@ public final class A4Options implements Serializable {
         // public static final SatSolver ZChaffJNI = new SatSolver("zchaff(jni)", "ZChaff with mincost", null, null, true);
         /** Lingeling */
         public static final SatSolver LingelingJNI = new SatSolver("lingeling(jni)", "Lingeling", null, null, true);
+        public static final SatSolver PLingelingJNI = new SatSolver("plingeling(jni)", "PLingeling", null, null, true);
         /** Glucose */
-        public static final SatSolver GlucoseJNI = new SatSolver("glucose(jni)", "Glucose", null, null, true);        
+        public static final SatSolver GlucoseJNI = new SatSolver("glucose(jni)", "Glucose", null, null, true);
         /** CryptoMiniSat */
         public static final SatSolver CryptoMiniSatJNI = new SatSolver("cryptominisat(jni)", "CryptoMiniSat", null, null, true);
         /** SAT4J using native Java */
@@ -145,7 +146,7 @@ public final class A4Options implements Serializable {
      * <p> Default value is set to the fastest current strategy.
      */
     public int coreMinimization = 2;
-    
+
     /** Unsat core granularity, default is 0 (only top-level conjuncts are considered), 3 expands all quantifiers */
     public int coreGranularity = 0;
 
@@ -173,7 +174,7 @@ public final class A4Options implements Serializable {
      * <p> Default value is false.
      */
     public boolean recordKodkod = false;
-    
+
     /** This option specifies whether the solver should report only solutions
      *  that don't cause any overflows. */
     public boolean noOverflow = false;

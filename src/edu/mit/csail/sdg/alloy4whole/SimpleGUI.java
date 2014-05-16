@@ -363,7 +363,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
            arch+"/libminisat.so", arch+"/libminisatx1.so", arch+"/libminisat.jnilib", arch+"/libminisat.dylib",
            arch+"/libminisatprover.so", arch+"/libminisatproverx1.so", arch+"/libminisatprover.jnilib", arch+"/libminisatprover.dylib",
            arch+"/libzchaff.so", arch+"/libzchaffmincost.so", arch+"/libzchaffx1.so", arch+"/libzchaff.jnilib",
-           arch+"/liblingeling.so", arch+"/liblingeling.dylib", arch+"/liblingeling.jnilib",
+           arch+"/liblingeling.so", arch+"/liblingeling.dylib", arch+"/liblingeling.jnilib", arch+"/plingeling",
            arch+"/libglucose.so", arch+"/libglucose.dylib", arch+"/libglucose.jnilib",
            arch+"/libcryptominisat.so", arch+"/libcryptominisat.la", arch+"/libcryptominisat.dylib", arch+"/libcryptominisat.jnilib",
            arch+"/berkmin", arch+"/spear", arch+"/cryptominisat");
@@ -1690,7 +1690,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
 
         // Create loggers for preference changes
         PreferencesDialog.logOnChange(log, A4Preferences.allUserPrefs().toArray(new Pref<?>[0]));
-        
+
         // Create the text area
         text = new OurTabbedSyntaxWidget(fontName, fontSize, TabSize.get());
         text.listeners.add(this);
@@ -1876,7 +1876,7 @@ public final class SimpleGUI implements ComponentListener, Listener {
          menuItem(parent, pref.renderValueLong(item).toString(), action, item==selected?iconYes:iconNo);
       }
    }
-   
+
    /** Takes a <code>Runner</code> and wraps it into a <code>ChangeListener</code> */
    private static ChangeListener wrapToChangeListener(final Runner r) {
       assert r != null;

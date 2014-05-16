@@ -276,12 +276,14 @@ public final class A4Solution {
             if (opt.solverDirectory.length()>0 && ext.indexOf(File.separatorChar)<0) ext=opt.solverDirectory+File.separatorChar+ext;
             try {
                 File tmp = File.createTempFile("tmp", ".cnf", new File(opt.tempDirectory));
-                tmp.deleteOnExit(); 
+                tmp.deleteOnExit();
 	            solver.options().setSolver(SATFactory.externalFactory(ext, tmp.getAbsolutePath(), opt.solver.options()));
                 //solver.options().setSolver(SATFactory.externalFactory(ext, tmp.getAbsolutePath(), opt.solver.options()));
             } catch(IOException ex) { throw new ErrorFatal("Cannot create temporary directory.", ex); }
         } else if (opt.solver.equals(A4Options.SatSolver.LingelingJNI)) {
             solver.options().setSolver(SATFactory.Lingeling);
+        } else if (opt.solver.equals(A4Options.SatSolver.PLingelingJNI)) {
+            solver.options().setSolver(SATFactory.plingeling(4, null));
         } else if (opt.solver.equals(A4Options.SatSolver.GlucoseJNI)) {
             solver.options().setSolver(SATFactory.Glucose);
         } else if (opt.solver.equals(A4Options.SatSolver.CryptoMiniSatJNI)) {
