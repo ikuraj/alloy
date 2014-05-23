@@ -1157,7 +1157,9 @@ public final class SimpleGUI implements ComponentListener, Listener {
             optmenu.addSeparator();
 
             addToMenu(optmenu, SyntaxDisabled);
-            addToMenu(optmenu, FontSize, FontName, TabSize);
+            addToMenu(optmenu, FontSize);
+            menuItem(optmenu, "Font: "+FontName.get()+"...", doOptFontname());
+            addToMenu(optmenu, TabSize);
             if (Util.onMac() || Util.onWindows())
                menuItem(optmenu, "Use anti-aliasing: Yes", false);
             else
@@ -1180,6 +1182,19 @@ public final class SimpleGUI implements ComponentListener, Listener {
 
         } finally {
             wrap = false;
+        }
+        return null;
+    }
+    
+    private Runner doOptFontname() {
+        if (wrap) return wrapMe();
+        int size=FontSize.get();
+        String f = OurDialog.askFont();
+        if (f.length()>0) {
+           FontName.set(f);
+           text.setFont(f, size, TabSize.get());
+           status.setFont(new Font(f, Font.PLAIN, size));
+           log.setFontName(f);
         }
         return null;
     }
