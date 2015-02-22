@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.ConstList;
@@ -184,6 +185,10 @@ public final class Command extends Browsable {
                 if (x.op==ExprConstant.Op.STRING) set.add(x.string);
                 return null;
             }
+            @Override public Object visit(ExprCall x) throws Err {
+                x.fun.getBody().accept(this);
+                return null;
+            }            
         };
         for(Command c=this; c!=null; c=c.parent) c.formula.accept(findString);
         for(Sig s: sigs) {

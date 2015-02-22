@@ -124,6 +124,8 @@ public final class A4Options implements Serializable {
 
     /** Constructs an A4Options object with default values for everything. */
     public A4Options() { }
+    
+    public boolean inferPartialInstance = true;
 
     /** This option specifies the amount of symmetry breaking to do (when symmetry breaking isn't explicitly disabled).
      *
@@ -185,6 +187,7 @@ public final class A4Options implements Serializable {
     /** This method makes a copy of this Options object. */
     public A4Options dup() {
         A4Options x = new A4Options();
+        x.inferPartialInstance = inferPartialInstance;
         x.unrolls = unrolls;
         x.symmetry = symmetry;
         x.skolemDepth = skolemDepth;
