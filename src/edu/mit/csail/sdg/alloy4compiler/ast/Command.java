@@ -187,6 +187,7 @@ public final class Command extends Browsable {
             }
             @Override public Object visit(ExprCall x) throws Err {
                 x.fun.getBody().accept(this);
+                for (Expr e : x.args) e.accept(this);
                 return null;
             }            
         };
