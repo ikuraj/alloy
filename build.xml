@@ -26,16 +26,10 @@
 			</classpath>
 
 			<!-- got rid of that huge one liner string -->
-			<package name="edu.mit.csail.sdg.alloy4whole"/>
-			<package name="edu.mit.csail.sdg.alloy4viz"/>
-			<package name="edu.mit.csail.sdg.alloy4compiler.sim"/>
-			<package name="edu.mit.csail.sdg.alloy4compiler.parser"/>
-			<package name="edu.mit.csail.sdg.alloy4compiler.ast"/>
-			<package name="edu.mit.csail.sdg.alloy4compiler.translator"/>
-			<package name="edu.mit.csail.sdg.alloy4graph"/>
-			<package name="edu.mit.csail.sdg.alloy4"/>
-			<package name="java_cup.runtime"/>
-			<package name="tmp"/>
+			<!-- ignore java_cup.runtime, tmp" -->
+			<packageset defaultexcludes="yes" dir="src">
+				<include name="edu.mit.csail.sdg.*"/>
+			</packageset>
 		</javadoc>
 	</target>
 
