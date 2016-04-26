@@ -12,7 +12,7 @@
 	<target name="javadoc">
 		<javadoc access="protected" author="true"
   		classpathref="lib.class.path"
-  		destdir="doc" doctitle="Alloy4.2 Documentation"
+  		destdir="deploy/doc" doctitle="Alloy4.2 Documentation"
   		nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false"
   		notree="false"
   		source="1.5" sourcepath="src" splitindex="true"
