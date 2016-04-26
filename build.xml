@@ -64,5 +64,14 @@
   <artifact:dependencies pathId="dependency.download">
 	  <dependency groupId="junit" artifactId="junit" version="4.8.2" scope="test"/>
 	</artifact:dependencies>
+	
+	<ivy:cachepath pathid="ant.git.tasks.classpath" conf="YOUR_IVY_CONFIGURATION"/>
+
+	<taskdef uri="antlib:com.rimerosolutions.ant.git"
+	         resource="com/rimerosolutions/ant/git/jgit-ant-lib.xml">
+	  <classpath>
+	    <path refid="ant.git.tasks.classpath"/>
+	  </classpath>
+	</taskdef>
 
 </project>
